@@ -1,0 +1,4 @@
+# install in docker
+-r common.txt
+psycopg2==2.9.9
+gunicorn==21.2.0

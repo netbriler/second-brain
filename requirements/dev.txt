@@ -1,0 +1,4 @@
+# install for developer environment
+-r common.txt
+psycopg2-binary==2.9.9
+# development like tests for example

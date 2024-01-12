@@ -1,0 +1,2 @@
+# install for development environment by default
+-r requirements/dev.txt
