@@ -34,6 +34,7 @@ class User(AbstractUser, PermissionsMixin):
         max_length=150,
         blank=True,
         editable=False,
+        null=True,
     )
 
     last_name = models.CharField(
@@ -41,6 +42,7 @@ class User(AbstractUser, PermissionsMixin):
         max_length=150,
         blank=True,
         editable=False,
+        null=True,
     )
 
     telegram_id = models.BigIntegerField(

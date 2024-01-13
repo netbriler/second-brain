@@ -1,3 +1,9 @@
-from .message_handlers import dp
+from aiogram import Router
 
-__all__ = ['dp']
+from .users import router as users_router
+
+router = Router(name='main')
+
+router.include_routers(
+    users_router,
+)

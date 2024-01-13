@@ -2,8 +2,7 @@ import asyncio
 
 from django.core.management.base import BaseCommand
 
-from telegram_bot.handlers import dp
-from telegram_bot.loader import bot
+from telegram_bot.start_bot import start_polling
 from utils.logging import logger
 
 
@@ -16,9 +15,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info('Starting telegram_bot')
 
-        async def main() -> None:
-            await dp.start_polling(bot)
-
-        asyncio.run(main())
+        asyncio.run(start_polling())
 
         logger.info('Finished telegram_bot')
