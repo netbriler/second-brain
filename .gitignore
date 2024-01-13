@@ -218,3 +218,4 @@ ENV/
 /static
 
 /logs
+/temp

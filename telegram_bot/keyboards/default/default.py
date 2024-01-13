@@ -20,4 +20,4 @@ def get_default_markup(user):
 
     builder.adjust(2, 1)
 
-    return builder.as_markup()
+    return builder.as_markup(resize_keyboard=True)

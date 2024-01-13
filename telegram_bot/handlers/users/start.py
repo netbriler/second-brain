@@ -1,5 +1,5 @@
-from aiogram import Router
-from aiogram.filters import CommandStart, Command
+from aiogram import Router, F
+from aiogram.filters import CommandStart, Command, or_f
 from aiogram.types import Message
 from django.utils.translation import gettext as _
 
@@ -23,10 +23,12 @@ async def _start(message: Message, user: User):
     await message.answer(text, reply_markup=get_language_inline_markup())
 
 
-# @router.message(i18n_text='Help 🆘')
 @router.message(
-    Command(
-        commands=['help']
+    or_f(
+        F.text == 'Help 🆘',
+        Command(
+            commands=['help']
+        )
     )
 )
 async def _help(message: Message, user: User):

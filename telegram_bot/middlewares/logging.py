@@ -16,9 +16,6 @@ class LoggingMiddleware(BaseMiddleware):
             event: Message | CallbackQuery | InlineQuery,
             data: dict[str, any]
     ) -> any:
-        print(f'{handler=}')
-        print(f'{event=}')
-
         if isinstance(event, Message):
             if event.content_type == 'text':
                 logger.debug(
