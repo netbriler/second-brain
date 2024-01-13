@@ -1,0 +1,178 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-14 00:29+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
+"(n%100>=11 && n%100<=14)? 2 : 3);\n"
+
+#: telegram_bot/apps.py:9
+#, fuzzy
+#| msgid "Telegram ID"
+msgid "Telegram Bot"
+msgstr "Айди Телеграма"
+
+#: telegram_bot/commands/admin.py:14
+msgid "export users to csv"
+msgstr "экспортировать пользователей в csv"
+
+#: telegram_bot/commands/admin.py:15
+msgid "count users who contacted the bot"
+msgstr "посчитать пользователей, которые связались с ботом"
+
+#: telegram_bot/commands/admin.py:18
+msgid "count active users (who didn't block the bot)"
+msgstr "посчитать активных пользователей (которые не заблокировали бота)"
+
+#: telegram_bot/commands/default.py:10
+msgid "start bot"
+msgstr "запустить бота"
+
+#: telegram_bot/commands/default.py:11
+msgid "how it works?"
+msgstr "как это работает?"
+
+#: telegram_bot/commands/default.py:12
+msgid "change language"
+msgstr "изменить язык"
+
+#: telegram_bot/commands/default.py:13
+msgid "open bot settings"
+msgstr "открыть настройки бота"
+
+#: telegram_bot/filters/i18n_text.py:22 users/apps.py:9 users/models.py:20
+msgid "Users"
+msgstr "Пользователи"
+
+#: telegram_bot/handlers/admin/admin_menu.py:36
+#: telegram_bot/handlers/admin/admin_menu.py:49
+#, python-brace-format
+msgid "Total users: {count}"
+msgstr "Всего пользователей: {count}"
+
+#: telegram_bot/handlers/admin/admin_menu.py:69
+#, python-brace-format
+msgid "Active users: {count}"
+msgstr "Активных пользователей: {count}"
+
+#: telegram_bot/handlers/users/helpers.py:13
+#: telegram_bot/handlers/users/helpers.py:19
+msgid "Choose an action from the menu 👇"
+msgstr "Выберите действие из меню 👇"
+
+#: telegram_bot/handlers/users/helpers.py:18
+msgid "Unknown action"
+msgstr "Неизвестное действие"
+
+#: telegram_bot/handlers/users/settings.py:38
+msgid ""
+"Language changed successfully\n"
+"Press /help to find out how I can help you"
+msgstr ""
+"Язык успешно изменен\n"
+"Нажмите /help, чтобы узнать, как я могу вам помочь"
+
+#: telegram_bot/handlers/users/settings.py:48
+#: telegram_bot/keyboards/default/default.py:11
+msgid "Settings 🛠"
+msgstr "Настройки 🛠"
+
+#: telegram_bot/handlers/users/settings.py:55
+msgid "Choose your language"
+msgstr "Выберите язык"
+
+#: telegram_bot/handlers/users/start.py:24
+#, python-brace-format
+msgid ""
+"Hi {full_name}!\n"
+"Choose your language_code"
+msgstr ""
+"Привет {full_name}!\n"
+"Выберите язык"
+
+#: telegram_bot/handlers/users/start.py:33
+#: telegram_bot/handlers/users/start.py:42
+#: telegram_bot/keyboards/default/default.py:10
+msgid "Help 🆘"
+msgstr "Помощь 🆘"
+
+#: telegram_bot/keyboards/default/default.py:14
+msgid "Export users 📁"
+msgstr "Экспортировать пользователей 📁"
+
+#: telegram_bot/keyboards/default/default.py:15
+msgid "Count users 👥"
+msgstr "Посчитать пользователей 👥"
+
+#: telegram_bot/keyboards/default/default.py:16
+msgid "Count active users 👥"
+msgstr "Посчитать активных пользователей 👥"
+
+#: users/models.py:19
+msgid "User"
+msgstr "Пользователь"
+
+#: users/models.py:28
+msgid "Active"
+msgstr "Активный"
+
+#: users/models.py:31
+msgid ""
+"Designates whether this user should be treated as active. Unselect this "
+"instead of deleting accounts."
+msgstr ""
+"Определяет, должен ли этот пользователь считаться активным. Снимите этот "
+"флажок вместо удаления учетных записей."
+
+#: users/models.py:37
+msgid "First Name"
+msgstr "Имя"
+
+#: users/models.py:45
+msgid "Last Name"
+msgstr "Фамилия"
+
+#: users/models.py:55
+msgid "Telegram ID"
+msgstr "Айди Телеграма"
+
+#: users/models.py:63
+msgid "Telegram Username"
+msgstr "Ник Телеграма"
+
+#: users/models.py:69
+msgid "Telegram Is Active"
+msgstr "Активен в Телеграме"
+
+#: users/models.py:73
+msgid "Telegram Last Activity At"
+msgstr "Последняя активность в Телеграме"
+
+#: users/models.py:79
+msgid "Language Code"
+msgstr "Код языка"
+
+#: users/validators.py:10
+msgid ""
+"Enter a valid username. This value may contain only letters, numbers, "
+"and ./-/_ characters."
+msgstr ""
+"Введите действительное имя пользователя. Это значение может содержать только "
+"буквы, цифры и символы ./-/_."
+
+#~| msgid "Users"
+#~ msgid "users"
+#~ msgstr "пользователи"

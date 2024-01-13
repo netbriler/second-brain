@@ -42,3 +42,10 @@ migrate:
 
 run-dev:
 	python manage.py runserver 0.0.0.0:8000
+
+makemessages:
+	django-admin makemessages -l ru --ignore=venv/* --ignore=*/venv/* && \
+	django-admin makemessages -l ua --ignore=venv/* --ignore=*/venv/*
+
+compilemessages:
+	django-admin compilemessages --ignore=venv/* --ignore=*/venv/*

@@ -72,6 +72,8 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'livereload.middleware.LiveReloadScript',
+
+    'users.middlewares.UserLanguageMiddleware',
 ]
 
 if not DEBUG:
@@ -114,6 +116,19 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'app.wsgi.application'
+LANGUAGES = [
+    ('en', '🇺🇸 English'),
+    ('ru', '🇷🇺 Русский'),
+    ('ua', '🇺🇦 Українська'),
+]
+
+LANGUAGE_CODE = 'en-us'
+
+USE_I18N = True
+
+LOCALE_PATHS = [BASE_DIR / 'locale']
+for path in LOCALE_PATHS:
+    path.mkdir(parents=True, exist_ok=True)
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases

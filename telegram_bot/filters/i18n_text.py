@@ -1,21 +1,23 @@
-from aiogram.dispatcher.filters import BoundFilter
+from aiogram.filters import Filter
 from aiogram.types import Message
+from django.conf import settings
+from django.utils.translation import gettext as _, override
 
-from loader import i18n, _
 
-
-class I18nText(BoundFilter):
-    key = 'i18n_text'
-
-    def __init__(self, i18n_text):
+class I18nText(Filter):
+    def __init__(self, i18n_text: str) -> None:
         self.i18n_text = i18n_text
 
-    async def check(self, message):
+    async def __call__(self, message: Message) -> bool:
         if not isinstance(message, Message):
             return False
 
-        available = [self.i18n_text]
-        for locale in i18n.available_locales:
-            available.append(_(self.i18n_text, locale=locale))
+        available = {self.i18n_text}
+        for lang_code, lang_name in settings.LANGUAGES:
+            if lang_code == 'en':
+                continue
+
+            with override(lang_code):
+                available.add(_(self.i18n_text))
 
         return message.text in available

@@ -1,7 +1,9 @@
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin, AbstractUser
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
+from django.conf import settings
 from users.validators import UnicodeUsernameValidator
 
 
@@ -14,8 +16,8 @@ class User(AbstractUser, PermissionsMixin):
     """
 
     class Meta:
-        verbose_name = 'User'
-        verbose_name_plural = 'Users'
+        verbose_name = _('User')
+        verbose_name_plural = _('Users')
 
     def get_all_permissions(self, obj=None):
         return super().get_all_permissions(obj)
@@ -23,14 +25,16 @@ class User(AbstractUser, PermissionsMixin):
     username_validator = UnicodeUsernameValidator()
 
     is_active = models.BooleanField(
-        verbose_name='Active',
+        verbose_name=_('Active'),
         default=True,
-        help_text='Designates whether this user should be treated as active. '
-                  'Unselect this instead of deleting accounts.',
+        help_text=_(
+            'Designates whether this user should be treated as active. '
+            'Unselect this instead of deleting accounts.'
+        ),
     )
 
     first_name = models.CharField(
-        verbose_name='First Name',
+        verbose_name=_('First Name'),
         max_length=150,
         blank=True,
         editable=False,
@@ -38,7 +42,7 @@ class User(AbstractUser, PermissionsMixin):
     )
 
     last_name = models.CharField(
-        verbose_name='Last Name',
+        verbose_name=_('Last Name'),
         max_length=150,
         blank=True,
         editable=False,
@@ -48,7 +52,7 @@ class User(AbstractUser, PermissionsMixin):
     telegram_id = models.BigIntegerField(
         null=True,
         unique=True,
-        verbose_name='Telegram ID',
+        verbose_name=_('Telegram ID'),
     )
 
     telegram_username = models.CharField(
@@ -56,24 +60,27 @@ class User(AbstractUser, PermissionsMixin):
         null=True,
         editable=False,
         db_index=True,
-        verbose_name='Telegram Username',
+        verbose_name=_('Telegram Username'),
     )
 
     telegram_is_active = models.BooleanField(
         default=True,
         editable=False,
-        verbose_name='Telegram Is Active',
+        verbose_name=_('Telegram Is Active'),
     )
 
     telegram_activity_at = models.DateTimeField(
+        verbose_name=_('Telegram Last Activity At'),
         null=True,
         editable=False,
     )
 
     language_code = models.CharField(
+        verbose_name=_('Language Code'),
         max_length=10,
         default='en',
         blank=True,
+        choices=settings.LANGUAGES,
     )
 
     def get_full_name(self):

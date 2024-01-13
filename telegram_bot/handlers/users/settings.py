@@ -1,31 +1,57 @@
-from aiogram.dispatcher.filters.builtin import Regexp
+import re
+
+from aiogram import Router, Bot
+from aiogram.filters import or_f, Command
 from aiogram.types import CallbackQuery, Message
+from django.utils.translation import override, gettext as _
 
-from bot.commands import set_admin_commands, set_user_commands
-from bot.keyboards.default import get_default_markup
-from bot.keyboards.inline import get_language_inline_markup
-from loader import dp, _, i18n
-from models import User
-from services.users import edit_user_language
+from telegram_bot.commands.admin import set_admin_commands
+from telegram_bot.commands.default import set_user_commands
+from telegram_bot.filters.i18n_text import I18nText
+from telegram_bot.filters.regexp import Regexp
+from telegram_bot.keyboards.default import get_default_markup
+from telegram_bot.keyboards.inline import get_language_inline_markup
+from users.models import User
+
+router = Router(name=__name__)
 
 
-@dp.callback_query_handler(Regexp('^lang_(\w\w)$'))
-async def _change_language(callback_query: CallbackQuery, regexp: Regexp, user: User):
+@router.callback_query(
+    Regexp(r'^lang_(\w\w)$')
+)
+async def _change_language(callback_query: CallbackQuery, user: User, regexp: re.Match, bot: Bot):
     language = regexp.group(1)
 
-    edit_user_language(callback_query.from_user.id, language)
-    i18n.set_user_locale(language)
+    user.language_code = language
+    await user.asave(
+        update_fields=(
+            'language_code',
+        )
+    )
 
-    await set_admin_commands(user.id, language) if user.is_admin else await set_user_commands(user.id, language)
+    with override(user.language_code):
+        await set_admin_commands(bot, user.telegram_id, language) if user.is_superuser else await set_user_commands(
+            bot, user.telegram_id, language
+        )
 
-    await callback_query.message.answer(_('Language changed successfully\n'
-                                          'Press /help to find out how I can help you'),
-                                        reply_markup=get_default_markup(user))
-    await callback_query.message.delete()
+        await callback_query.message.answer(
+            _(
+                'Language changed successfully\n'
+                'Press /help to find out how I can help you'
+            ),
+            reply_markup=get_default_markup(user)
+        )
+        await callback_query.message.delete()
 
 
-@dp.message_handler(i18n_text='Settings 🛠')
-@dp.message_handler(commands=['lang', 'settings'])
+@router.message(
+    or_f(
+        I18nText('Settings 🛠'),
+        Command(
+            commands=['lang', 'settings']
+        )
+    )
+)
 async def _settings(message: Message):
     text = _('Choose your language')
 

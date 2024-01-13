@@ -4,6 +4,7 @@ from aiogram import BaseMiddleware
 from aiogram.dispatcher.event.bases import CancelHandler
 from aiogram.types import Message, CallbackQuery, InlineQuery
 from aiogram.utils.chat_action import ChatActionSender
+from django.utils.translation import override
 
 from users.services import get_or_create_user
 
@@ -32,5 +33,5 @@ class UsersMiddleware(BaseMiddleware):
                 telegram_username=user.username,
                 language_code=user.language_code
             )
-
-            return await handler(event, data)
+            with override(data['user'].language_code):
+                return await handler(event, data)

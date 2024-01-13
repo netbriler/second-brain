@@ -1,12 +1,13 @@
 import csv
 
-from aiogram import Router, Bot, F
+from aiogram import Router, Bot
 from aiogram.filters import Command, or_f
 from aiogram.types import Message, FSInputFile
+from django.conf import settings
 from django.utils.translation import gettext as _
 
-from app import settings
 from telegram_bot.filters.admin import IsAdmin
+from telegram_bot.filters.i18n_text import I18nText
 from users.models import User
 
 router = Router(name=__name__)
@@ -15,7 +16,7 @@ router = Router(name=__name__)
 @router.message(
     IsAdmin(),
     or_f(
-        F.text == 'Export users 📁',
+        I18nText('Export users 📁'),
         Command(commands=['export_users'])
     )
 )
@@ -39,7 +40,7 @@ async def _export_users(message: Message):
 @router.message(
     IsAdmin(),
     or_f(
-        F.text == 'Count users 👥',
+        I18nText('Count users 👥'),
         Command(commands=['count_users'])
     )
 )
@@ -52,7 +53,7 @@ async def _users_count(message: Message):
 @router.message(
     IsAdmin(),
     or_f(
-        F.text == 'Count active users 👥',
+        I18nText('Count active users 👥'),
         Command(commands=['count_active_users'])
     )
 )

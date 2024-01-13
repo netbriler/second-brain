@@ -1,12 +1,12 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from django.conf import settings
 
 
 def get_language_inline_markup():
     builder = InlineKeyboardBuilder()
 
-    builder.button(text='🇺🇸 English', callback_data='lang_en')
-    builder.button(text='🇷🇺 Русский', callback_data='lang_ru')
-    builder.button(text='🇺🇦 Українська', callback_data='lang_uk')
+    for code, title in settings.LANGUAGES:
+        builder.button(text=title, callback_data=f'lang_{code}')
 
     builder.adjust(1)
 
