@@ -9,8 +9,8 @@ from telegram_bot.commands.admin import set_admin_commands
 from telegram_bot.commands.default import set_user_commands
 from telegram_bot.filters.i18n_text import I18nText
 from telegram_bot.filters.regexp import Regexp
-from telegram_bot.keyboards.default import get_default_markup
-from telegram_bot.keyboards.inline import get_language_inline_markup
+from telegram_bot.keyboards.default.default import get_default_markup
+from telegram_bot.keyboards.inline.language import get_language_inline_markup
 from users.models import User
 
 router = Router(name=__name__)

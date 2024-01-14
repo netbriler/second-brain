@@ -2,7 +2,7 @@ from aiogram import Router
 from aiogram.types import Message, CallbackQuery
 from django.utils.translation import gettext as _
 
-from telegram_bot.keyboards.default import get_default_markup
+from telegram_bot.keyboards.default.default import get_default_markup
 from users.models import User
 
 router = Router(name=__name__)

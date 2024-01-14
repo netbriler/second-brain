@@ -1,3 +1,9 @@
-from .error_handler import dp
+from aiogram import Router
 
-__all__ = ['dp']
+from .error_handler import router as error_handler_router
+
+router = Router(name=__name__)
+
+router.include_routers(
+    error_handler_router,
+)

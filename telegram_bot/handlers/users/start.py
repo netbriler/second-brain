@@ -1,4 +1,4 @@
-from aiogram import Router, Bot, F
+from aiogram import Router, Bot
 from aiogram.filters import CommandStart, Command, or_f
 from aiogram.types import Message
 from django.utils.translation import gettext as _
@@ -6,7 +6,7 @@ from django.utils.translation import gettext as _
 from telegram_bot.commands.admin import set_admin_commands, get_admin_commands
 from telegram_bot.commands.default import get_default_commands
 from telegram_bot.filters.i18n_text import I18nText
-from telegram_bot.keyboards.inline import get_language_inline_markup
+from telegram_bot.keyboards.inline.language import get_language_inline_markup
 from users.models import User
 
 router = Router(name=__name__)
