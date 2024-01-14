@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'djangoql',
     'users',
     'telegram_bot',
+    'courses',
 ]
 
 if not DEBUG:
