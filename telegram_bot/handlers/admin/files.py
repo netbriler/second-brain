@@ -1,13 +1,13 @@
 import json
 from typing import NoReturn
 
-from aiogram import F, Router
+from aiogram import Bot, F, Router
 from aiogram.enums import ContentType
 from aiogram.types import Message
-from django.utils.translation import gettext as _
 
 from telegram_bot.filters.admin import IsAdmin
 from telegram_bot.models import File
+from telegram_bot.services.files import send_file_to_user
 from users.models import User
 
 router = Router(name=__name__)
@@ -27,7 +27,7 @@ router = Router(name=__name__)
         },
     ),
 )
-async def _upload_file(message: Message, user: User) -> NoReturn:
+async def _upload_file(message: Message, user: User, bot: Bot) -> NoReturn:
     raw_json = None
     if message.content_type == ContentType.AUDIO:
         raw_json = message.audio.model_dump_json()
@@ -74,20 +74,4 @@ async def _upload_file(message: Message, user: User) -> NoReturn:
             ],
         )
 
-    text = _(
-        'New file uploaded:\n'
-        '<b>File type</b>: {content_type}\n'
-        '<b>Title</b>: {title}\n'
-        '<b>File ID</b>: {file_id}\n'
-        '<b>Thumbnail ID</b>: {thumbnail_id}\n'
-        '<b>Uploaded by</b>: <a href="tg://user?id={uploaded_by_id}">{uploaded_by}</a>\n',
-    ).format(
-        content_type=file.get_content_type_display(),
-        title=file.title,
-        file_id=file.file_id,
-        thumbnail_id=file.thumbnail_id,
-        uploaded_by=str(file.uploaded_by),
-        uploaded_by_id=file.uploaded_by.telegram_id,
-    )
-
-    await message.answer(text, parse_mode='HTML')
+    await send_file_to_user(bot, file, user)

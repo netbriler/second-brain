@@ -8,7 +8,7 @@ from django.utils.translation import gettext as _
 from telegram_bot.commands.admin import set_admin_commands
 from telegram_bot.filters.i18n_text import I18nText
 from telegram_bot.keyboards.inline.language import get_language_inline_markup
-from telegram_bot.messages import get_help_text
+from telegram_bot.services.messages import get_help_text
 from users.models import User
 
 router = Router(name=__name__)
