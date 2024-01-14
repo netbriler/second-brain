@@ -35,11 +35,13 @@ services:
     depends_on:
       - backend
 
-  userbot:
+  telegram-bot-webhook:
     <<: *x-backend-service
+    expose:
+      - 8000
     depends_on:
       - postgres
-    command: python manage.py run_userbot
+    command: python manage.py run_telegram_webhook
 
   postgres:
     image: postgres

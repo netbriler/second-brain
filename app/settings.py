@@ -63,6 +63,7 @@ if not DEBUG:
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -122,9 +123,11 @@ LANGUAGES = [
     ('ua', '🇺🇦 Українська'),
 ]
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-ru'
 
 USE_I18N = True
+
+USE_L10N = True
 
 LOCALE_PATHS = [BASE_DIR / 'locale']
 for path in LOCALE_PATHS:
@@ -197,5 +200,12 @@ STATICFILES_FINDERS = (
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
-
+# Telegram bot settings
 TELEGRAM_BOT_TOKEN = env('TELEGRAM_BOT_TOKEN')
+
+TELEGRAM_WEB_SERVER_HOST = env('TELEGRAM_WEB_SERVER_HOST', default='0.0.0.0')
+TELEGRAM_WEB_SERVER_PORT = env.int('TELEGRAM_WEB_SERVER_PORT', default=8000)
+
+TELEGRAM_WEBHOOK_PATH = env('TELEGRAM_WEBHOOK_PATH', default='/webhook')
+TELEGRAM_WEBHOOK_SECRET = env('TELEGRAM_WEBHOOK_SECRET', default='')
+TELEGRAM_BASE_WEBHOOK_URL = env('TELEGRAM_BASE_WEBHOOK_URL', default='')
