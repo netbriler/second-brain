@@ -37,21 +37,16 @@ INTERNAL_IPS = env.list(
 INSTALLED_APPS = [
     'admin_interface',
     'colorfield',
-
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-
     'livereload',
-
     'django.contrib.staticfiles',
-
     'corsheaders',
     'debug_toolbar',
     'djangoql',
-
     'users',
     'telegram_bot',
 ]
@@ -69,11 +64,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
     'corsheaders.middleware.CorsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'livereload.middleware.LiveReloadScript',
-
     'users.middlewares.UserLanguageMiddleware',
 ]
 
@@ -86,16 +79,18 @@ SILENCED_SYSTEM_CHECKS = ['security.W019']
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = env.list(
-    'CORS_ALLOWED_ORIGINS', default=[
+    'CORS_ALLOWED_ORIGINS',
+    default=[
         'http://localhost:8000',
         'http://127.0.0.1:8000',
-    ]
+    ],
 )
 CSRF_TRUSTED_ORIGINS = env.list(
-    'CORS_ALLOWED_ORIGINS', default=[
+    'CORS_ALLOWED_ORIGINS',
+    default=[
         'http://localhost:8000',
         'http://127.0.0.1:8000',
-    ]
+    ],
 )
 
 ROOT_URLCONF = 'app.urls'
@@ -150,7 +145,7 @@ DATABASES = {
         'OPTIONS': {
             'sslmode': env('DATABASE_SSL_MODE', default='prefer'),
         },
-    }
+    },
 }
 
 # Password validation
@@ -203,7 +198,7 @@ STATICFILES_FINDERS = (
 # Telegram bot settings
 TELEGRAM_BOT_TOKEN = env('TELEGRAM_BOT_TOKEN')
 
-TELEGRAM_WEB_SERVER_HOST = env('TELEGRAM_WEB_SERVER_HOST', default='0.0.0.0')
+TELEGRAM_WEB_SERVER_HOST = env('TELEGRAM_WEB_SERVER_HOST', default='0.0.0.0')  # noqa
 TELEGRAM_WEB_SERVER_PORT = env.int('TELEGRAM_WEB_SERVER_PORT', default=8000)
 
 TELEGRAM_WEBHOOK_PATH = env('TELEGRAM_WEBHOOK_PATH', default='/webhook')

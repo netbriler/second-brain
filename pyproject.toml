@@ -1,0 +1,146 @@
+[tool.black]
+line-length = 119
+target-version = ['py311']
+
+skip-source-first-line = false
+skip-string-normalization = true
+skip-magic-trailing-comma = false
+
+[tool.isort]
+profile = "black"
+
+[tool.ruff]
+
+select = [
+    "A",
+    "B",
+    # "D",
+    "E",
+    "F",
+    #"G", # optional
+    "I",
+    "N",
+    "Q",
+    "S",
+    #"C4", # optional
+    #"EM", # optional
+    "DJ",
+    "FA",
+    "UP",
+    # "ARG", # too much
+    "COM",
+    "BLE",
+    #"DTZ", # optional
+    #"FBT", # too much
+    "EXE",
+    "INP",
+    "ISC",
+    "PIE",
+    "RET",
+    "SLF",
+    "SIM",
+    "T20",
+    "TID",
+    "TCH",
+    "INT",
+    "PTH",
+    "ERA",
+    "PD",
+    "PGH",
+    "PL",
+    "TRY",
+    "FLY",
+    # "RUF", # todo return to working. disables now, possibly bug with ignoring imports
+    "YTT",
+    "ASYNC",
+]
+
+ignore = [
+    "B904", # optional
+    "ERA001", # examples should stay in code
+    "UP038", # optional
+    "DJ012", # optional
+    "DJ001", # manual migration need
+    "PGH004",
+    "PLR0912", # should be fixed in whole project
+    "PLR0913", # should be fixed in whole project
+    "PLR0915", # should be fixed in whole project
+    "PLR2004",
+    "RUF001",
+    "RUF003", # never
+    "RET503", # tobe fixed
+    "RET504", # optional
+    "RET505", # optional
+    "TCH001", # module integrations.types should be renamed
+    "TRY401", # ...
+    "TRY003", # ...
+    "TRY200", # ...
+    "TRY002", # should be fixed in whole project
+    "TRY301", # should be fixed in whole project
+    "S113", # optional
+    "S308", # optional
+    "S311", # optional
+]
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["A", "B", "C", "D", "E", "F", "G", "I", "N", "Q", "S", "T", "W", "ANN", "ARG", "BLE", "COM", "DJ", "DTZ", "EM", "ERA", "EXE", "FBT", "ICN", "INP", "ISC", "NPY", "PD", "PGH", "PIE", "PL", "PT", "PTH", "PYI", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY", "UP", "YTT", ]
+unfixable = []
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    ".venv",
+    ".env",
+    "*/migrations/*.py",
+    "manage.py",
+]
+
+# Same as Black.
+line-length = 119
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+# Assume Python 3.11
+target-version = "py311"
+
+[tool.ruff.per-file-ignores]
+"**/test*.py" = ["S101"]
+"**py_tests.py" = ["S101"]
+
+[tool.ruff.flake8-builtins]
+builtins-ignorelist = [
+    "id",
+    "help",
+    "list",
+    "type",
+    "hash",
+    "format",
+]
+
+[tool.ruff.flake8-quotes]
+inline-quotes = "single"
+multiline-quotes = "double"
+
+[tool.ruff.pylint]
+max-returns = 10

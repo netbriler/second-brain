@@ -219,3 +219,4 @@ ENV/
 
 /logs
 /temp
+.ruff_cache

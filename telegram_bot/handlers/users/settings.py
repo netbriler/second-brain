@@ -1,10 +1,11 @@
 import re
 from typing import NoReturn
 
-from aiogram import Router, Bot
-from aiogram.filters import or_f, Command
+from aiogram import Bot, Router
+from aiogram.filters import Command, or_f
 from aiogram.types import CallbackQuery, Message
-from django.utils.translation import gettext as _, override
+from django.utils.translation import gettext as _
+from django.utils.translation import override
 
 from telegram_bot.commands.admin import set_admin_commands
 from telegram_bot.commands.default import set_user_commands
@@ -18,30 +19,29 @@ router = Router(name=__name__)
 
 
 @router.callback_query(
-    Regexp(r'^lang_(\w\w)$')
+    Regexp(r'^lang_(\w\w)$'),
 )
 async def _change_language(callback_query: CallbackQuery, user: User, regexp: re.Match, bot: Bot) -> NoReturn:
     language = regexp.group(1)
 
     user.language_code = language
     await user.asave(
-        update_fields=(
-            'language_code',
-        )
+        update_fields=('language_code',),
     )
 
     with override(user.language_code):
         await callback_query.message.answer(
             _(
-                'Language changed successfully\n'
-                'Press /help to find out how I can help you'
+                'Language changed successfully\nPress /help to find out how I can help you',
             ),
-            reply_markup=get_default_markup(user)
+            reply_markup=get_default_markup(user),
         )
         await callback_query.message.delete()
 
         await set_admin_commands(bot, user.telegram_id, language) if user.is_superuser else await set_user_commands(
-            bot, user.telegram_id, language
+            bot,
+            user.telegram_id,
+            language,
         )
 
 
@@ -49,9 +49,9 @@ async def _change_language(callback_query: CallbackQuery, user: User, regexp: re
     or_f(
         I18nText('Settings 🛠'),
         Command(
-            commands=['lang', 'settings']
-        )
-    )
+            commands=['lang', 'settings'],
+        ),
+    ),
 )
 async def _settings(message: Message) -> NoReturn:
     text = _('Choose your language')

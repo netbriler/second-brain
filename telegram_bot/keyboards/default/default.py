@@ -1,6 +1,5 @@
 from aiogram.types import ReplyKeyboardRemove
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
-
 from django.utils.translation import gettext as _
 
 

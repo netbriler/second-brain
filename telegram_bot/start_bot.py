@@ -16,7 +16,7 @@ dp = Dispatcher()
 default_bot = Bot(
     settings.TELEGRAM_BOT_TOKEN,
     parse_mode=ParseMode.HTML,
-    disable_web_page_preview=True
+    disable_web_page_preview=True,
 )
 
 dp.include_router(router)
@@ -51,7 +51,7 @@ async def on_startup_webhook(bot: Bot) -> NoReturn:
     webhook_url = f'{settings.TELEGRAM_BASE_WEBHOOK_URL}{settings.TELEGRAM_WEBHOOK_PATH}'
     await bot.set_webhook(
         webhook_url,
-        secret_token=settings.TELEGRAM_WEBHOOK_SECRET
+        secret_token=settings.TELEGRAM_WEBHOOK_SECRET,
     )
     logger.info(f'Webhook set to {webhook_url}')
 

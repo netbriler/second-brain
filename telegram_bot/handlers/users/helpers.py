@@ -1,7 +1,8 @@
+import contextlib
 from typing import NoReturn
 
 from aiogram import Router
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import CallbackQuery, Message
 from django.utils.translation import gettext as _
 
 from telegram_bot.keyboards.default.default import get_default_markup
@@ -19,7 +20,6 @@ async def _default_menu(message: Message, user: User) -> NoReturn:
 async def _default_menu(callback_query: CallbackQuery, user: User) -> NoReturn:
     await callback_query.answer(_('Unknown action'))
     await callback_query.message.answer(_('Choose an action from the menu 👇'), reply_markup=get_default_markup(user))
-    try:
+
+    with contextlib.suppress(Exception):
         await callback_query.message.delete()
-    except Exception:
-        pass

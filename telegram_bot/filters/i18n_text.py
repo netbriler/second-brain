@@ -3,7 +3,8 @@ from typing import NoReturn
 from aiogram.filters import Filter
 from aiogram.types import Message
 from django.conf import settings
-from django.utils.translation import gettext as _, override
+from django.utils.translation import gettext as _
+from django.utils.translation import override
 
 
 class I18nText(Filter):
@@ -15,11 +16,11 @@ class I18nText(Filter):
             return False
 
         available = {self.i18n_text}
-        for lang_code, lang_name in settings.LANGUAGES:
-            if lang_code == 'en':
+        for lang in settings.LANGUAGES:
+            if lang[0] == 'en':
                 continue
 
-            with override(lang_code):
+            with override(lang[0]):
                 available.add(_(self.i18n_text))
 
         return message.text in available

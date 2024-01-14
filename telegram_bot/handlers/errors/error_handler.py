@@ -1,3 +1,4 @@
+import contextlib
 import traceback
 from typing import NoReturn
 
@@ -14,18 +15,14 @@ router = Router(name=__name__)
 async def error_handler(event: ErrorEvent) -> NoReturn:
     try:
         raise event.exception
-    except:
+    except:  # noqa
         exception_traceback = traceback.format_exc()
 
     logger.exception(f'Update: {event.update} \n{exception_traceback}')
 
     if event.update.message:
-        try:
+        with contextlib.suppress(Exception):
             await event.update.message.answer(_('Something went wrong.'))
-        except:
-            pass
     elif event.update.callback_query:
-        try:
+        with contextlib.suppress(Exception):
             await event.update.callback_query.answer(_('Something went wrong.'))
-        except:
-            pass

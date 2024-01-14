@@ -1,10 +1,12 @@
+import contextlib
 import csv
 import re
+from pathlib import Path
 from typing import NoReturn
 
-from aiogram import Router, Bot
-from aiogram.filters import Command, or_f, CommandObject
-from aiogram.types import Message, FSInputFile
+from aiogram import Bot, Router
+from aiogram.filters import Command, CommandObject, or_f
+from aiogram.types import FSInputFile, Message
 from django.conf import settings
 from django.utils.translation import gettext as _
 
@@ -19,15 +21,15 @@ router = Router(name=__name__)
     IsAdmin(),
     or_f(
         I18nText('Export users 📁'),
-        Command(commands=['export_users'])
-    )
+        Command(commands=['export_users']),
+    ),
 )
 async def _export_users(message: Message) -> NoReturn:
     count = await User.objects.acount()
 
     file_path = settings.BASE_DIR / 'temp/users.csv'
     file_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(file_path, 'w', encoding='UTF8', newline='') as f:
+    with Path.open(file_path, 'w', encoding='UTF8', newline='') as f:
         writer = csv.writer(f)
 
         writer.writerow(
@@ -38,20 +40,21 @@ async def _export_users(message: Message) -> NoReturn:
                 'language',
                 'telegram_is_active',
                 'telegram_activity_at',
-                'date_joined'
-            ]
+                'date_joined',
+            ],
         )
 
         async for user in User.objects.all():
             writer.writerow(
                 [
-                    user.id, user.full_name,
+                    user.id,
+                    user.full_name,
                     user.username,
                     user.language_code,
                     user.telegram_is_active,
                     user.telegram_activity_at,
                     user.date_joined,
-                ]
+                ],
             )
 
     text_file = FSInputFile(path=file_path, filename='users.csv')
@@ -62,8 +65,8 @@ async def _export_users(message: Message) -> NoReturn:
     IsAdmin(),
     or_f(
         I18nText('Count users 👥'),
-        Command(commands=['count_users'])
-    )
+        Command(commands=['count_users']),
+    ),
 )
 async def _users_count(message: Message) -> NoReturn:
     count = await User.objects.acount()
@@ -75,25 +78,22 @@ async def _users_count(message: Message) -> NoReturn:
     IsAdmin(),
     or_f(
         I18nText('Count active users 👥'),
-        Command(commands=['count_active_users'])
-    )
+        Command(commands=['count_active_users']),
+    ),
 )
 async def _active_users_count(message: Message, bot: Bot) -> NoReturn:
     count = 0
     async for user in User.objects.all():
-        try:
+        with contextlib.suppress(Exception):
             if await bot.send_chat_action(chat_id=user.telegram_id, action='typing'):
                 count += 1
-        except Exception as e:
-            print(e)
-            pass
 
     await message.answer(_('Active users: {count}').format(count=count))
 
 
 @router.message(
     IsAdmin(),
-    Command(re.compile(r'user[\s|_]?@?([\d|\w]*)', re.IGNORECASE))
+    Command(re.compile(r'user[\s|_]?@?([\d|\w]*)', re.IGNORECASE)),
 )
 async def _user(message: Message, bot: Bot, command: CommandObject) -> NoReturn:
     search_user = command.regexp_match.group(1) or command.args
@@ -108,7 +108,7 @@ async def _user(message: Message, bot: Bot, command: CommandObject) -> NoReturn:
 
     if not found_user:
         await message.answer(_('User not found'))
-        return
+        return NoReturn
 
     text = _(
         'User info:\n'
@@ -120,7 +120,7 @@ async def _user(message: Message, bot: Bot, command: CommandObject) -> NoReturn:
         '<b>Is active</b>: {is_active}\n'
         '<b>Telegram is active</b>: {telegram_is_active}\n'
         '<b>Last activity at</b>: {telegram_activity_at}\n'
-        '<b>Joined at</b>: {date_joined}\n'
+        '<b>Joined at</b>: {date_joined}\n',
     ).format(
         id=found_user.telegram_id,
         name=found_user.full_name,

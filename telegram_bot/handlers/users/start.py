@@ -1,7 +1,7 @@
 from typing import NoReturn
 
-from aiogram import Router, Bot
-from aiogram.filters import CommandStart, Command, or_f
+from aiogram import Bot, Router
+from aiogram.filters import Command, CommandStart, or_f
 from aiogram.types import Message
 from django.utils.translation import gettext as _
 
@@ -20,12 +20,11 @@ async def _start(message: Message, user: User, bot: Bot) -> NoReturn:
         await set_admin_commands(
             bot=bot,
             user_id=user.telegram_id,
-            commands_lang=user.language_code
+            commands_lang=user.language_code,
         )
 
     text = _(
-        'Hi {full_name}!\n'
-        'Choose your language_code'
+        'Hi {full_name}!\nChoose your language_code',
     ).format(full_name=message.from_user.full_name)
 
     await message.answer(text, reply_markup=get_language_inline_markup())
@@ -35,9 +34,9 @@ async def _start(message: Message, user: User, bot: Bot) -> NoReturn:
     or_f(
         I18nText('Help 🆘'),
         Command(
-            commands=['help']
-        )
-    )
+            commands=['help'],
+        ),
+    ),
 )
 async def _help(message: Message, user: User) -> NoReturn:
     text = get_help_text(user)

@@ -1,9 +1,8 @@
-from django.contrib.auth.base_user import AbstractBaseUser
-from django.contrib.auth.models import PermissionsMixin, AbstractUser
+from django.conf import settings
+from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from django.conf import settings
 from users.validators import UnicodeUsernameValidator
 
 
@@ -28,8 +27,7 @@ class User(AbstractUser, PermissionsMixin):
         verbose_name=_('Active'),
         default=True,
         help_text=_(
-            'Designates whether this user should be treated as active. '
-            'Unselect this instead of deleting accounts.'
+            'Designates whether this user should be treated as active. Unselect this instead of deleting accounts.',
         ),
     )
 

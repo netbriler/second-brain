@@ -1,8 +1,9 @@
 from typing import NoReturn
 
 from aiogram import Bot
-from aiogram.types import BotCommandScopeChat, BotCommand
-from django.utils.translation import override, gettext as _
+from aiogram.types import BotCommand, BotCommandScopeChat
+from django.utils.translation import gettext as _
+from django.utils.translation import override
 
 from .default import get_default_commands
 
@@ -19,9 +20,9 @@ def get_admin_commands(lang: str = 'en', with_categories: bool = False) -> list[
                 BotCommand(command='/count_users', description=_('count users who contacted the bot')),
                 BotCommand(
                     command='/count_active_users',
-                    description=_('count active users (who didn\'t block the bot)')
+                    description=_("count active users (who didn't block the bot)"),
                 ),
-            ]
+            ],
         )
 
         if not with_categories:

@@ -60,29 +60,38 @@ class UserAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     )
 
     fieldsets = (
-        ('Main', {
-            'fields': (
-                'id',
-                'username',
-                'language_code',
-                'first_name',
-                'last_name',
-            ),
-        }),
-        ('Permissions', {
-            'fields': (
-                'is_superuser',
-                'is_active',
-                'groups',
-                'user_permissions',
-            ),
-        }),
-        ('Telegram', {
-            'fields': (
-                'telegram_id',
-                'telegram_username',
-                'telegram_is_active',
-                'telegram_activity_at',
-            ),
-        }),
+        (
+            'Main',
+            {
+                'fields': (
+                    'id',
+                    'username',
+                    'language_code',
+                    'first_name',
+                    'last_name',
+                ),
+            },
+        ),
+        (
+            'Permissions',
+            {
+                'fields': (
+                    'is_superuser',
+                    'is_active',
+                    'groups',
+                    'user_permissions',
+                ),
+            },
+        ),
+        (
+            'Telegram',
+            {
+                'fields': (
+                    'telegram_id',
+                    'telegram_username',
+                    'telegram_is_active',
+                    'telegram_activity_at',
+                ),
+            },
+        ),
     )
