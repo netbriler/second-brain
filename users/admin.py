@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
 from djangoql.admin import DjangoQLSearchMixin
 
 from . import models
@@ -61,7 +62,7 @@ class UserAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 
     fieldsets = (
         (
-            'Main',
+            _('General'),
             {
                 'fields': (
                     'id',
@@ -73,7 +74,7 @@ class UserAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
             },
         ),
         (
-            'Permissions',
+            _('Permissions'),
             {
                 'fields': (
                     'is_superuser',
@@ -84,7 +85,7 @@ class UserAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
             },
         ),
         (
-            'Telegram',
+            _('Telegram'),
             {
                 'fields': (
                     'telegram_id',

@@ -1,15 +1,21 @@
 from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
 from djangoql.admin import DjangoQLSearchMixin
 
 from . import models
-from .inlines import CourseGroupInline, GroupCourseInline, LessonGroupInline
+from .inlines import (
+    CourseGroupInline,
+    GroupCourseInline,
+    GroupLessonInline,
+    LessonGroupInline,
+)
 
 
 @admin.register(models.Course)
 class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = (
         'id',
-        'name',
+        'title',
         'description',
         'created_at',
         'updated_at',
@@ -17,7 +23,7 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 
     search_fields = (
         'id',
-        'name',
+        'title',
         'description',
         'created_at',
         'updated_at',
@@ -25,7 +31,7 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 
     list_filter = (
         'id',
-        'name',
+        'title',
         'description',
         'created_at',
         'updated_at',
@@ -39,11 +45,11 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 
     fieldsets = [
         (
-            'Main',
+            _('General'),
             {
                 'fields': [
                     'id',
-                    'name',
+                    'title',
                     'description',
                     'created_at',
                     'updated_at',
@@ -59,7 +65,7 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 class GroupAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = (
         'id',
-        'name',
+        'title',
         'description',
         'parent',
         'created_at',
@@ -68,7 +74,7 @@ class GroupAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 
     search_fields = (
         'id',
-        'name',
+        'title',
         'description',
         'parent',
         'created_at',
@@ -77,7 +83,7 @@ class GroupAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 
     list_filter = (
         'id',
-        'name',
+        'title',
         'description',
         'parent',
         'created_at',
@@ -92,11 +98,11 @@ class GroupAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 
     fieldsets = [
         (
-            'Main',
+            _('General'),
             {
                 'fields': [
                     'id',
-                    'name',
+                    'title',
                     'description',
                     'parent',
                     'created_at',
@@ -106,7 +112,7 @@ class GroupAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         ),
     ]
 
-    inlines = [LessonGroupInline, GroupCourseInline]
+    inlines = [GroupLessonInline, GroupCourseInline]
 
 
 @admin.register(models.Lesson)
@@ -140,7 +146,7 @@ class LessonAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 
     fieldsets = [
         (
-            'Main',
+            _('General'),
             {
                 'fields': [
                     'id',

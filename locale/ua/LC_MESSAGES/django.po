@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-14 21:54+0100\n"
+"POT-Creation-Date: 2024-01-14 23:05+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,62 +16,64 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: courses/apps.py:9 courses/inlines.py:11 courses/models.py:9
+#: courses/admin.py:43 courses/admin.py:96 courses/admin.py:144
+#: telegram_bot/admin.py:62 users/admin.py:65
+msgid "General"
+msgstr "Загальне"
+
+#: courses/apps.py:9 courses/inlines.py:21 courses/models.py:8
 msgid "Courses"
 msgstr "Курси"
 
-#: courses/inlines.py:10 courses/models.py:8
+#: courses/inlines.py:20 courses/models.py:7
 msgid "Course"
 msgstr "Курс"
 
-#: courses/inlines.py:17 courses/models.py:83
+#: courses/inlines.py:28 courses/inlines.py:42 courses/models.py:82
 msgid "Lesson"
 msgstr "Урок"
 
-#: courses/inlines.py:18 courses/models.py:84
+#: courses/inlines.py:29 courses/inlines.py:43 courses/models.py:83
 msgid "Lessons"
 msgstr "Уроки"
 
-#: courses/inlines.py:24 courses/models.py:44
+#: courses/inlines.py:35 courses/models.py:43
 msgid "Group"
 msgstr "Група"
 
-#: courses/inlines.py:25 courses/models.py:35 courses/models.py:45
-#: courses/models.py:119
+#: courses/inlines.py:36 courses/models.py:34 courses/models.py:44
+#: courses/models.py:118
 msgid "Groups"
 msgstr "Групи"
 
-#: courses/models.py:13 courses/models.py:49
-msgid "Name"
-msgstr "Ім'я"
+#: courses/models.py:12 courses/models.py:48 courses/models.py:87
+#: telegram_bot/models.py:22
+msgid "Title"
+msgstr "Заголовок"
 
-#: courses/models.py:19 courses/models.py:55
+#: courses/models.py:18 courses/models.py:54
 msgid "Description"
 msgstr "Опис"
 
-#: courses/models.py:24 courses/models.py:69 courses/models.py:108
+#: courses/models.py:23 courses/models.py:68 courses/models.py:107
 #: telegram_bot/models.py:45
 msgid "Created At"
 msgstr "Створено в"
 
-#: courses/models.py:29 courses/models.py:74 courses/models.py:113
+#: courses/models.py:28 courses/models.py:73 courses/models.py:112
 #: telegram_bot/models.py:50
 msgid "Updated At"
 msgstr "Оновлено в"
 
-#: courses/models.py:64
+#: courses/models.py:63
 msgid "Parent Group"
 msgstr "Батьківська група"
 
-#: courses/models.py:88 telegram_bot/models.py:22
-msgid "Title"
-msgstr "Заголовок"
-
-#: courses/models.py:94
+#: courses/models.py:93
 msgid "Content"
 msgstr "Контент"
 
-#: courses/models.py:103 telegram_bot/models.py:9
+#: courses/models.py:102 telegram_bot/models.py:9
 msgid "File"
 msgstr "Файл"
 
@@ -301,6 +303,14 @@ msgstr ""
 #: telegram_bot/services/files.py:69
 msgid "Unknown content type"
 msgstr "Невідомий тип контенту"
+
+#: users/admin.py:77
+msgid "Permissions"
+msgstr "Дозволи"
+
+#: users/admin.py:88
+msgid "Telegram"
+msgstr "Телеграм"
 
 #: users/apps.py:9 users/models.py:19
 msgid "Users"

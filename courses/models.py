@@ -7,9 +7,9 @@ class Course(models.Model):
         verbose_name = _('Course')
         verbose_name_plural = _('Courses')
 
-    name = models.CharField(
+    title = models.CharField(
         max_length=200,
-        verbose_name=_('Name'),
+        verbose_name=_('Title'),
     )
 
     description = models.TextField(
@@ -43,9 +43,9 @@ class Group(models.Model):
         verbose_name = _('Group')
         verbose_name_plural = _('Groups')
 
-    name = models.CharField(
+    title = models.CharField(
         max_length=200,
-        verbose_name=_('Name'),
+        verbose_name=_('Title'),
     )
 
     description = models.TextField(
