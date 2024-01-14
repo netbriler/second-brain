@@ -1,5 +1,6 @@
 from asgiref.sync import async_to_sync
 from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
 from djangoql.admin import DjangoQLSearchMixin
 
 from telegram_bot.start_bot import default_bot
@@ -80,12 +81,12 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         'send_to_telegram',
     ]
 
-    @admin.action(description='Send to telegram')
+    @admin.action(description=_('Send to telegram'))
     def send_to_telegram(self, request, queryset):
         for file in queryset:
             async_to_sync(send_file_to_user)(default_bot, file, request.user)
 
-        self.message_user(request, 'Done')
+        self.message_user(request, _('Files sent to telegram'))
 
     def has_add_permission(self, request):
         return False

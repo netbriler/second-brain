@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-14 15:48+0100\n"
+"POT-Creation-Date: 2024-01-14 21:54+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,6 +15,73 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#: courses/apps.py:9 courses/inlines.py:11 courses/models.py:9
+msgid "Courses"
+msgstr "Курси"
+
+#: courses/inlines.py:10 courses/models.py:8
+msgid "Course"
+msgstr "Курс"
+
+#: courses/inlines.py:17 courses/models.py:83
+msgid "Lesson"
+msgstr "Урок"
+
+#: courses/inlines.py:18 courses/models.py:84
+msgid "Lessons"
+msgstr "Уроки"
+
+#: courses/inlines.py:24 courses/models.py:44
+msgid "Group"
+msgstr "Група"
+
+#: courses/inlines.py:25 courses/models.py:35 courses/models.py:45
+#: courses/models.py:119
+msgid "Groups"
+msgstr "Групи"
+
+#: courses/models.py:13 courses/models.py:49
+msgid "Name"
+msgstr "Ім'я"
+
+#: courses/models.py:19 courses/models.py:55
+msgid "Description"
+msgstr "Опис"
+
+#: courses/models.py:24 courses/models.py:69 courses/models.py:108
+#: telegram_bot/models.py:45
+msgid "Created At"
+msgstr "Створено в"
+
+#: courses/models.py:29 courses/models.py:74 courses/models.py:113
+#: telegram_bot/models.py:50
+msgid "Updated At"
+msgstr "Оновлено в"
+
+#: courses/models.py:64
+msgid "Parent Group"
+msgstr "Батьківська група"
+
+#: courses/models.py:88 telegram_bot/models.py:22
+msgid "Title"
+msgstr "Заголовок"
+
+#: courses/models.py:94
+msgid "Content"
+msgstr "Контент"
+
+#: courses/models.py:103 telegram_bot/models.py:9
+msgid "File"
+msgstr "Файл"
+
+#: telegram_bot/admin.py:83
+msgid "Send to telegram"
+msgstr "Відправити в телеграм"
+
+#: telegram_bot/admin.py:88
+msgid "Files sent to telegram"
+msgstr "Файли відправлені в телеграм"
 
 #: telegram_bot/apps.py:9
 msgid "Telegram Bot"
@@ -44,6 +111,18 @@ msgstr "підрахувати користувачів які зв'язалис
 msgid "count active users (who didn't block the bot)"
 msgstr "підрахувати активних користувачів (які не заблокували бота)"
 
+#: telegram_bot/commands/admin.py:25
+msgid ""
+"\n"
+"<b>File commands 📁</b>"
+msgstr ""
+"\n"
+"<b>Команди для файлів 📁</b>"
+
+#: telegram_bot/commands/admin.py:26
+msgid "get file"
+msgstr "отримати файл"
+
 #: telegram_bot/commands/default.py:13
 msgid "start bot"
 msgstr "запустити бота"
@@ -59,6 +138,18 @@ msgstr "змінити мову"
 #: telegram_bot/commands/default.py:16
 msgid "open bot settings"
 msgstr "відкрити налаштування бота"
+
+#: telegram_bot/handlers/admin/files.py:26
+msgid ""
+"Usage:\n"
+"/file [file_id]"
+msgstr ""
+"Використання:\n"
+"/file [айді файлу]"
+
+#: telegram_bot/handlers/admin/files.py:31
+msgid "file not found"
+msgstr "файл не знайдено"
 
 #: telegram_bot/handlers/admin/users.py:61
 #: telegram_bot/handlers/admin/users.py:74
@@ -143,7 +234,8 @@ msgstr ""
 "Привіт {full_name}!\n"
 "Виберіть вашу мову"
 
-#: telegram_bot/keyboards/default/default.py:9 telegram_bot/messages.py:14
+#: telegram_bot/keyboards/default/default.py:9
+#: telegram_bot/services/messages.py:14
 msgid "Help 🆘"
 msgstr "Допомога 🆘"
 
@@ -162,6 +254,53 @@ msgstr "Підрахувати користувачів 👥"
 #: telegram_bot/keyboards/default/default.py:15
 msgid "Count active users 👥"
 msgstr "Підрахувати активних користувачів 👥"
+
+#: telegram_bot/models.py:10
+msgid "Files"
+msgstr "Файли"
+
+#: telegram_bot/models.py:15
+msgid "Content Type"
+msgstr "Тип контенту"
+
+#: telegram_bot/models.py:27
+msgid "File ID"
+msgstr "Айді файлу"
+
+#: telegram_bot/models.py:34
+msgid "Thumbnail ID"
+msgstr "Айді прев'ю"
+
+#: telegram_bot/models.py:40
+msgid "Raw Data"
+msgstr "Сирі дані"
+
+#: telegram_bot/models.py:59
+msgid "Uploaded By"
+msgstr "Завантажив користувач"
+
+#: telegram_bot/services/files.py:13
+#, python-brace-format
+msgid ""
+"New file uploaded:\n"
+"<b>File type</b>: {content_type}\n"
+"<b>Title</b>: {title}\n"
+"<b>File ID</b>: {file_id}\n"
+"<b>Thumbnail ID</b>: {thumbnail_id}\n"
+"<b>Uploaded by</b>: <a href=\"tg://user?id={uploaded_by_id}\">{uploaded_by}</"
+"a>\n"
+msgstr ""
+"Новий файл завантажено:\n"
+"<b>Тип файлу</b>: {content_type}\n"
+"<b>Заголовок</b>: {title}\n"
+"<b>Айді файлу</b>: {file_id}\n"
+"<b>Айді прев'ю</b>: {thumbnail_id}\n"
+"<b>Завантажив</b>: <a href=\"tg://user?id={uploaded_by_id}\">{uploaded_by}</"
+"a>\n"
+
+#: telegram_bot/services/files.py:69
+msgid "Unknown content type"
+msgstr "Невідомий тип контенту"
 
 #: users/apps.py:9 users/models.py:19
 msgid "Users"
