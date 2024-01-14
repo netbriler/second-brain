@@ -23,7 +23,7 @@ services:
       - static_volume:/app/static
     depends_on:
       - postgres
-    command: ["gunicorn", "-c", "/app/app/gunicorn.py", "app.wsgi"]
+    command: [ "gunicorn", "-c", "/app/app/gunicorn.py", "app.wsgi" ]
 
   nginx:
     image: nginx:1.25-alpine
@@ -42,6 +42,13 @@ services:
     depends_on:
       - postgres
     command: python manage.py run_telegram_webhook
+
+  # uncomment if you want to use pooling instead of webhook
+  #  telegram-bot-pooling:
+  #    <<: *x-backend-service
+  #    depends_on:
+  #      - postgres
+  #    command: python manage.py run_telegram_pooling
 
   postgres:
     image: postgres

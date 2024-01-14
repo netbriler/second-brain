@@ -5,10 +5,10 @@ from aiogram.filters import CommandStart, Command, or_f
 from aiogram.types import Message
 from django.utils.translation import gettext as _
 
-from telegram_bot.commands.admin import set_admin_commands, get_admin_commands
-from telegram_bot.commands.default import get_default_commands
+from telegram_bot.commands.admin import set_admin_commands
 from telegram_bot.filters.i18n_text import I18nText
 from telegram_bot.keyboards.inline.language import get_language_inline_markup
+from telegram_bot.messages import get_help_text
 from users.models import User
 
 router = Router(name=__name__)
@@ -40,10 +40,6 @@ async def _start(message: Message, user: User, bot: Bot) -> NoReturn:
     )
 )
 async def _help(message: Message, user: User) -> NoReturn:
-    commands = get_admin_commands(user.language_code) if user.is_superuser else get_default_commands(user.language_code)
-
-    text = _('Help 🆘') + '\n\n'
-    for command in commands:
-        text += f'{command.command} - {command.description}\n'
+    text = get_help_text(user)
 
     await message.answer(text)

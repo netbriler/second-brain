@@ -7,12 +7,14 @@ from django.utils.translation import override, gettext as _
 from .default import get_default_commands
 
 
-def get_admin_commands(lang: str = 'en') -> list[BotCommand]:
+def get_admin_commands(lang: str = 'en', with_categories: bool = False) -> list[BotCommand | str]:
     commands = get_default_commands(lang)
 
     with override(lang):
         commands.extend(
             [
+                _('\n<b>Admin commands 👑</b>'),
+                BotCommand(command='/user', description=_('get user info')),
                 BotCommand(command='/export_users', description=_('export users to csv')),
                 BotCommand(command='/count_users', description=_('count users who contacted the bot')),
                 BotCommand(
@@ -21,6 +23,9 @@ def get_admin_commands(lang: str = 'en') -> list[BotCommand]:
                 ),
             ]
         )
+
+        if not with_categories:
+            return [c for c in commands if isinstance(c, BotCommand)]
 
         return commands
 

@@ -6,7 +6,7 @@ from django.conf import settings
 from django.utils.translation import override, gettext as _
 
 
-def get_default_commands(lang: str = 'en') -> list[BotCommand]:
+def get_default_commands(lang: str = 'en', with_categories: bool = False) -> list[BotCommand | str]:
     with override(lang):
         commands = [
             BotCommand(command='/start', description=_('start bot')),
@@ -14,6 +14,9 @@ def get_default_commands(lang: str = 'en') -> list[BotCommand]:
             BotCommand(command='/lang', description=_('change language')),
             BotCommand(command='/settings', description=_('open bot settings')),
         ]
+
+        if not with_categories:
+            return [c for c in commands if isinstance(c, BotCommand)]
 
         return commands
 

@@ -9,51 +9,66 @@ from django.conf import settings
 from telegram_bot.commands.default import set_default_commands
 from telegram_bot.handlers import router
 from telegram_bot.middlewares import setup_middleware
+from utils.logging import logger
 
 dp = Dispatcher()
 
-bot = Bot(
+default_bot = Bot(
     settings.TELEGRAM_BOT_TOKEN,
     parse_mode=ParseMode.HTML,
     disable_web_page_preview=True
 )
 
+dp.include_router(router)
+setup_middleware(dp)
+
 
 async def on_startup(bot: Bot) -> NoReturn:
-    print('Starting bot...')
     await set_default_commands(bot)
-    await bot.set_webhook(
-        f"{settings.TELEGRAM_BASE_WEBHOOK_URL}{settings.TELEGRAM_WEBHOOK_PATH}",
-        secret_token=settings.TELEGRAM_WEBHOOK_SECRET
-    )
+    bot_username = (await bot.me()).username
+    logger.info(f'Bot @{bot_username} started')
 
 
-def initialize() -> Dispatcher:
-    dp.include_router(router)
-
-    setup_middleware(dp)
-    dp.startup.register(on_startup)
-
-    return dp
+async def on_shutdown(bot: Bot) -> NoReturn:
+    bot_username = (await bot.me()).username
+    logger.info(f'Bot @{bot_username} stopped')
+    await bot.delete_webhook()
 
 
-dispatcher = initialize()
+async def on_startup_polling(bot: Bot) -> NoReturn:
+    await on_startup(bot)
+    await bot.delete_webhook()
 
 
 async def start_polling() -> NoReturn:
-    await dispatcher.start_polling(bot)
+    dp.startup.register(on_startup_polling)
+    dp.shutdown.register(on_shutdown)
+    await dp.start_polling(default_bot)
+
+
+async def on_startup_webhook(bot: Bot) -> NoReturn:
+    await on_startup(bot)
+    webhook_url = f'{settings.TELEGRAM_BASE_WEBHOOK_URL}{settings.TELEGRAM_WEBHOOK_PATH}'
+    await bot.set_webhook(
+        webhook_url,
+        secret_token=settings.TELEGRAM_WEBHOOK_SECRET
+    )
+    logger.info(f'Webhook set to {webhook_url}')
 
 
 def start_webhook() -> NoReturn:
+    dp.startup.register(on_startup_webhook)
+    dp.shutdown.register(on_shutdown)
+
     app = web.Application()
 
     webhook_requests_handler = SimpleRequestHandler(
         dispatcher=dp,
-        bot=bot,
+        bot=default_bot,
         secret_token=settings.TELEGRAM_WEBHOOK_SECRET,
     )
     webhook_requests_handler.register(app, path=settings.TELEGRAM_WEBHOOK_PATH)
 
-    setup_application(app, dp, bot=bot)
+    setup_application(app, dp, bot=default_bot)
 
     web.run_app(app, host=settings.TELEGRAM_WEB_SERVER_HOST, port=settings.TELEGRAM_WEB_SERVER_PORT)

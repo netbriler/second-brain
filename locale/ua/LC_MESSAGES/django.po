@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-14 13:02+0100\n"
+"POT-Creation-Date: 2024-01-14 15:30+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -21,14 +21,26 @@ msgid "Telegram Bot"
 msgstr "Телеграм Бот"
 
 #: telegram_bot/commands/admin.py:16
+msgid ""
+"\n"
+"<b>Admin commands 👑</b>"
+msgstr ""
+"\n"
+"<b>Адмін команди 👑</b>"
+
+#: telegram_bot/commands/admin.py:17
+msgid "get user info"
+msgstr "отримати інформацію про користувача"
+
+#: telegram_bot/commands/admin.py:18
 msgid "export users to csv"
 msgstr "експорт користувачів в csv"
 
-#: telegram_bot/commands/admin.py:17
+#: telegram_bot/commands/admin.py:19
 msgid "count users who contacted the bot"
 msgstr "підрахувати користувачів які зв'язалися з ботом"
 
-#: telegram_bot/commands/admin.py:20
+#: telegram_bot/commands/admin.py:22
 msgid "count active users (who didn't block the bot)"
 msgstr "підрахувати активних користувачів (які не заблокували бота)"
 
@@ -122,7 +134,7 @@ msgstr ""
 msgid "Choose your language"
 msgstr "Виберіть вашу мову"
 
-#: telegram_bot/handlers/users/start.py:27
+#: telegram_bot/handlers/users/start.py:28
 #, python-brace-format
 msgid ""
 "Hi {full_name}!\n"
@@ -131,8 +143,7 @@ msgstr ""
 "Привіт {full_name}!\n"
 "Виберіть вашу мову"
 
-#: telegram_bot/handlers/users/start.py:45
-#: telegram_bot/keyboards/default/default.py:10
+#: telegram_bot/keyboards/default/default.py:10 telegram_bot/messages.py:14
 msgid "Help 🆘"
 msgstr "Допомога 🆘"
 
