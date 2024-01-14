@@ -1,11 +1,12 @@
 import re
+from typing import NoReturn
 
 from aiogram.filters import Filter
 from aiogram.types import Message, CallbackQuery, InlineQuery
 
 
 class Regexp(Filter):
-    def __init__(self, regexp: str) -> None:
+    def __init__(self, regexp: str) -> NoReturn:
         self.regexp = re.compile(regexp)
 
     async def __call__(

@@ -1,4 +1,5 @@
 import traceback
+from typing import NoReturn
 
 from aiogram import Router
 from aiogram.types import ErrorEvent
@@ -10,7 +11,7 @@ router = Router(name=__name__)
 
 
 @router.error()
-async def error_handler(event: ErrorEvent, **kwargs):
+async def error_handler(event: ErrorEvent) -> NoReturn:
     try:
         raise event.exception
     except:

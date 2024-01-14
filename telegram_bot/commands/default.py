@@ -1,3 +1,5 @@
+from typing import NoReturn
+
 from aiogram import Bot
 from aiogram.types import BotCommandScopeDefault, BotCommandScopeChat, BotCommand
 from django.conf import settings
@@ -16,12 +18,12 @@ def get_default_commands(lang: str = 'en') -> list[BotCommand]:
         return commands
 
 
-async def set_default_commands(bot: Bot):
+async def set_default_commands(bot: Bot) -> NoReturn:
     await bot.set_my_commands(get_default_commands(), scope=BotCommandScopeDefault())
 
     for lang, _ in settings.LANGUAGES:
         await bot.set_my_commands(get_default_commands(lang), scope=BotCommandScopeDefault(), language_code=lang)
 
 
-async def set_user_commands(bot: Bot, user_id: int, commands_lang: str):
+async def set_user_commands(bot: Bot, user_id: int, commands_lang: str) -> NoReturn:
     await bot.set_my_commands(get_default_commands(commands_lang), scope=BotCommandScopeChat(chat_id=user_id))

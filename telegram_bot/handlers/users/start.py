@@ -1,3 +1,5 @@
+from typing import NoReturn
+
 from aiogram import Router, Bot
 from aiogram.filters import CommandStart, Command, or_f
 from aiogram.types import Message
@@ -13,7 +15,7 @@ router = Router(name=__name__)
 
 
 @router.message(CommandStart())
-async def _start(message: Message, user: User, bot: Bot):
+async def _start(message: Message, user: User, bot: Bot) -> NoReturn:
     if user.is_superuser:
         await set_admin_commands(
             bot=bot,
@@ -37,7 +39,7 @@ async def _start(message: Message, user: User, bot: Bot):
         )
     )
 )
-async def _help(message: Message, user: User):
+async def _help(message: Message, user: User) -> NoReturn:
     commands = get_admin_commands(user.language_code) if user.is_superuser else get_default_commands(user.language_code)
 
     text = _('Help 🆘') + '\n\n'

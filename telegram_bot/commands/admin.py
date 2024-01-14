@@ -1,3 +1,5 @@
+from typing import NoReturn
+
 from aiogram import Bot
 from aiogram.types import BotCommandScopeChat, BotCommand
 from django.utils.translation import override, gettext as _
@@ -23,5 +25,5 @@ def get_admin_commands(lang: str = 'en') -> list[BotCommand]:
         return commands
 
 
-async def set_admin_commands(bot: Bot, user_id: int, commands_lang: str):
+async def set_admin_commands(bot: Bot, user_id: int, commands_lang: str) -> NoReturn:
     await bot.set_my_commands(get_admin_commands(commands_lang), scope=BotCommandScopeChat(chat_id=user_id))

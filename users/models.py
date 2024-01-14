@@ -83,8 +83,16 @@ class User(AbstractUser, PermissionsMixin):
         choices=settings.LANGUAGES,
     )
 
-    def get_full_name(self):
+    @property
+    def full_name(self) -> str:
         """
         Return the first_name plus the last_name, with a space in between.
         """
-        return f'{self.first_name} {self.last_name}'.strip()
+        return f'{self.first_name} {self.last_name or ""}'.strip()
+
+    # @property
+    # def language_label(self) -> str:
+    #     for code, label in settings.LANGUAGES:
+    #         if code == user_language_code:
+    #             return label
+    #     return None

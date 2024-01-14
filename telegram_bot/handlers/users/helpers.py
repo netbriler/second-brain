@@ -1,3 +1,5 @@
+from typing import NoReturn
+
 from aiogram import Router
 from aiogram.types import Message, CallbackQuery
 from django.utils.translation import gettext as _
@@ -9,12 +11,12 @@ router = Router(name=__name__)
 
 
 @router.message()
-async def _default_menu(message: Message, user: User):
+async def _default_menu(message: Message, user: User) -> NoReturn:
     await message.answer(_('Choose an action from the menu 👇'), reply_markup=get_default_markup(user))
 
 
 @router.callback_query()
-async def _default_menu(callback_query: CallbackQuery, user: User):
+async def _default_menu(callback_query: CallbackQuery, user: User) -> NoReturn:
     await callback_query.answer(_('Unknown action'))
     await callback_query.message.answer(_('Choose an action from the menu 👇'), reply_markup=get_default_markup(user))
     try:

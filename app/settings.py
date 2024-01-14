@@ -130,6 +130,8 @@ LOCALE_PATHS = [BASE_DIR / 'locale']
 for path in LOCALE_PATHS:
     path.mkdir(parents=True, exist_ok=True)
 
+DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S %Z'
+
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 

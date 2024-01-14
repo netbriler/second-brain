@@ -6,7 +6,7 @@ from aiogram.types import Message, CallbackQuery, InlineQuery
 from aiogram.utils.chat_action import ChatActionSender
 from django.utils.translation import override
 
-from users.services import get_or_create_user
+from users.services import get_or_create_telegram_user
 
 
 class UsersMiddleware(BaseMiddleware):
@@ -26,7 +26,7 @@ class UsersMiddleware(BaseMiddleware):
             raise CancelHandler()
 
         async with ChatActionSender.typing(bot=data['bot'], chat_id=user.id):
-            data['user'] = await get_or_create_user(
+            data['user'] = await get_or_create_telegram_user(
                 telegram_id=user.id,
                 first_name=user.first_name,
                 last_name=user.last_name,

@@ -1,3 +1,5 @@
+from typing import NoReturn
+
 from aiogram.filters import Filter
 from aiogram.types import Message
 from django.conf import settings
@@ -5,7 +7,7 @@ from django.utils.translation import gettext as _, override
 
 
 class I18nText(Filter):
-    def __init__(self, i18n_text: str) -> None:
+    def __init__(self, i18n_text: str) -> NoReturn:
         self.i18n_text = i18n_text
 
     async def __call__(self, message: Message) -> bool:

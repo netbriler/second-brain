@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-14 01:02+0100\n"
+"POT-Creation-Date: 2024-01-14 13:03+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,65 +20,100 @@ msgstr ""
 "(n%100>=11 && n%100<=14)? 2 : 3);\n"
 
 #: telegram_bot/apps.py:9
-#, fuzzy
-#| msgid "Telegram ID"
 msgid "Telegram Bot"
-msgstr "Айди Телеграма"
+msgstr "Телеграм Бот"
 
-#: telegram_bot/commands/admin.py:14
+#: telegram_bot/commands/admin.py:16
 msgid "export users to csv"
 msgstr "экспортировать пользователей в csv"
 
-#: telegram_bot/commands/admin.py:15
+#: telegram_bot/commands/admin.py:17
 msgid "count users who contacted the bot"
 msgstr "посчитать пользователей, которые связались с ботом"
 
-#: telegram_bot/commands/admin.py:18
+#: telegram_bot/commands/admin.py:20
 msgid "count active users (who didn't block the bot)"
 msgstr "посчитать активных пользователей (которые не заблокировали бота)"
 
-#: telegram_bot/commands/default.py:10
+#: telegram_bot/commands/default.py:12
 msgid "start bot"
 msgstr "запустить бота"
 
-#: telegram_bot/commands/default.py:11
+#: telegram_bot/commands/default.py:13
 msgid "how it works?"
 msgstr "как это работает?"
 
-#: telegram_bot/commands/default.py:12
+#: telegram_bot/commands/default.py:14
 msgid "change language"
 msgstr "изменить язык"
 
-#: telegram_bot/commands/default.py:13
+#: telegram_bot/commands/default.py:15
 msgid "open bot settings"
 msgstr "открыть настройки бота"
 
-#: telegram_bot/handlers/admin/admin_menu.py:37
-#: telegram_bot/handlers/admin/admin_menu.py:50
+#: telegram_bot/handlers/admin/users.py:58
+#: telegram_bot/handlers/admin/users.py:71
 #, python-brace-format
 msgid "Total users: {count}"
 msgstr "Всего пользователей: {count}"
 
-#: telegram_bot/handlers/admin/admin_menu.py:70
+#: telegram_bot/handlers/admin/users.py:91
 #, python-brace-format
 msgid "Active users: {count}"
 msgstr "Активных пользователей: {count}"
 
-#: telegram_bot/handlers/errors/error_handler.py:23
-#: telegram_bot/handlers/errors/error_handler.py:28
+#: telegram_bot/handlers/admin/users.py:102
+msgid ""
+"Usage:\n"
+"/user [user_id | username]"
+msgstr ""
+"Использование:\n"
+"/user [айди | юзернейм]"
+
+#: telegram_bot/handlers/admin/users.py:110
+msgid "User not found"
+msgstr "Пользователь не найден"
+
+#: telegram_bot/handlers/admin/users.py:114
+#, python-brace-format
+msgid ""
+"User info:\n"
+"<b>ID</b>: <a href=\"tg://user?id={id}\">{id}</a>\n"
+"<b>Name</b>: {name}\n"
+"<b>Username</b>: @{username}\n"
+"<b>Language</b>: {language}\n"
+"<b>Is admin</b>: {is_admin}\n"
+"<b>Is active</b>: {is_active}\n"
+"<b>Telegram is active</b>: {telegram_is_active}\n"
+"<b>Last activity at</b>: {telegram_activity_at}\n"
+"<b>Joined at</b>: {date_joined}\n"
+msgstr ""
+"Информация о пользователе:\n"
+"<b>ID</b>: <a href=\"tg://user?id={id}\">{id}</a>\n"
+"<b>Имя</b>: {name}\n"
+"<b>Ник</b>: @{username}\n"
+"<b>Язык</b>: {language}\n"
+"<b>Админ</b>: {is_admin}\n"
+"<b>Активен</b>: {is_active}\n"
+"<b>Активен в Телеграме</b>: {telegram_is_active}\n"
+"<b>Последняя активность в Телеграме</b>: {telegram_activity_at}\n"
+"<b>Зарегистрирован</b>: {date_joined}\n"
+
+#: telegram_bot/handlers/errors/error_handler.py:24
+#: telegram_bot/handlers/errors/error_handler.py:29
 msgid "Something went wrong."
 msgstr "Что-то пошло не так."
 
-#: telegram_bot/handlers/users/helpers.py:13
-#: telegram_bot/handlers/users/helpers.py:19
+#: telegram_bot/handlers/users/helpers.py:15
+#: telegram_bot/handlers/users/helpers.py:21
 msgid "Choose an action from the menu 👇"
 msgstr "Выберите действие из меню 👇"
 
-#: telegram_bot/handlers/users/helpers.py:18
+#: telegram_bot/handlers/users/helpers.py:20
 msgid "Unknown action"
 msgstr "Неизвестное действие"
 
-#: telegram_bot/handlers/users/settings.py:39
+#: telegram_bot/handlers/users/settings.py:36
 msgid ""
 "Language changed successfully\n"
 "Press /help to find out how I can help you"
@@ -86,11 +121,11 @@ msgstr ""
 "Язык успешно изменен\n"
 "Нажмите /help, чтобы узнать, как я могу вам помочь"
 
-#: telegram_bot/handlers/users/settings.py:56
+#: telegram_bot/handlers/users/settings.py:57
 msgid "Choose your language"
 msgstr "Выберите язык"
 
-#: telegram_bot/handlers/users/start.py:25
+#: telegram_bot/handlers/users/start.py:27
 #, python-brace-format
 msgid ""
 "Hi {full_name}!\n"
@@ -99,7 +134,7 @@ msgstr ""
 "Привет {full_name}!\n"
 "Выберите язык"
 
-#: telegram_bot/handlers/users/start.py:43
+#: telegram_bot/handlers/users/start.py:45
 #: telegram_bot/keyboards/default/default.py:10
 msgid "Help 🆘"
 msgstr "Помощь 🆘"
@@ -175,7 +210,3 @@ msgid ""
 msgstr ""
 "Введите действительное имя пользователя. Это значение может содержать только "
 "буквы, цифры и символы ./-/_."
-
-#~| msgid "Users"
-#~ msgid "users"
-#~ msgstr "пользователи"

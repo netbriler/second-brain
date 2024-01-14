@@ -1,7 +1,9 @@
+from django.utils import timezone
+
 from users.models import User
 
 
-async def get_or_create_user(
+async def get_or_create_telegram_user(
         telegram_id: int,
         first_name: str,
         last_name: str,
@@ -14,6 +16,8 @@ async def get_or_create_user(
             'telegram_username': telegram_username,
             'first_name': first_name,
             'last_name': last_name,
+            'telegram_activity_at': timezone.now(),
+            'telegram_is_active': True,
         }
     )
     if created:
