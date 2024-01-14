@@ -22,6 +22,8 @@ def get_admin_commands(lang: str = 'en', with_categories: bool = False) -> list[
                     command='/count_active_users',
                     description=_("count active users (who didn't block the bot)"),
                 ),
+                _('\n<b>File commands 📁</b>'),
+                BotCommand(command='/file', description=_('get file')),
             ],
         )
 
