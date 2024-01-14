@@ -35,7 +35,7 @@ class Course(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        return self.title
 
 
 class Group(models.Model):
@@ -74,7 +74,7 @@ class Group(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        return self.title
 
 
 class Lesson(models.Model):
