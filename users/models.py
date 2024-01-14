@@ -88,9 +88,6 @@ class User(AbstractUser, PermissionsMixin):
         """
         return f'{self.first_name} {self.last_name or ""}'.strip()
 
-    # @property
-    # def language_label(self) -> str:
-    #     for code, label in settings.LANGUAGES:
-    #         if code == user_language_code:
-    #             return label
-    #     return None
+    def __str__(self):
+        username = f'@{self.telegram_username}' if self.telegram_username else ''
+        return f'{self.telegram_id} {username} {self.full_name or ""}'.strip()
