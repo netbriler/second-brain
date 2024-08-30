@@ -1,6 +1,7 @@
 from typing import NoReturn
 
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
@@ -15,8 +16,10 @@ dp = Dispatcher()
 
 default_bot = Bot(
     settings.TELEGRAM_BOT_TOKEN,
-    parse_mode=ParseMode.HTML,
-    disable_web_page_preview=True,
+    default=DefaultBotProperties(
+        parse_mode=ParseMode.HTML,
+        link_preview_is_disabled=True,
+    ),
 )
 
 dp.include_router(router)

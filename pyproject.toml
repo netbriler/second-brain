@@ -144,3 +144,39 @@ multiline-quotes = "double"
 
 [tool.ruff.pylint]
 max-returns = 10
+
+[tool.poetry]
+name = "second-brain"
+version = "0.1.0"
+description = ""
+authors = ["Yaros <yaros@Yaross-Laptop.local>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+django = "5.1"
+django-environ = "0.11.2"
+django-debug-toolbar = "4.4.6"
+django-cors-headers = "4.4.0"
+django-admin-interface = "0.28.8"
+django-livereload-server = "0.5.1"
+aiogram = "3.12.0"
+loguru = "0.7.2"
+djangoql = "0.18.1"
+gunicorn = "^23.0.0"
+psycopg2 = { version = "2.9.9", markers = "sys_platform != 'darwin'" }
+psycopg2-binary = { version = "2.9.9", markers = "sys_platform == 'darwin'" }
+
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "3.6.0"
+black = "23.12.1"
+ruff = "0.1.13"
+pytest = "7.4.4"
+pytest-django = "4.7.0"
+add-trailing-comma = "3.1.0"
+isort = "5.13.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
