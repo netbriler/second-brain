@@ -20,7 +20,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 env = environ.Env()
 environ.Env.read_env('./.env')
 
-SECRET_KEY = env('SECRET_KEY')
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-#x0&n@5j7qk@r5vz4q!k@^4w^3j^9z@1@2$!8q@#&!7@z6&^@u')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=True)
