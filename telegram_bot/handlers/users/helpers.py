@@ -23,3 +23,8 @@ async def _default_menu(callback_query: CallbackQuery, user: User) -> NoReturn:
 
     with contextlib.suppress(Exception):
         await callback_query.message.delete()
+
+
+@router.message_reaction()
+async def _echo_reaction(message: Message) -> NoReturn:
+    pass

@@ -197,7 +197,7 @@ STATICFILES_FINDERS = (
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 # Telegram bot settings
-TELEGRAM_BOT_TOKEN = env('TELEGRAM_BOT_TOKEN')
+TELEGRAM_BOT_TOKEN = env('TELEGRAM_BOT_TOKEN', default='')
 
 TELEGRAM_WEB_SERVER_HOST = env('TELEGRAM_WEB_SERVER_HOST', default='0.0.0.0')  # noqa
 TELEGRAM_WEB_SERVER_PORT = env.int('TELEGRAM_WEB_SERVER_PORT', default=8000)

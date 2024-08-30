@@ -23,6 +23,14 @@ class User(AbstractUser, PermissionsMixin):
 
     username_validator = UnicodeUsernameValidator()
 
+    username = models.CharField(
+        max_length=36,
+        null=True,
+        unique=True,
+        verbose_name='Username',
+        validators=[username_validator],
+    )
+
     is_active = models.BooleanField(
         verbose_name=_('Active'),
         default=True,
