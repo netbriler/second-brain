@@ -1,7 +1,7 @@
 version: '3.7'
 
 x-backend-service: &x-backend-service
-  image: briler/second-brain:lastest
+  image: briler/second-brain:latest
   env_file:
     - .env
   restart: unless-stopped
@@ -53,8 +53,6 @@ services:
   postgres:
     image: postgres
     restart: always
-    environment:
-      POSTGRES_PASSWORD: postgres  # Need a better password
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -65,9 +63,8 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      WATCHTOWER_CLEANUP: "true"
-      WATCHTOWER_POLL_INTERVAL: 30  # Check every 30 seconds for new versions
+    env_file:
+      - .env
 
 volumes:
   postgres_data:

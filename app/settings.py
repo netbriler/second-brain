@@ -137,14 +137,14 @@ DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S %Z'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'HOST': env('DATABASE_HOST', default='postgres'),
-        'PORT': env.int('DATABASE_PORT', default=5432),
-        'CONN_MAX_AGE': env.int('DATABASE_CONN_MAX_AGE', default=30),
-        'NAME': env('DATABASE_NAME', default='postgres'),
-        'USER': env('DATABASE_USER', default='postgres'),
-        'PASSWORD': env('DATABASE_PASSWORD', default='postgres'),
+        'HOST': env('POSTGRES_HOST', default='postgres'),
+        'PORT': env.int('POSTGRES_PORT', default=5432),
+        'CONN_MAX_AGE': env.int('POSTGRES_CONN_MAX_AGE', default=30),
+        'NAME': env('POSTGRES_NAME', default='postgres'),
+        'USER': env('POSTGRES_USER', default='postgres'),
+        'PASSWORD': env('POSTGRES_PASSWORD', default='postgres'),
         'OPTIONS': {
-            'sslmode': env('DATABASE_SSL_MODE', default='prefer'),
+            'sslmode': env('POSTGRES_SSL_MODE', default='prefer'),
         },
     },
 }
