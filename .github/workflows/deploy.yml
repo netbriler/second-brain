@@ -14,8 +14,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag ${{ secrets.DOCKER_USERNAME }}/second-brain:latest
-    - name: Push the Docker image
-      run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_TOKEN }} && docker push ${{ secrets.DOCKER_USERNAME }}/second-brain:latest
+      - uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build the Docker image
+        run: |
+          COMMIT_HASH=${{ github.sha }}
+          docker build . --file Dockerfile --tag ${{ secrets.DOCKER_USERNAME }}/second-brain:latest --tag ${{ secrets.DOCKER_USERNAME }}/second-brain:$COMMIT_HASH
+
+      - name: Push the Docker image
+        run: |
+          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_TOKEN }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/second-brain:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/second-brain:$COMMIT_HASH

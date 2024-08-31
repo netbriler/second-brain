@@ -1,7 +1,7 @@
 # latest stable
 ARG PYTHON_VERSION=3.12.1-slim-bullseye
 
-FROM python:$PYTHON_VERSION AS requirements-stage
+FROM --platform=linux/amd64 python:$PYTHON_VERSION AS requirements-stage
 
 WORKDIR /tmp
 
@@ -11,7 +11,7 @@ COPY ./pyproject.toml ./poetry.lock* /tmp/
 
 RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
 
-FROM python:${PYTHON_VERSION} AS django
+FROM --platform=linux/amd64 python:${PYTHON_VERSION} AS django
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV PGSSLCERT /tmp/postgresql.crt
