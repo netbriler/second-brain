@@ -14,12 +14,16 @@ from utils.logging import logger
 
 dp = Dispatcher()
 
-default_bot = Bot(
-    settings.TELEGRAM_BOT_TOKEN,
-    default=DefaultBotProperties(
-        parse_mode=ParseMode.HTML,
-        link_preview_is_disabled=True,
-    ),
+default_bot = (
+    Bot(
+        settings.TELEGRAM_BOT_TOKEN,
+        default=DefaultBotProperties(
+            parse_mode=ParseMode.HTML,
+            link_preview_is_disabled=True,
+        ),
+    )
+    if settings.TELEGRAM_BOT_TOKEN
+    else None
 )
 
 dp.include_router(router)
