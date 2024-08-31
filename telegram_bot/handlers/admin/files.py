@@ -1,7 +1,9 @@
 import json
+import random
 import re
 from typing import NoReturn
 
+import google.generativeai as genai
 from aiogram import Bot, F, Router
 from aiogram.enums import ContentType
 from aiogram.filters import Command, CommandObject
@@ -64,6 +66,25 @@ async def _upload_file(message: Message, user: User, bot: Bot) -> NoReturn:
         raw_json = message.video_note.model_dump_json()
     elif message.content_type == ContentType.VOICE:
         raw_json = message.voice.model_dump_json()
+
+        if message.voice:
+            api_keys = ['AIzaSyDsGM7Bv0S2oOJHBWUthvl8GF8J21oq0vg', 'AIzaSyBgyocfylSsMreU_2Qn7PBIX7HDlXsqzz0']
+            genai.configure(api_key=random.choice(api_keys))
+
+            file = await message.bot.get_file(message.voice.file_id)
+            file_path = file.file_path
+
+            destination = f'temp/{file.file_id}.ogg'
+            await message.bot.download_file(file_path, destination=destination)
+
+            try:
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                result = model.generate_content(
+                    [genai.upload_file(destination), '\n\n', 'Transcribe audio'],
+                )
+                await message.reply(result.text)
+            except Exception as e:  # noqa
+                await message.answer('Something went wrong, try again later')
 
     data = json.loads(raw_json)
     file_id = data.get('file_id', None)

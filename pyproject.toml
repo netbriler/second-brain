@@ -166,6 +166,7 @@ djangoql = "0.18.1"
 gunicorn = "^23.0.0"
 psycopg2 = { version = "2.9.9", markers = "sys_platform != 'darwin'" }
 psycopg2-binary = { version = "2.9.9", markers = "sys_platform == 'darwin'" }
+google-generativeai = "^0.7.2"
 
 
 [tool.poetry.group.dev.dependencies]
