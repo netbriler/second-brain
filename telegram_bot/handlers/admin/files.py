@@ -84,7 +84,7 @@ async def _upload_file(message: Message, user: User, bot: Bot) -> NoReturn:
                     [
                         genai.upload_file(destination),
                         '\n\n',
-                        'Transcribe audio and folow instructions about formating is said "отформатируй"',
+                        'Transcribe audio and folow instructions from user if needed',
                     ],
                 )
                 await message.reply(result.text)
