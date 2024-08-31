@@ -38,20 +38,20 @@ services:
       - backend
     restart: unless-stopped
 
-  #  telegram-bot-webhook:
-  #    <<: *x-backend-service
-  #    expose:
-  #      - 8000
-  #    depends_on:
-  #      - postgres
-  #    command: python manage.py run_telegram_webhook
-
-  # uncomment if you want to use pooling instead of webhook
-  telegram-bot-pooling:
+  telegram-bot-webhook:
     <<: *x-backend-service
+    expose:
+      - 8000
     depends_on:
       - postgres
-    command: python manage.py run_telegram_polling
+    command: python manage.py run_telegram_webhook
+
+  # uncomment if you want to use pooling instead of webhook
+  #  telegram-bot-pooling:
+  #    <<: *x-backend-service
+  #    depends_on:
+  #      - postgres
+  #    command: python manage.py run_telegram_polling
 
   postgres:
     image: postgres
