@@ -138,7 +138,7 @@ DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S %Z'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'HOST': env('POSTGRES_HOST', default='postgres'),
+        'HOST': env('POSTGRES_HOST', default='localhost'),
         'PORT': env.int('POSTGRES_PORT', default=5432),
         'CONN_MAX_AGE': env.int('POSTGRES_CONN_MAX_AGE', default=30),
         'NAME': env('POSTGRES_NAME', default='postgres'),
