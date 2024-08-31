@@ -53,6 +53,7 @@ async def _file(message: Message, bot: Bot, command: CommandObject, user: User) 
     ),
 )
 async def _upload_file(message: Message, user: User, bot: Bot) -> NoReturn:
+    logger.debug(f'User {user} uploaded file {message.content_type}')
     raw_json = None
     if message.content_type == ContentType.AUDIO:
         raw_json = message.audio.model_dump_json()
@@ -70,22 +71,23 @@ async def _upload_file(message: Message, user: User, bot: Bot) -> NoReturn:
         raw_json = message.voice.model_dump_json()
 
         if message.voice:
-            api_keys = ['AIzaSyDsGM7Bv0S2oOJHBWUthvl8GF8J21oq0vg', 'AIzaSyBgyocfylSsMreU_2Qn7PBIX7HDlXsqzz0']
-            genai.configure(api_key=random.choice(api_keys))
+            genai.configure(api_key=random.choice(settings.GOOGLE_GEMINI_API_KEYS))
 
             file = await message.bot.get_file(message.voice.file_id)
             file_path = file.file_path
 
+            logger.debug(f'Downloading file {file_path}')
+            await message.bot.send_chat_action(message.chat.id, 'record_voice')
             destination = settings.BASE_DIR / f'temp/{file.file_id}.ogg'
             await message.bot.download_file(file_path, destination=destination)
 
             try:
+                logger.debug(f'Sending file to genai {destination}')
                 model = genai.GenerativeModel('gemini-1.5-flash')
                 result = model.generate_content(
                     [
                         genai.upload_file(destination),
-                        '\n\n',
-                        'Transcribe audio and folow instructions from user if needed',
+                        'Only transcribe audio to text',
                     ],
                 )
                 await message.reply(result.text)

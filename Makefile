@@ -20,38 +20,35 @@ pretty:
 	pre-commit run --all-files
 
 run:
-	docker-compose up -d --force-recreate
+	docker compose up -d --force-recreate
 
 build:
-	docker-compose build --no-cache
-
-exec_userbot:
-	docker-compose exec -it userbot /bin/bash
+	docker compose build --no-cache
 
 exec_backend:
-	docker-compose exec -it backend /bin/bash
+	docker compose exec -it backend /bin/bash
 
 exec_nginx:
-	docker-compose exec -it nginx /bin/sh
+	docker compose exec -it nginx /bin/sh
 
 down:
-	docker-compose down
+	docker compose down
 
 psql:
-	docker-compose exec postgres psql -U postgres postgres
+	docker compose exec postgres psql -U postgres postgres
 
 pg_dump:
-	mkdir -p ./data/backups/postgres && docker-compose exec -T postgres pg_dump -U postgres postgres --no-owner \
+	mkdir -p ./data/backups/postgres && docker compose exec -T postgres pg_dump -U postgres postgres --no-owner \
 	| gzip -9 > ./data/backups/postgres/backup-$(shell date +%Y-%m-%d_%H-%M-%S).sql.gz
 
 pg_restore:
 	mkdir -p ./data/backups/postgres && bash ./bin/pg_restore.sh ${BACKUPS_PATH}
 
 restart:
-	docker-compose restart userbot && docker-compose restart backend
+	docker compose restart userbot && docker compose restart backend
 
 stop:
-	docker-compose stop
+	docker compose stop
 
 migrate:
 	python manage.py makemigrations && python manage.py migrate
