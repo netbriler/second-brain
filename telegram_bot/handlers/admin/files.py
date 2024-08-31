@@ -10,6 +10,7 @@ from aiogram.filters import Command, CommandObject
 from aiogram.types import Message
 from django.utils.translation import gettext as _
 
+from app import settings
 from telegram_bot.filters.admin import IsAdmin
 from telegram_bot.models import File
 from telegram_bot.services.files import send_file_to_user
@@ -74,13 +75,17 @@ async def _upload_file(message: Message, user: User, bot: Bot) -> NoReturn:
             file = await message.bot.get_file(message.voice.file_id)
             file_path = file.file_path
 
-            destination = f'temp/{file.file_id}.ogg'
+            destination = settings.BASE_DIR / f'temp/{file.file_id}.ogg'
             await message.bot.download_file(file_path, destination=destination)
 
             try:
                 model = genai.GenerativeModel('gemini-1.5-flash')
                 result = model.generate_content(
-                    [genai.upload_file(destination), '\n\n', 'Transcribe audio'],
+                    [
+                        genai.upload_file(destination),
+                        '\n\n',
+                        'Transcribe audio and folow instructions about formating is said "отформатируй"',
+                    ],
                 )
                 await message.reply(result.text)
             except Exception as e:  # noqa
