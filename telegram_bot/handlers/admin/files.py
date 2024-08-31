@@ -19,6 +19,8 @@ from utils.logging import logger
 
 router = Router(name=__name__)
 
+model = genai.GenerativeModel('gemini-1.5-flash')
+
 
 @router.message(
     IsAdmin(),
@@ -83,17 +85,25 @@ async def _upload_file(message: Message, user: User, bot: Bot) -> NoReturn:
 
             try:
                 logger.debug(f'Sending file to genai {destination}')
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                file = genai.upload_file(destination, mime_type=message.voice.mime_type)
+            except Exception as e:  # noqa
+                logger.exception(e)
+                await message.answer(_('Something went wrong.'))
+
+            try:
+                if not file:
+                    raise Exception('File not found')
+                logger.debug(f'Generating content for file {destination}')
                 result = model.generate_content(
                     [
-                        genai.upload_file(destination),
+                        file,
                         'Only transcribe audio to text',
                     ],
                 )
                 await message.reply(result.text)
             except Exception as e:  # noqa
                 logger.exception(e)
-                await message.answer('Something went wrong, try again later')
+                await message.answer(_('Something went wrong.'))
 
     data = json.loads(raw_json)
     file_id = data.get('file_id', None)
