@@ -3,6 +3,7 @@ from pathlib import Path
 
 import google.generativeai as genai
 from django.utils.translation import activate
+from django.utils.translation import gettext as _
 from telebot.types import ReactionTypeEmoji
 
 from app import settings
@@ -26,7 +27,7 @@ def transcribe_file_task(chat_id: int, file_id: int, user_id: int, message_id: i
 
     db_file = File.objects.get(id=file_id)
     if not message_id:
-        message_id, _ = sync_send_file_to_user(bot, db_file, user)
+        message_id, message_id2 = sync_send_file_to_user(bot, db_file, user)
 
     bot.set_message_reaction(chat_id, message_id, [ReactionTypeEmoji('👀')])
 
@@ -70,6 +71,14 @@ def transcribe_file_task(chat_id: int, file_id: int, user_id: int, message_id: i
             ],
         )
         bot.send_message(chat_id, result.text, reply_to_message_id=message_id)
+
+        db_file.raw_data['transcription'] = result.text
+        db_file.save(
+            update_fields=[
+                'raw_data',
+            ],
+        )
+
     except Exception as e:  # noqa
         logger.exception(f'Error generating content from genai: {e}')
         bot.send_message(

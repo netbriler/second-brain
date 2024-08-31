@@ -8,6 +8,10 @@ from users.models import User
 
 
 def generate_file_text(file: File) -> str:
+    raw_data = ''
+    for key, value in file.raw_data.items():
+        raw_data += f'{key}: {value}\n'
+
     return _(
         'New file uploaded:\n'
         '<b>File type</b>: {content_type}\n'
@@ -15,6 +19,7 @@ def generate_file_text(file: File) -> str:
         '<b>File ID</b>: {file_id}\n'
         '<b>Thumbnail ID</b>: {thumbnail_id}\n'
         '<b>Uploaded by</b>: <a href="tg://user?id={uploaded_by_id}">{uploaded_by}</a>\n'
+        '\n<b>Raw Data</b>:'
         '<code>{raw_data}</code>\n',
     ).format(
         content_type=file.get_content_type_display(),
