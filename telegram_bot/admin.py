@@ -1,12 +1,10 @@
-from asgiref.sync import async_to_sync
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from djangoql.admin import DjangoQLSearchMixin
 
-from telegram_bot.start_bot import default_bot
-
 from . import models
-from .services.files import send_file_to_user
+from .constants import FileContentType
+from .tasks import send_file_to_user_task, transcribe_file_task
 
 
 @admin.register(models.File)
@@ -79,14 +77,35 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 
     actions = [
         'send_to_telegram',
+        'transcribe_audio_to_text',
     ]
 
     @admin.action(description=_('Send to telegram'))
     def send_to_telegram(self, request, queryset):
         for file in queryset:
-            async_to_sync(send_file_to_user)(default_bot, file, request.user)
+            send_file_to_user_task.delay(file.id, request.user.id)
 
         self.message_user(request, _('Files sent to telegram'))
+
+    @admin.action(description=_('Transcribe audio to text'))
+    def transcribe_audio_to_text(self, request, queryset):
+        for file in queryset:
+            if file.content_type not in [FileContentType.VOICE.value, FileContentType.AUDIO.value]:
+                self.message_user(request, _('Only audio files are supported for transcription'))
+                return
+
+            if not file.raw_data.get('mime_type', None):
+                self.message_user(request, _('File {file_id} is not an audio file').format(file_id=file.file_id))
+                continue
+
+            transcribe_file_task.delay(
+                chat_id=request.user.telegram_id,
+                file_id=file.id,
+                user_id=request.user.id,
+                message_id=None,
+            )
+
+        self.message_user(request, _('Files sent to transcription'))
 
     def has_add_permission(self, request):
         return False

@@ -7,13 +7,14 @@ x-backend-service: &x-backend-service
   restart: unless-stopped
   labels:
     - "com.centurylinklabs.watchtower.enable=true"
+  depends_on:
+    - postgres
+    - redis
 
 services:
 
   migrate:
     <<: *x-backend-service
-    depends_on:
-      - postgres
     command: python manage.py migrate --noinput && python manage.py seeds
     restart: "no"
 
@@ -23,9 +24,6 @@ services:
       - 8000
     volumes:
       - static_volume:/app/static
-    depends_on:
-      - postgres
-      - redis
     command: [ "gunicorn", "-c", "/app/app/gunicorn.py", "app.wsgi" ]
 
   nginx:
@@ -43,15 +41,11 @@ services:
   #    <<: *x-backend-service
   #    expose:
   #      - 8000
-  #    depends_on:
-  #      - postgres
   #    command: python manage.py run_telegram_webhook
 
   # uncomment if you want to use pooling instead of webhook
   telegram-bot-pooling:
     <<: *x-backend-service
-    depends_on:
-      - postgres
     command: python manage.py run_telegram_polling
 
   postgres:

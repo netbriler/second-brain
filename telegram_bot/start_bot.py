@@ -1,8 +1,6 @@
 from typing import NoReturn
 
 from aiogram import Bot, Dispatcher
-from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 from django.conf import settings
@@ -12,19 +10,9 @@ from telegram_bot.handlers import router
 from telegram_bot.middlewares import setup_middleware
 from utils.logging import logger
 
-dp = Dispatcher()
+from .loader import default_bot
 
-default_bot = (
-    Bot(
-        settings.TELEGRAM_BOT_TOKEN,
-        default=DefaultBotProperties(
-            parse_mode=ParseMode.HTML,
-            link_preview_is_disabled=True,
-        ),
-    )
-    if settings.TELEGRAM_BOT_TOKEN
-    else None
-)
+dp = Dispatcher()
 
 dp.include_router(router)
 setup_middleware(dp)

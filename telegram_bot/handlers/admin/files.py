@@ -1,25 +1,21 @@
 import json
-import random
 import re
 from typing import NoReturn
 
-import google.generativeai as genai
 from aiogram import Bot, F, Router
 from aiogram.enums import ContentType
 from aiogram.filters import Command, CommandObject
 from aiogram.types import Message
 from django.utils.translation import gettext as _
 
-from app import settings
 from telegram_bot.filters.admin import IsAdmin
 from telegram_bot.models import File
 from telegram_bot.services.files import send_file_to_user
+from telegram_bot.tasks import transcribe_file_task
 from users.models import User
 from utils.logging import logger
 
 router = Router(name=__name__)
-
-model = genai.GenerativeModel('gemini-1.5-flash')
 
 
 @router.message(
@@ -72,39 +68,6 @@ async def _upload_file(message: Message, user: User, bot: Bot) -> NoReturn:
     elif message.content_type == ContentType.VOICE:
         raw_json = message.voice.model_dump_json()
 
-        if message.voice:
-            genai.configure(api_key=random.choice(settings.GOOGLE_GEMINI_API_KEYS))
-
-            file = await message.bot.get_file(message.voice.file_id)
-            file_path = file.file_path
-
-            logger.debug(f'Downloading file {file_path}')
-            await message.bot.send_chat_action(message.chat.id, 'record_voice')
-            destination = settings.BASE_DIR / f'temp/{file.file_id}.ogg'
-            await message.bot.download_file(file_path, destination=destination)
-
-            try:
-                logger.debug(f'Sending file to genai {destination}')
-                file = genai.upload_file(destination, mime_type=message.voice.mime_type)
-            except Exception as e:  # noqa
-                logger.exception(e)
-                await message.answer(_('Something went wrong.'))
-
-            try:
-                if not file:
-                    raise Exception('File not found')
-                logger.debug(f'Generating content for file {destination}')
-                result = model.generate_content(
-                    [
-                        file,
-                        'Only transcribe audio to text',
-                    ],
-                )
-                await message.reply(result.text)
-            except Exception as e:  # noqa
-                logger.exception(e)
-                await message.answer(_('Something went wrong.'))
-
     data = json.loads(raw_json)
     file_id = data.get('file_id', None)
     if not file_id:
@@ -136,3 +99,11 @@ async def _upload_file(message: Message, user: User, bot: Bot) -> NoReturn:
         )
 
     await send_file_to_user(bot, file, user)
+
+    if message.content_type == ContentType.VOICE and message.voice:
+        transcribe_file_task.delay(
+            chat_id=message.chat.id,
+            message_id=message.message_id,
+            file_id=file.id,
+            user_id=user.id,
+        )

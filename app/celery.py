@@ -2,8 +2,7 @@ import os
 
 from celery import Celery, Task
 from django.conf import settings
-
-from utils.logging import logger
+from django.db.models.query_utils import logger
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'app.settings')
 
