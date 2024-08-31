@@ -32,10 +32,10 @@ async def on_shutdown(bot: Bot) -> NoReturn:
 
 async def on_startup_polling(bot: Bot) -> NoReturn:
     await on_startup(bot)
-    await bot.delete_webhook()
 
 
 async def start_polling() -> NoReturn:
+    await default_bot.delete_webhook()
     dp.startup.register(on_startup_polling)
     dp.shutdown.register(on_shutdown)
     await dp.start_polling(default_bot)

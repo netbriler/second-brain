@@ -28,7 +28,7 @@ def generate_file_text(file: File) -> str:
         thumbnail_id=file.thumbnail_id,
         uploaded_by=str(file.uploaded_by),
         uploaded_by_id=file.uploaded_by.telegram_id,
-        raw_data=file.raw_data,
+        raw_data=raw_data,
     )
 
 
