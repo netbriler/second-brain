@@ -15,6 +15,7 @@ from telegram_bot.filters.admin import IsAdmin
 from telegram_bot.models import File
 from telegram_bot.services.files import send_file_to_user
 from users.models import User
+from utils.logging import logger
 
 router = Router(name=__name__)
 
@@ -89,6 +90,7 @@ async def _upload_file(message: Message, user: User, bot: Bot) -> NoReturn:
                 )
                 await message.reply(result.text)
             except Exception as e:  # noqa
+                logger.exception(e)
                 await message.answer('Something went wrong, try again later')
 
     data = json.loads(raw_json)
