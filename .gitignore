@@ -218,5 +218,8 @@ ENV/
 /static
 
 /logs
-/temp
 .ruff_cache
+
+temp/*
+
+!temp/.gitkeep

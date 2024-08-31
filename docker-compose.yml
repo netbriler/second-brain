@@ -67,6 +67,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     env_file:
       - .env
+    command: --cleanup --include-restarting nginx
 
 volumes:
   postgres_data:
