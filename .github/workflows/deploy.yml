@@ -25,10 +25,10 @@ jobs:
       - name: Build the Docker image
         run: |
           COMMIT_HASH=${{ github.sha }}
-          docker build . --file Dockerfile --tag ${{ secrets.DOCKER_USERNAME }}/second-brain:latest --tag ${{ secrets.DOCKER_USERNAME }}/second-brain:${{SHORT_SHA}}
+          docker build . --file Dockerfile --tag ${{ secrets.DOCKER_USERNAME }}/second-brain:latest --tag ${{ secrets.DOCKER_USERNAME }}/second-brain:${SHORT_SHA}
 
       - name: Push the Docker image
         run: |
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_TOKEN }}
           docker push ${{ secrets.DOCKER_USERNAME }}/second-brain:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/second-brain:${{SHORT_SHA}}
+          docker push ${{ secrets.DOCKER_USERNAME }}/second-brain:${SHORT_SHA}
