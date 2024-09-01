@@ -10,17 +10,16 @@ from users.models import User
 def generate_file_text(file: File) -> str:
     raw_data = ''
     for key, value in file.raw_data.items():
-        raw_data += f'{key}: {value}\n'
+        raw_data += f'<b>{key.title().replace("_", " ")}</b>: <code>{value}</code>\n'
 
     return _(
         'New file uploaded:\n'
-        '<b>File type</b>: {content_type}\n'
-        '<b>Title</b>: {title}\n'
-        '<b>File ID</b>: {file_id}\n'
-        '<b>Thumbnail ID</b>: {thumbnail_id}\n'
+        '<b>File type</b>: <code>{content_type}</code>\n'
+        '<b>Title</b>: <code>{title}</code>\n'
+        '<b>File ID</b>: <code>{file_id}</code>\n'
+        '<b>Thumbnail ID</b>: <code>{thumbnail_id}</code>\n'
         '<b>Uploaded by</b>: <a href="tg://user?id={uploaded_by_id}">{uploaded_by}</a>\n'
-        '\n<b>Raw Data</b>:'
-        '<code>{raw_data}</code>\n',
+        '\n<b>Raw Data</b>:\n{raw_data}',
     ).format(
         content_type=file.get_content_type_display(),
         title=file.title,
