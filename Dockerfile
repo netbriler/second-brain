@@ -17,7 +17,7 @@ ENV PYTHONUNBUFFERED 1
 ENV PGSSLCERT /tmp/postgresql.crt
 RUN mkdir -p /app
 WORKDIR /app
-RUN apt-get update && apt-get install -y git gettext build-essential libffi-dev libpcre3-dev libpq-dev libssl-dev gettext
+RUN apt-get update && apt-get install -y git gettext build-essential libffi-dev libpcre3-dev libpq-dev libssl-dev gettext ffmpeg
 COPY --from=requirements-stage /tmp/requirements.txt ./requirements.txt
 RUN /usr/local/bin/python -m pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
