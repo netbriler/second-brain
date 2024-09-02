@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-02 14:35+0700\n"
+"POT-Creation-Date: 2024-09-02 14:49+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,8 +16,8 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ai/admin.py:63 courses/admin.py:48 courses/admin.py:101 courses/admin.py:149
-#: telegram_bot/admin.py:61 users/admin.py:65
+#: ai/admin.py:62 courses/admin.py:48 courses/admin.py:101 courses/admin.py:149
+#: telegram_bot/admin.py:62 users/admin.py:65
 msgid "General"
 msgstr "Загальне"
 
@@ -79,7 +79,6 @@ msgid "Time Spent"
 msgstr "Час витрачений"
 
 #: ai/models.py:46
-#| msgid "Content Type"
 msgid "Source Type"
 msgstr "Тип контенту"
 
@@ -162,28 +161,28 @@ msgstr "Контент"
 msgid "File"
 msgstr "Файл"
 
-#: telegram_bot/admin.py:83
+#: telegram_bot/admin.py:84
 msgid "Send to telegram"
 msgstr "Відправити в телеграм"
 
-#: telegram_bot/admin.py:88
+#: telegram_bot/admin.py:89
 msgid "Files sent to telegram"
 msgstr "Файли відправлені в телеграм"
 
-#: telegram_bot/admin.py:90
+#: telegram_bot/admin.py:91
 msgid "Transcribe audio to text"
 msgstr "Транскрибувати аудіо в текст"
 
-#: telegram_bot/admin.py:94
+#: telegram_bot/admin.py:95
 msgid "Only audio files are supported for transcription"
 msgstr "Підтримуються тільки аудіо файли для транскрипції"
 
-#: telegram_bot/admin.py:98
+#: telegram_bot/admin.py:99
 #, python-brace-format
 msgid "File {file_id} is not an audio file"
 msgstr "Файл {file_id} не є аудіо файлом"
 
-#: telegram_bot/admin.py:108
+#: telegram_bot/admin.py:109
 msgid "Files sent to transcription"
 msgstr "Файли відправлені на транскрипцію"
 
@@ -227,6 +226,11 @@ msgstr ""
 msgid "get file"
 msgstr "отримати файл"
 
+#: telegram_bot/commands/admin.py:27
+#| msgid "Upload file 📁"
+msgid "upload files"
+msgstr "завантажити файли"
+
 #: telegram_bot/commands/default.py:13
 msgid "start bot"
 msgstr "запустити бота"
@@ -243,7 +247,7 @@ msgstr "змінити мову"
 msgid "open bot settings"
 msgstr "відкрити налаштування бота"
 
-#: telegram_bot/handlers/admin/files.py:30
+#: telegram_bot/handlers/admin/files.py:29
 msgid ""
 "Usage:\n"
 "/file [file_id]"
@@ -251,11 +255,11 @@ msgstr ""
 "Використання:\n"
 "/file [айді файлу]"
 
-#: telegram_bot/handlers/admin/files.py:35
+#: telegram_bot/handlers/admin/files.py:34
 msgid "file not found"
 msgstr "файл не знайдено"
 
-#: telegram_bot/handlers/admin/files.py:55
+#: telegram_bot/handlers/admin/files.py:54
 msgid "Send me a something to upload"
 msgstr "Надішліть мені щось для завантаження"
 
@@ -312,13 +316,13 @@ msgstr ""
 msgid "Something went wrong."
 msgstr "Щось пішло не так."
 
-#: telegram_bot/handlers/users/helpers.py:23
-#: telegram_bot/handlers/users/helpers.py:58
-#: telegram_bot/handlers/users/helpers.py:64
+#: telegram_bot/handlers/users/helpers.py:22
+#: telegram_bot/handlers/users/helpers.py:57
+#: telegram_bot/handlers/users/helpers.py:63
 msgid "Choose an action from the menu 👇"
 msgstr "Виберіть дію з меню 👇"
 
-#: telegram_bot/handlers/users/helpers.py:63
+#: telegram_bot/handlers/users/helpers.py:62
 msgid "Unknown action"
 msgstr "Невідома дія"
 
