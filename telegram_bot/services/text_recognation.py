@@ -1,8 +1,10 @@
 import random
+from enum import Enum
 from pathlib import Path
 
 import google.generativeai as genai
 import speech_recognition as sr
+from django.utils.translation import gettext_lazy as _
 from google.ai.generativelanguage_v1beta import Schema, Type
 from loguru import logger
 from openai import OpenAI
@@ -15,6 +17,21 @@ genai.configure(api_key=random.choice(settings.GOOGLE_GEMINI_API_KEYS))
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 
+class Categories(Enum):
+    NOTES = 'notes', _('Notes')
+    WORKOUT = 'workout', _('Workout')
+    MEALS = 'meals', _('Meals')
+    EXPENSES = 'expenses', _('Expenses')
+    TASKS = 'tasks', _('Tasks')
+    REMINDERS = 'reminders', _('Reminders')
+    READING = 'reading', _('Reading')
+    COURSES = 'courses', _('Courses')
+
+    @property
+    def label(self):
+        return self.value[1]
+
+
 class TextRecognition(BaseModel):
     text: str
     category_predictions: list[str]
@@ -23,11 +40,11 @@ class TextRecognition(BaseModel):
 # noinspection PyTypeChecker
 def determine_category_and_format_text(message: str, category_enum: list[str] = None) -> TextRecognition | None:
     if category_enum is None:
-        category_enum = ['NOTES', 'WORKOUT', 'MEALS', 'EXPENSES']
+        category_enum = list(Categories.__members__.keys())
 
     logger.debug(f'Sending message to genai: {message}')
     result = model.generate_content(
-        f'Determine what categories this text can be and add punctuation.\n\n{message}',
+        f'Determine what categories (maximum 3) this text can be and add punctuation.\n\n{message}',
         generation_config=genai.GenerationConfig(
             response_mime_type='application/json',
             response_schema=Schema(

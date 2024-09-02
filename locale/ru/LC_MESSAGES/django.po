@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-14 23:05+0100\n"
+"POT-Creation-Date: 2024-09-02 10:59+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,12 +19,13 @@ msgstr ""
 "n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
 "(n%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: courses/admin.py:43 courses/admin.py:96 courses/admin.py:144
-#: telegram_bot/admin.py:62 users/admin.py:65
+#: courses/admin.py:48 courses/admin.py:101 courses/admin.py:149
+#: telegram_bot/admin.py:61 users/admin.py:65
 msgid "General"
 msgstr "Общее"
 
 #: courses/apps.py:9 courses/inlines.py:21 courses/models.py:8
+#: telegram_bot/services/text_recognation.py:28
 msgid "Courses"
 msgstr "Курсы"
 
@@ -88,6 +89,23 @@ msgstr "Отправить в телеграм"
 msgid "Files sent to telegram"
 msgstr "Файлы отправлены в телеграм"
 
+#: telegram_bot/admin.py:90
+msgid "Transcribe audio to text"
+msgstr "Транскрибировать аудио в текст"
+
+#: telegram_bot/admin.py:94
+msgid "Only audio files are supported for transcription"
+msgstr "Только аудиофайлы поддерживаются для транскрипции"
+
+#: telegram_bot/admin.py:98
+#, python-brace-format
+msgid "File {file_id} is not an audio file"
+msgstr "Файл {file_id} не является аудиофайлом"
+
+#: telegram_bot/admin.py:108
+msgid "Files sent to transcription"
+msgstr "Файлы отправлены на транскрипцию"
+
 #: telegram_bot/apps.py:9
 msgid "Telegram Bot"
 msgstr "Телеграм Бот"
@@ -144,7 +162,7 @@ msgstr "изменить язык"
 msgid "open bot settings"
 msgstr "открыть настройки бота"
 
-#: telegram_bot/handlers/admin/files.py:26
+#: telegram_bot/handlers/admin/files.py:28
 msgid ""
 "Usage:\n"
 "/file [file_id]"
@@ -152,7 +170,7 @@ msgstr ""
 "Использование:\n"
 "/file [айди файла]"
 
-#: telegram_bot/handlers/admin/files.py:31
+#: telegram_bot/handlers/admin/files.py:33
 msgid "file not found"
 msgstr "файл не найден"
 
@@ -209,14 +227,13 @@ msgstr ""
 msgid "Something went wrong."
 msgstr "Что-то пошло не так."
 
-#: telegram_bot/handlers/users/helpers.py:16
-#: telegram_bot/handlers/users/helpers.py:22
-msgid "Choose an action from the menu 👇"
-msgstr "Выберите действие из меню 👇"
-
-#: telegram_bot/handlers/users/helpers.py:21
+#: telegram_bot/handlers/users/helpers.py:37
 msgid "Unknown action"
 msgstr "Неизвестное действие"
+
+#: telegram_bot/handlers/users/helpers.py:38
+msgid "Choose an action from the menu 👇"
+msgstr "Выберите действие из меню 👇"
 
 #: telegram_bot/handlers/users/settings.py:35
 msgid ""
@@ -284,16 +301,19 @@ msgstr "Сырые данные"
 msgid "Uploaded By"
 msgstr "Загружено пользователем"
 
-#: telegram_bot/services/files.py:13
+#: telegram_bot/services/files.py:16
 #, python-brace-format
 msgid ""
 "New file uploaded:\n"
-"<b>File type</b>: {content_type}\n"
-"<b>Title</b>: {title}\n"
-"<b>File ID</b>: {file_id}\n"
-"<b>Thumbnail ID</b>: {thumbnail_id}\n"
+"<b>File type</b>: <code>{content_type}</code>\n"
+"<b>Title</b>: <code>{title}</code>\n"
+"<b>File ID</b>: <code>{file_id}</code>\n"
+"<b>Thumbnail ID</b>: <code>{thumbnail_id}</code>\n"
 "<b>Uploaded by</b>: <a href=\"tg://user?id={uploaded_by_id}\">{uploaded_by}</"
 "a>\n"
+"\n"
+"<b>Raw Data</b>:\n"
+"{raw_data}"
 msgstr ""
 "Новый файл загружен:\n"
 "<b>Тип файла</b>: {content_type}\n"
@@ -302,10 +322,52 @@ msgstr ""
 "<b>Айди превью</b>: {thumbnail_id}\n"
 "<b>Загружено пользователем</b>: <a href=\"tg://user?"
 "id={uploaded_by_id}\">{uploaded_by}</a>\n"
+"\n"
+"<b>Сырые данные</b>:\n"
+"{raw_data}"
 
-#: telegram_bot/services/files.py:69
+#: telegram_bot/services/files.py:78 telegram_bot/services/files.py:128
 msgid "Unknown content type"
 msgstr "Неизвестный тип контента"
+
+#: telegram_bot/services/text_recognation.py:21
+msgid "Notes"
+msgstr "Заметки"
+
+#: telegram_bot/services/text_recognation.py:22
+msgid "Workout"
+msgstr "Тренировка"
+
+#: telegram_bot/services/text_recognation.py:23
+msgid "Meals"
+msgstr "Приемы пищи"
+
+#: telegram_bot/services/text_recognation.py:24
+msgid "Expenses"
+msgstr "Расходы"
+
+#: telegram_bot/services/text_recognation.py:25
+msgid "Tasks"
+msgstr "Задачи"
+
+#: telegram_bot/services/text_recognation.py:26
+msgid "Reminders"
+msgstr "Напоминания"
+
+#: telegram_bot/services/text_recognation.py:27
+msgid "Reading"
+msgstr "Чтение"
+
+#: telegram_bot/tasks.py:165
+#, python-brace-format
+msgid ""
+"Message: {text}\n"
+"\n"
+"Choose the category:"
+msgstr ""
+"Сообщение: {text}\n"
+"\n"
+"Выберите категорию:"
 
 #: users/admin.py:77
 msgid "Permissions"
@@ -323,11 +385,11 @@ msgstr "Пользователи"
 msgid "User"
 msgstr "Пользователь"
 
-#: users/models.py:27
+#: users/models.py:35
 msgid "Active"
 msgstr "Активный"
 
-#: users/models.py:30
+#: users/models.py:38
 msgid ""
 "Designates whether this user should be treated as active. Unselect this "
 "instead of deleting accounts."
@@ -335,31 +397,31 @@ msgstr ""
 "Определяет, должен ли этот пользователь считаться активным. Снимите этот "
 "флажок вместо удаления учетных записей."
 
-#: users/models.py:35
+#: users/models.py:43
 msgid "First Name"
 msgstr "Имя"
 
-#: users/models.py:43
+#: users/models.py:51
 msgid "Last Name"
 msgstr "Фамилия"
 
-#: users/models.py:53
+#: users/models.py:61
 msgid "Telegram ID"
 msgstr "Айди Телеграма"
 
-#: users/models.py:61
+#: users/models.py:69
 msgid "Telegram Username"
 msgstr "Ник Телеграма"
 
-#: users/models.py:67
+#: users/models.py:75
 msgid "Telegram Is Active"
 msgstr "Активен в Телеграме"
 
-#: users/models.py:71
+#: users/models.py:79
 msgid "Telegram Last Activity At"
 msgstr "Последняя активность в Телеграме"
 
-#: users/models.py:77
+#: users/models.py:85
 msgid "Language Code"
 msgstr "Код языка"
 

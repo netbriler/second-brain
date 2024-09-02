@@ -2,6 +2,7 @@ from pathlib import Path
 from time import time
 
 from django.utils.translation import activate
+from django.utils.translation import gettext as _
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, ReactionTypeEmoji
 
 from app import settings
@@ -13,6 +14,7 @@ from utils.logging import logger
 
 from .loader import get_sync_bot
 from .services.text_recognation import (
+    Categories,
     determine_category_and_format_text,
     free_speech_to_text,
     transcribe_using_genai,
@@ -65,6 +67,8 @@ def transcribe_openai_task(chat_id: int, file_id: int, destination: str, message
         ],
     )
 
+    determine_category_task.delay(chat_id, file.uploaded_by.id, transcription_openai, message_id)
+
 
 @app.task(base=LoggingTask)
 def transcribe_free_task(chat_id: int, file_id: int, destination: str, message_id: int = None):
@@ -73,7 +77,7 @@ def transcribe_free_task(chat_id: int, file_id: int, destination: str, message_i
     file = File.objects.get(id=file_id)
 
     time_start = time()
-    transcription_free = free_speech_to_text(destination, 'ru-RU')
+    transcription_free = free_speech_to_text(Path(destination), 'ru-RU')
     bot.send_message(
         chat_id,
         f'Free:\n\n{transcription_free}\n\nTook {time() - time_start:.6f}s',
@@ -115,9 +119,7 @@ def transcribe_file_task(chat_id: int, file_id: int, user_id: int, message_id: i
     with Path.open(destination, 'wb') as new_file:
         new_file.write(downloaded_file)
 
-    transcribe_genai_task.delay(chat_id, db_file.id, str(destination), message_id)
     transcribe_openai_task.delay(chat_id, db_file.id, str(destination), message_id)
-    transcribe_free_task.delay(chat_id, db_file.id, str(destination), message_id)
 
 
 @app.task(base=LoggingTask)
@@ -157,11 +159,12 @@ def determine_category_task(chat_id: int, user_id: int, message: str, message_id
 
     markup = InlineKeyboardMarkup()
     for category in result.category_predictions:
-        markup.add(InlineKeyboardButton(category, callback_data=f'category_{category}'))
+        text = Categories[category].label
+        markup.add(InlineKeyboardButton(text, callback_data=f'category_{category}'))
 
     bot.send_message(
         chat_id,
-        f'Message: {result.text}\n\nChoose the category:',
+        _('Message: {text}\n\nChoose the category:').format(text=result.text),
         reply_to_message_id=message_id,
         reply_markup=markup,
     )
