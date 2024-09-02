@@ -23,14 +23,9 @@ class Migration(migrations.Migration):
                     'category',
                     models.CharField(
                         choices=[
-                            ('notes', 'Notes'),
-                            ('workout', 'Workout'),
-                            ('meals', 'Meals'),
-                            ('expenses', 'Expenses'),
-                            ('tasks', 'Tasks'),
-                            ('reminders', 'Reminders'),
-                            ('reading', 'Reading'),
-                            ('courses', 'Courses'),
+                            ('voice_recognition', 'Voice Recognition'),
+                            ('text_recognition', 'Text Recognition'),
+                            ('task_recognition', 'Task Recognition'),
                         ],
                         max_length=50,
                         verbose_name='Category',

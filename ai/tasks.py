@@ -4,7 +4,8 @@ from django.utils.translation import activate
 from django.utils.translation import gettext as _
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, ReactionTypeEmoji
 
-from ai.constants import AIMessageCategories
+from ai.constants import AITasksCategories
+from ai.services.base import save_ai_response
 from ai.services.text_recognation import (
     determine_category_and_format_text,
     google_translate_speech_to_text,
@@ -57,6 +58,8 @@ def transcribe_genai_task(chat_id: int, file_id: int, destination: str, message_
 
     determine_category_task.delay(chat_id, file.uploaded_by.id, transcription_genai.text_recognition, message_id)
 
+    save_ai_response(transcription_genai, source=file, requested_by=file.uploaded_by)
+
     return True
 
 
@@ -96,6 +99,8 @@ def transcribe_openai_task(chat_id: int, file_id: int, destination: str, message
     )
 
     determine_category_task.delay(chat_id, file.uploaded_by.id, transcription_openai.text_recognition, message_id)
+
+    save_ai_response(transcription_openai, source=file, requested_by=file.uploaded_by)
 
     return True
 
@@ -149,6 +154,8 @@ def transcribe_google_translate_task(
         transcription_google_translate.text_recognition,
         message_id,
     )
+
+    save_ai_response(transcription_google_translate, source=file, requested_by=file.uploaded_by)
 
     return True
 
@@ -231,7 +238,6 @@ def determine_category_task(chat_id: int, user_id: int, message: str, message_id
     activate(user.language_code)
 
     result = determine_category_and_format_text(message)
-
     if result.error_message:
         bot.send_message(
             chat_id,
@@ -242,7 +248,7 @@ def determine_category_task(chat_id: int, user_id: int, message: str, message_id
 
     markup = InlineKeyboardMarkup()
     for category in result.text_recognition.category_predictions:
-        text = str(AIMessageCategories[category].label)
+        text = str(AITasksCategories[category].label)
         markup.add(InlineKeyboardButton(text, callback_data=f'category_{category}'))
 
     bot.send_message(
@@ -251,5 +257,7 @@ def determine_category_task(chat_id: int, user_id: int, message: str, message_id
         reply_to_message_id=message_id,
         reply_markup=markup,
     )
+
+    save_ai_response(result, requested_by=user)
 
     return True

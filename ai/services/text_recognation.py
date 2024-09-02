@@ -7,38 +7,23 @@ import speech_recognition as sr
 from google.ai.generativelanguage_v1beta import Schema, Type
 from loguru import logger
 from openai import OpenAI
-from pydantic import BaseModel
 from pydub import AudioSegment
 
-from ai.constants import AIMessageCategories
+from ai.constants import AIMessageCategories, AITasksCategories
+from ai.services.base import (
+    TextRecognition,
+    TextRecognitionResponse,
+    VoiceRecognitionResponse,
+)
 from app import settings
 
 genai.configure(api_key=random.choice(settings.GOOGLE_GEMINI_API_KEYS))
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 
-class AIResponse(BaseModel):
-    text: str | None = None
-    prompt: str | None = None
-    response: str | None = None
-    category: str | None = None
-    time_spent: float | None = None
-    error_message: str | None = None
-    is_successful: bool = True
-
-
-class TextRecognition(BaseModel):
-    text: str | None = None
-    category_predictions: list[str] | None = None
-
-
-class TextRecognitionResponse(AIResponse):
-    text_recognition: TextRecognition | None = None
-
-
 def determine_category_and_format_text(message: str, category_enum: list[str] = None) -> TextRecognitionResponse:
     if category_enum is None:
-        category_enum = list(AIMessageCategories.__members__.keys())
+        category_enum = list(AITasksCategories.__members__.keys())
 
     logger.debug(f'Sending message to genai: {message}')
 
@@ -88,7 +73,7 @@ def determine_category_and_format_text(message: str, category_enum: list[str] = 
         prompt=prompt,
         response=result,
         text=message,
-        category='text_recognition',
+        category=AIMessageCategories.TEXT_RECOGNITION.value[0],
         time_spent=time_spent,
         error_message=error_message,
         is_successful=not error_message,
@@ -98,10 +83,6 @@ def determine_category_and_format_text(message: str, category_enum: list[str] = 
         response.text_recognition = TextRecognition.model_validate_json(result)
 
     return response
-
-
-class VoiceRecognitionResponse(AIResponse):
-    text_recognition: str | None = None
 
 
 def transcribe_using_openai(file_path: Path) -> VoiceRecognitionResponse:
@@ -130,7 +111,7 @@ def transcribe_using_openai(file_path: Path) -> VoiceRecognitionResponse:
         prompt='Voice recognition using OpenAI',
         response=result,
         text=str(file_path),
-        category='voice_recognition',
+        category=AIMessageCategories.VOICE_RECOGNITION.value[0],
         time_spent=time_spent,
         error_message=error_message,
         is_successful=not error_message,
@@ -177,7 +158,7 @@ def transcribe_using_genai(file_path: Path, mime_type: str = None) -> VoiceRecog
         prompt=prompt,
         response=result,
         text=str(file_path),
-        category='voice_recognition',
+        category=AIMessageCategories.VOICE_RECOGNITION.value[0],
         time_spent=time_spent,
         error_message=error_message,
         is_successful=not error_message,
@@ -224,7 +205,7 @@ def google_translate_speech_to_text(path: Path, language: str) -> VoiceRecogniti
         prompt='Voice recognition using Google Speech Recognition',
         response=result,
         text=str(file_path) + f' (language: {language})',
-        category='voice_recognition',
+        category=AIMessageCategories.VOICE_RECOGNITION.value[0],
         time_spent=time_spent,
         error_message=error_message,
         is_successful=not error_message,

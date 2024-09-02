@@ -1,3 +1,4 @@
+from admin_auto_filters.filters import AutocompleteFilterFactory
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from djangoql.admin import DjangoQLSearchMixin
@@ -35,14 +36,11 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     )
 
     list_filter = (
-        'id',
         'content_type',
-        'title',
-        'file_id',
-        'thumbnail_id',
         'created_at',
         'updated_at',
         'uploaded_by',
+        AutocompleteFilterFactory('Uploaded By', 'uploaded_by'),
     )
 
     readonly_fields = (

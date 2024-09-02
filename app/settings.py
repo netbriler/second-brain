@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'livereload',
     'django.contrib.staticfiles',
     'corsheaders',
+    'admin_auto_filters',
     'debug_toolbar',
     'django_celery_beat',
     'djangoql',
