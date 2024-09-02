@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-02 10:59+0700\n"
+"POT-Creation-Date: 2024-09-02 14:35+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,15 +19,109 @@ msgstr ""
 "n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
 "(n%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: courses/admin.py:48 courses/admin.py:101 courses/admin.py:149
+#: ai/admin.py:63 courses/admin.py:48 courses/admin.py:101 courses/admin.py:149
 #: telegram_bot/admin.py:61 users/admin.py:65
 msgid "General"
 msgstr "Общее"
 
-#: courses/apps.py:9 courses/inlines.py:21 courses/models.py:8
-#: telegram_bot/services/text_recognation.py:28
+#: ai/apps.py:9
+msgid "AI"
+msgstr "Искусственный интеллект"
+
+#: ai/constants.py:7
+msgid "Notes"
+msgstr "Заметки"
+
+#: ai/constants.py:8
+msgid "Workout"
+msgstr "Тренировка"
+
+#: ai/constants.py:9
+msgid "Meals"
+msgstr "Приемы пищи"
+
+#: ai/constants.py:10
+msgid "Expenses"
+msgstr "Расходы"
+
+#: ai/constants.py:11
+msgid "Tasks"
+msgstr "Задачи"
+
+#: ai/constants.py:12
+msgid "Reminders"
+msgstr "Напоминания"
+
+#: ai/constants.py:13
+msgid "Reading"
+msgstr "Чтение"
+
+#: ai/constants.py:14 courses/apps.py:9 courses/inlines.py:21
+#: courses/models.py:8
 msgid "Courses"
 msgstr "Курсы"
+
+#: ai/models.py:11
+msgid "Text"
+msgstr "Текст"
+
+#: ai/models.py:15
+msgid "Prompt"
+msgstr "Запрос"
+
+#: ai/models.py:21
+msgid "Response"
+msgstr "Ответ"
+
+#: ai/models.py:29
+msgid "Category"
+msgstr "Категория"
+
+#: ai/models.py:35
+msgid "Time Spent"
+msgstr "Потраченное время"
+
+#: ai/models.py:46
+#| msgid "Content Type"
+msgid "Source Type"
+msgstr "Тип контента"
+
+#: ai/models.py:52
+msgid "Source ID"
+msgstr "Айди источника"
+
+#: ai/models.py:63
+msgid "Requested By"
+msgstr "Запрошено кем"
+
+#: ai/models.py:68 courses/models.py:23 courses/models.py:68
+#: courses/models.py:107 telegram_bot/models.py:45
+msgid "Created At"
+msgstr "Создано в"
+
+#: ai/models.py:73 courses/models.py:28 courses/models.py:73
+#: courses/models.py:112 telegram_bot/models.py:50
+msgid "Updated At"
+msgstr "Обновлено в"
+
+#: ai/models.py:77
+msgid "Message"
+msgstr "Сообщение"
+
+#: ai/models.py:78
+msgid "Messages"
+msgstr "Сообщения"
+
+#: ai/tasks.py:250
+#, python-brace-format
+msgid ""
+"Message: {text}\n"
+"\n"
+"Choose the category:"
+msgstr ""
+"Сообщение: {text}\n"
+"\n"
+"Выберите категорию:"
 
 #: courses/inlines.py:20 courses/models.py:7
 msgid "Course"
@@ -58,16 +152,6 @@ msgstr "Название"
 #: courses/models.py:18 courses/models.py:54
 msgid "Description"
 msgstr "Описание"
-
-#: courses/models.py:23 courses/models.py:68 courses/models.py:107
-#: telegram_bot/models.py:45
-msgid "Created At"
-msgstr "Создано в"
-
-#: courses/models.py:28 courses/models.py:73 courses/models.py:112
-#: telegram_bot/models.py:50
-msgid "Updated At"
-msgstr "Обновлено в"
 
 #: courses/models.py:63
 msgid "Parent Group"
@@ -162,7 +246,7 @@ msgstr "изменить язык"
 msgid "open bot settings"
 msgstr "открыть настройки бота"
 
-#: telegram_bot/handlers/admin/files.py:28
+#: telegram_bot/handlers/admin/files.py:30
 msgid ""
 "Usage:\n"
 "/file [file_id]"
@@ -170,9 +254,13 @@ msgstr ""
 "Использование:\n"
 "/file [айди файла]"
 
-#: telegram_bot/handlers/admin/files.py:33
+#: telegram_bot/handlers/admin/files.py:35
 msgid "file not found"
 msgstr "файл не найден"
+
+#: telegram_bot/handlers/admin/files.py:55
+msgid "Send me a something to upload"
+msgstr ""
 
 #: telegram_bot/handlers/admin/users.py:61
 #: telegram_bot/handlers/admin/users.py:74
@@ -227,13 +315,15 @@ msgstr ""
 msgid "Something went wrong."
 msgstr "Что-то пошло не так."
 
-#: telegram_bot/handlers/users/helpers.py:37
-msgid "Unknown action"
-msgstr "Неизвестное действие"
-
-#: telegram_bot/handlers/users/helpers.py:38
+#: telegram_bot/handlers/users/helpers.py:23
+#: telegram_bot/handlers/users/helpers.py:58
+#: telegram_bot/handlers/users/helpers.py:64
 msgid "Choose an action from the menu 👇"
 msgstr "Выберите действие из меню 👇"
+
+#: telegram_bot/handlers/users/helpers.py:63
+msgid "Unknown action"
+msgstr "Неизвестное действие"
 
 #: telegram_bot/handlers/users/settings.py:35
 msgid ""
@@ -256,6 +346,10 @@ msgstr ""
 "Привет {full_name}!\n"
 "Выберите язык"
 
+#: telegram_bot/keyboards/default/cancel.py:8
+msgid "Cancel ❌"
+msgstr "Отмена ❌"
+
 #: telegram_bot/keyboards/default/default.py:9
 #: telegram_bot/services/messages.py:14
 msgid "Help 🆘"
@@ -266,14 +360,18 @@ msgid "Settings 🛠"
 msgstr "Настройки 🛠"
 
 #: telegram_bot/keyboards/default/default.py:13
+msgid "Upload file 📁"
+msgstr "Загрузить файл 📁"
+
+#: telegram_bot/keyboards/default/default.py:14
 msgid "Export users 📁"
 msgstr "Экспортировать пользователей 📁"
 
-#: telegram_bot/keyboards/default/default.py:14
+#: telegram_bot/keyboards/default/default.py:15
 msgid "Count users 👥"
 msgstr "Посчитать пользователей 👥"
 
-#: telegram_bot/keyboards/default/default.py:15
+#: telegram_bot/keyboards/default/default.py:16
 msgid "Count active users 👥"
 msgstr "Посчитать активных пользователей 👥"
 
@@ -301,7 +399,7 @@ msgstr "Сырые данные"
 msgid "Uploaded By"
 msgstr "Загружено пользователем"
 
-#: telegram_bot/services/files.py:16
+#: telegram_bot/services/files.py:21
 #, python-brace-format
 msgid ""
 "New file uploaded:\n"
@@ -326,48 +424,9 @@ msgstr ""
 "<b>Сырые данные</b>:\n"
 "{raw_data}"
 
-#: telegram_bot/services/files.py:78 telegram_bot/services/files.py:128
+#: telegram_bot/services/files.py:83 telegram_bot/services/files.py:133
 msgid "Unknown content type"
 msgstr "Неизвестный тип контента"
-
-#: telegram_bot/services/text_recognation.py:21
-msgid "Notes"
-msgstr "Заметки"
-
-#: telegram_bot/services/text_recognation.py:22
-msgid "Workout"
-msgstr "Тренировка"
-
-#: telegram_bot/services/text_recognation.py:23
-msgid "Meals"
-msgstr "Приемы пищи"
-
-#: telegram_bot/services/text_recognation.py:24
-msgid "Expenses"
-msgstr "Расходы"
-
-#: telegram_bot/services/text_recognation.py:25
-msgid "Tasks"
-msgstr "Задачи"
-
-#: telegram_bot/services/text_recognation.py:26
-msgid "Reminders"
-msgstr "Напоминания"
-
-#: telegram_bot/services/text_recognation.py:27
-msgid "Reading"
-msgstr "Чтение"
-
-#: telegram_bot/tasks.py:165
-#, python-brace-format
-msgid ""
-"Message: {text}\n"
-"\n"
-"Choose the category:"
-msgstr ""
-"Сообщение: {text}\n"
-"\n"
-"Выберите категорию:"
 
 #: users/admin.py:77
 msgid "Permissions"
@@ -432,6 +491,3 @@ msgid ""
 msgstr ""
 "Введите действительное имя пользователя. Это значение может содержать только "
 "буквы, цифры и символы ./-/_."
-
-#~ msgid "Name"
-#~ msgstr "Название"

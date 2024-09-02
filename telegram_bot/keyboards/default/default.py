@@ -10,6 +10,7 @@ def get_default_markup(user):
     builder.button(text=_('Settings 🛠'))
 
     if user.is_superuser:
+        builder.button(text=_('Upload file 📁'))
         builder.button(text=_('Export users 📁'))
         builder.button(text=_('Count users 👥'))
         builder.button(text=_('Count active users 👥'))

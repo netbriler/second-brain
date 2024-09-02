@@ -2,9 +2,10 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from djangoql.admin import DjangoQLSearchMixin
 
+from ai.tasks import send_file_to_user_task, transcribe_file_task
+
 from . import models
 from .constants import FileContentType
-from .tasks import send_file_to_user_task, transcribe_file_task
 
 
 @admin.register(models.File)

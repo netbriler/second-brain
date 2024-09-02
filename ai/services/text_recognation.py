@@ -197,7 +197,7 @@ def google_translate_speech_to_text(path: Path, language: str) -> VoiceRecogniti
     try:
         if file_path.suffix == '.wav':
             wav_file = str(file_path)
-        elif file_path.suffix in ('.mp3', '.m4a', '.ogg', '.flac'):
+        elif file_path.suffix in ('.mp3', '.m4a', '.ogg', '.flac', '.oga'):
             audio_file = AudioSegment.from_file(
                 file_path,
                 format=file_path.suffix[1:],

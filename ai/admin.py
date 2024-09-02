@@ -1,3 +1,4 @@
+from admin_auto_filters.filters import AutocompleteFilterFactory
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from djangoql.admin import DjangoQLSearchMixin
@@ -15,6 +16,7 @@ class MessageAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         'category',
         'time_spent',
         'source',
+        'requested_by',
         'created_at',
         'updated_at',
     )
@@ -27,6 +29,7 @@ class MessageAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         'category',
         'time_spent',
         'source',
+        'requested_by',
         'created_at',
         'updated_at',
     )
@@ -38,6 +41,7 @@ class MessageAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         'source_id',
         'created_at',
         'updated_at',
+        AutocompleteFilterFactory('Requested By', 'requested_by'),
     )
 
     readonly_fields = (
@@ -48,6 +52,7 @@ class MessageAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         'category',
         'time_spent',
         'source',
+        'requested_by',
         'created_at',
         'updated_at',
     )
@@ -64,6 +69,7 @@ class MessageAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
                     'category',
                     'time_spent',
                     'source',
+                    'requested_by',
                     'created_at',
                     'updated_at',
                 ],

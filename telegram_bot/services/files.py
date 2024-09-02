@@ -1,10 +1,15 @@
+import json
+from typing import NoReturn
+
 from aiogram import Bot
 from aiogram.enums import ContentType
+from aiogram.types import Message
 from django.utils.translation import gettext as _
 from telebot import TeleBot
 
 from telegram_bot.models import File
 from users.models import User
+from utils.logging import logger
 
 
 def generate_file_text(file: File) -> str:
@@ -130,3 +135,54 @@ def sync_send_file_to_user(bot: TeleBot, file: File, user: User) -> tuple[int, i
     message2 = bot.send_message(user.telegram_id, text, reply_to_message_id=message.message_id)
 
     return message.message_id, message2.message_id
+
+
+async def save_file(message: Message, user: User) -> NoReturn:
+    logger.debug(f'User {user} uploaded file {message.content_type}')
+    raw_json = None
+    if message.content_type == ContentType.AUDIO:
+        raw_json = message.audio.model_dump_json()
+    elif message.content_type == ContentType.DOCUMENT:
+        raw_json = message.document.model_dump_json()
+    elif message.content_type == ContentType.PHOTO:
+        raw_json = message.photo[-1].model_dump_json()
+    elif message.content_type == ContentType.STICKER:
+        raw_json = message.sticker.model_dump_json()
+    elif message.content_type == ContentType.VIDEO:
+        raw_json = message.video.model_dump_json()
+    elif message.content_type == ContentType.VIDEO_NOTE:
+        raw_json = message.video_note.model_dump_json()
+    elif message.content_type == ContentType.VOICE:
+        raw_json = message.voice.model_dump_json()
+
+    data = json.loads(raw_json)
+    file_id = data.get('file_id', None)
+    if not file_id:
+        return NoReturn
+
+    if title := data.get('title', data.get('file_name', None)):
+        title = title.encode('utf-16', 'surrogatepass').decode('utf-16')
+
+    thumbnail_id = None
+    if thumbnail := data.get('thumbnail', data.get('thumb', None)):
+        thumbnail_id = thumbnail.get('file_id', None)
+
+    file, created = await File.objects.aupdate_or_create(
+        content_type=message.content_type,
+        file_id=file_id,
+        defaults={
+            'title': title,
+            'thumbnail_id': thumbnail_id,
+            'raw_data': data,
+        },
+    )
+
+    if created:
+        file.uploaded_by = user
+        await file.asave(
+            update_fields=[
+                'uploaded_by',
+            ],
+        )
+
+    return file

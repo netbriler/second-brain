@@ -54,6 +54,15 @@ class Message(models.Model):
 
     source = GenericForeignKey('source_type', 'source_id')
 
+    requested_by = models.ForeignKey(
+        'users.User',
+        related_name='ai_messages',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name=_('Requested By'),
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name=_('Created At'),

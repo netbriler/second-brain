@@ -13,12 +13,11 @@ from ai.services.text_recognation import (
 )
 from app import settings
 from app.celery import LoggingTask, app
+from telegram_bot.loader import get_sync_bot
 from telegram_bot.models import File
 from telegram_bot.services.files import sync_send_file_to_user
 from users.models import User
 from utils.logging import logger
-
-from .loader import get_sync_bot
 
 
 @app.task(
@@ -27,7 +26,7 @@ from .loader import get_sync_bot
     retry_kwargs={'max_retries': 3},
     retry_backoff=True,
 )
-def transcribe_genai_task(chat_id: int, file_id: int, destination: str, message_id: int = None):
+def transcribe_genai_task(chat_id: int, file_id: int, destination: str, message_id: int = None, debug: bool = False):
     bot = get_sync_bot()
 
     file = File.objects.get(id=file_id)
@@ -41,11 +40,12 @@ def transcribe_genai_task(chat_id: int, file_id: int, destination: str, message_
         )
         raise Exception('Error transcribing using Genai')
 
-    bot.send_message(
-        chat_id,
-        f'GenaI:\n\n{transcription_genai.text_recognition}\n\nTook {transcription_genai.time_spent:.6f}s',
-        reply_to_message_id=message_id,
-    )
+    if debug:
+        bot.send_message(
+            chat_id,
+            f'GenaI:\n\n{transcription_genai.text_recognition}\n\nTook {transcription_genai.time_spent:.6f}s',
+            reply_to_message_id=message_id,
+        )
 
     file.refresh_from_db()
     file.raw_data['transcription_genai'] = transcription_genai.text_recognition
@@ -66,7 +66,7 @@ def transcribe_genai_task(chat_id: int, file_id: int, destination: str, message_
     retry_kwargs={'max_retries': 3},
     retry_backoff=True,
 )
-def transcribe_openai_task(chat_id: int, file_id: int, destination: str, message_id: int = None):
+def transcribe_openai_task(chat_id: int, file_id: int, destination: str, message_id: int = None, debug: bool = False):
     bot = get_sync_bot()
 
     file = File.objects.get(id=file_id)
@@ -79,11 +79,13 @@ def transcribe_openai_task(chat_id: int, file_id: int, destination: str, message
             reply_to_message_id=message_id,
         )
         raise Exception('Error transcribing using OpenAI')
-    bot.send_message(
-        chat_id,
-        f'Openai:\n\n{transcription_openai.text_recognition}\n\nTook {transcription_openai.time_spent:.6f}s',
-        reply_to_message_id=message_id,
-    )
+
+    if debug:
+        bot.send_message(
+            chat_id,
+            f'Openai:\n\n{transcription_openai.text_recognition}\n\nTook {transcription_openai.time_spent:.6f}s',
+            reply_to_message_id=message_id,
+        )
 
     file.refresh_from_db()
     file.raw_data['transcription_openai'] = transcription_openai.text_recognition
@@ -104,7 +106,13 @@ def transcribe_openai_task(chat_id: int, file_id: int, destination: str, message
     retry_kwargs={'max_retries': 3},
     retry_backoff=True,
 )
-def transcribe_google_translate_task(chat_id: int, file_id: int, destination: str, message_id: int = None):
+def transcribe_google_translate_task(
+    chat_id: int,
+    file_id: int,
+    destination: str,
+    message_id: int = None,
+    debug: bool = False,
+):
     bot = get_sync_bot()
 
     file = File.objects.get(id=file_id)
@@ -118,12 +126,14 @@ def transcribe_google_translate_task(chat_id: int, file_id: int, destination: st
             reply_to_message_id=message_id,
         )
         raise Exception('Error transcribing using Google Translate')
-    bot.send_message(
-        chat_id,
-        f'google_translate:\n\n{transcription_google_translate.text_recognition}'
-        f'\n\nTook {transcription_google_translate.time_spent:.6f}s',
-        reply_to_message_id=message_id,
-    )
+
+    if debug:
+        bot.send_message(
+            chat_id,
+            f'google_translate:\n\n{transcription_google_translate.text_recognition}'
+            f'\n\nTook {transcription_google_translate.time_spent:.6f}s',
+            reply_to_message_id=message_id,
+        )
 
     file.refresh_from_db()
     file.raw_data['transcription_google_translate'] = transcription_google_translate.text_recognition
@@ -166,17 +176,24 @@ def transcribe_file_task(chat_id: int, file_id: int, user_id: int, message_id: i
     # Download the file
     file = bot.get_file(db_file.file_id)
     file_path = file.file_path
+    file_extension = file_path.split('.')[-1]
 
     logger.debug(f'Downloading file {file_path}')
-    bot.send_chat_action(chat_id, 'record_voice')
-    destination = settings.BASE_DIR / f'temp/{file.file_id}.ogg'
-    downloaded_file = bot.download_file(file_path)
-    with Path.open(destination, 'wb') as new_file:
-        new_file.write(downloaded_file)
 
-    transcribe_genai_task.delay(chat_id, db_file.id, str(destination), message_id)
+    bot.send_chat_action(chat_id, 'record_voice')
+    destination = settings.BASE_DIR / f'temp/{file.file_unique_id}.{file_extension}'
+    if not Path.exists(destination.parent):
+        Path.mkdir(destination.parent, parents=True)
+
+    # if file is not downloaded, download it
+    if not Path.exists(destination):
+        downloaded_file = bot.download_file(file_path)
+        with Path.open(destination, 'wb') as new_file:
+            new_file.write(downloaded_file)
+
+    # transcribe_genai_task.delay(chat_id, db_file.id, str(destination), message_id)
     transcribe_openai_task.delay(chat_id, db_file.id, str(destination), message_id)
-    transcribe_google_translate_task.delay(chat_id, db_file.id, str(destination), message_id)
+    # transcribe_google_translate_task.delay(chat_id, db_file.id, str(destination), message_id)
 
     return True
 

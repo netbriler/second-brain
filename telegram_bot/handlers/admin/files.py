@@ -1,19 +1,20 @@
-import json
 import re
 from typing import NoReturn
 
 from aiogram import Bot, F, Router
 from aiogram.enums import ContentType
-from aiogram.filters import Command, CommandObject
+from aiogram.filters import Command, CommandObject, or_f
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message
 from django.utils.translation import gettext as _
 
 from telegram_bot.filters.admin import IsAdmin
+from telegram_bot.filters.i18n_text import I18nText
+from telegram_bot.keyboards.default.cancel import get_cancel_markup
 from telegram_bot.models import File
-from telegram_bot.services.files import send_file_to_user
-from telegram_bot.tasks import transcribe_file_task
+from telegram_bot.services.files import save_file, send_file_to_user
 from users.models import User
-from utils.logging import logger
 
 router = Router(name=__name__)
 
@@ -36,8 +37,26 @@ async def _file(message: Message, bot: Bot, command: CommandObject, user: User) 
     await send_file_to_user(bot, file, user)
 
 
+class FilesAddForm(StatesGroup):
+    add_file = State()
+
+
 @router.message(
     IsAdmin(),
+    or_f(
+        I18nText('Upload file 📁'),
+        Command(commands=['upload_files']),
+    ),
+)
+async def _upload_files(message: Message, state: FSMContext) -> NoReturn:
+    await state.set_state(FilesAddForm.add_file)
+
+    await message.answer(_('Send me a something to upload'), reply_markup=get_cancel_markup())
+
+
+@router.message(
+    IsAdmin(),
+    FilesAddForm.add_file,
     F.content_type.in_(
         {
             ContentType.AUDIO,
@@ -51,59 +70,9 @@ async def _file(message: Message, bot: Bot, command: CommandObject, user: User) 
     ),
 )
 async def _upload_file(message: Message, user: User, bot: Bot) -> NoReturn:
-    logger.debug(f'User {user} uploaded file {message.content_type}')
-    raw_json = None
-    if message.content_type == ContentType.AUDIO:
-        raw_json = message.audio.model_dump_json()
-    elif message.content_type == ContentType.DOCUMENT:
-        raw_json = message.document.model_dump_json()
-    elif message.content_type == ContentType.PHOTO:
-        raw_json = message.photo[-1].model_dump_json()
-    elif message.content_type == ContentType.STICKER:
-        raw_json = message.sticker.model_dump_json()
-    elif message.content_type == ContentType.VIDEO:
-        raw_json = message.video.model_dump_json()
-    elif message.content_type == ContentType.VIDEO_NOTE:
-        raw_json = message.video_note.model_dump_json()
-    elif message.content_type == ContentType.VOICE:
-        raw_json = message.voice.model_dump_json()
-
-    data = json.loads(raw_json)
-    file_id = data.get('file_id', None)
-    if not file_id:
-        return NoReturn
-
-    if title := data.get('title', data.get('file_name', None)):
-        title = title.encode('utf-16', 'surrogatepass').decode('utf-16')
-
-    thumbnail_id = None
-    if thumbnail := data.get('thumbnail', data.get('thumb', None)):
-        thumbnail_id = thumbnail.get('file_id', None)
-
-    file, created = await File.objects.aupdate_or_create(
-        content_type=message.content_type,
-        file_id=file_id,
-        defaults={
-            'title': title,
-            'thumbnail_id': thumbnail_id,
-            'raw_data': data,
-        },
+    file = await save_file(
+        message=message,
+        user=user,
     )
 
-    if created:
-        file.uploaded_by = user
-        await file.asave(
-            update_fields=[
-                'uploaded_by',
-            ],
-        )
-
     await send_file_to_user(bot, file, user)
-
-    if message.content_type == ContentType.VOICE and message.voice:
-        transcribe_file_task.delay(
-            chat_id=message.chat.id,
-            message_id=message.message_id,
-            file_id=file.id,
-            user_id=user.id,
-        )
