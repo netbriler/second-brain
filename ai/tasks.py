@@ -32,7 +32,7 @@ def transcribe_genai_task(chat_id: int, file_id: int, destination: str, message_
 
     file = File.objects.get(id=file_id)
 
-    transcription_genai = transcribe_using_genai(Path(destination), mime_type=file.raw_data.get('mime_type', None))
+    transcription_genai = transcribe_using_genai(Path(destination), mime_type=file.mime_type)
     if transcription_genai.error_message:
         bot.send_message(
             chat_id,

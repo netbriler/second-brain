@@ -15,23 +15,23 @@ class File(models.Model):
         verbose_name=_('Content Type'),
     )
 
-    title = models.CharField(
-        max_length=200,
-        blank=True,
-        null=True,
-        verbose_name=_('Title'),
-    )
-
     file_id = models.CharField(
         max_length=200,
         verbose_name=_('File ID'),
     )
 
-    thumbnail_id = models.CharField(
+    file_unique_id = models.CharField(
+        max_length=200,
+        verbose_name=_('File Unique ID'),
+        null=True,
+        blank=True,
+    )
+
+    mime_type = models.CharField(
         max_length=200,
         blank=True,
         null=True,
-        verbose_name=_('Thumbnail ID'),
+        verbose_name=_('MIME Type'),
     )
 
     raw_data = models.JSONField(
@@ -60,4 +60,4 @@ class File(models.Model):
     )
 
     def __str__(self):
-        return f'{self.get_content_type_display()} {self.title or self.file_id}'
+        return f'{self.get_content_type_display()} {self.file_id}'

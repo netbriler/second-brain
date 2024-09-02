@@ -14,9 +14,9 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = (
         'id',
         'content_type',
-        'title',
-        'file_id',
-        'thumbnail_id',
+        'short_file_id',
+        'short_file_unique_id',
+        'mime_type',
         'created_at',
         'updated_at',
         'uploaded_by',
@@ -27,9 +27,9 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     search_fields = (
         'id',
         'content_type',
-        'title',
         'file_id',
-        'thumbnail_id',
+        'file_unique_id',
+        'mime_type',
         'created_at',
         'updated_at',
         'uploaded_by',
@@ -46,9 +46,9 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     readonly_fields = (
         'id',
         'content_type',
-        'title',
         'file_id',
-        'thumbnail_id',
+        'file_unique_id',
+        'mime_type',
         'raw_data',
         'created_at',
         'updated_at',
@@ -62,9 +62,9 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
                 'fields': [
                     'id',
                     'content_type',
-                    'title',
                     'file_id',
-                    'thumbnail_id',
+                    'file_unique_id',
+                    'mime_type',
                     'raw_data',
                     'created_at',
                     'updated_at',
@@ -78,6 +78,12 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         'send_to_telegram',
         'transcribe_audio_to_text',
     ]
+
+    def short_file_id(self, obj):
+        return obj.file_id[:10] + '...' if obj.file_id else ''
+
+    def short_file_unique_id(self, obj):
+        return obj.file_unique_id[:10] + '...' if obj.file_unique_id else ''
 
     @admin.action(description=_('Send to telegram'))
     def send_to_telegram(self, request, queryset):
@@ -93,7 +99,7 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
                 self.message_user(request, _('Only audio files are supported for transcription'))
                 return
 
-            if not file.raw_data.get('mime_type', None):
+            if not file.mime_type:
                 self.message_user(request, _('File {file_id} is not an audio file').format(file_id=file.file_id))
                 continue
 

@@ -20,16 +20,12 @@ def generate_file_text(file: File) -> str:
     return _(
         'New file uploaded:\n'
         '<b>File type</b>: <code>{content_type}</code>\n'
-        '<b>Title</b>: <code>{title}</code>\n'
         '<b>File ID</b>: <code>{file_id}</code>\n'
-        '<b>Thumbnail ID</b>: <code>{thumbnail_id}</code>\n'
         '<b>Uploaded by</b>: <a href="tg://user?id={uploaded_by_id}">{uploaded_by}</a>\n'
         '\n<b>Raw Data</b>:\n{raw_data}',
     ).format(
         content_type=file.get_content_type_display(),
-        title=file.title,
         file_id=file.file_id,
-        thumbnail_id=file.thumbnail_id,
         uploaded_by=str(file.uploaded_by),
         uploaded_by_id=file.uploaded_by.telegram_id,
         raw_data=raw_data,
@@ -160,20 +156,13 @@ async def save_file(message: Message, user: User) -> NoReturn:
     if not file_id:
         return NoReturn
 
-    if title := data.get('title', data.get('file_name', None)):
-        title = title.encode('utf-16', 'surrogatepass').decode('utf-16')
-
-    thumbnail_id = None
-    if thumbnail := data.get('thumbnail', data.get('thumb', None)):
-        thumbnail_id = thumbnail.get('file_id', None)
-
     file, created = await File.objects.aupdate_or_create(
         content_type=message.content_type,
         file_id=file_id,
         defaults={
-            'title': title,
-            'thumbnail_id': thumbnail_id,
             'raw_data': data,
+            'file_unique_id': data.get('file_unique_id', None),
+            'mime_type': data.get('mime_type', None),
         },
     )
 

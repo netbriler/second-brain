@@ -55,6 +55,8 @@ class MessageAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         'updated_at',
     )
 
+    list_display_links = ('id', 'text')
+
     fieldsets = [
         (
             _('General'),
