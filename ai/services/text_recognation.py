@@ -1,35 +1,19 @@
 import random
-from enum import Enum
 from pathlib import Path
 
 import google.generativeai as genai
 import speech_recognition as sr
-from django.utils.translation import gettext_lazy as _
 from google.ai.generativelanguage_v1beta import Schema, Type
 from loguru import logger
 from openai import OpenAI
 from pydantic import BaseModel
 from pydub import AudioSegment
 
+from ai.constants import AIMessageCategories
 from app import settings
 
 genai.configure(api_key=random.choice(settings.GOOGLE_GEMINI_API_KEYS))
 model = genai.GenerativeModel('gemini-1.5-flash')
-
-
-class Categories(Enum):
-    NOTES = 'notes', _('Notes')
-    WORKOUT = 'workout', _('Workout')
-    MEALS = 'meals', _('Meals')
-    EXPENSES = 'expenses', _('Expenses')
-    TASKS = 'tasks', _('Tasks')
-    REMINDERS = 'reminders', _('Reminders')
-    READING = 'reading', _('Reading')
-    COURSES = 'courses', _('Courses')
-
-    @property
-    def label(self):
-        return self.value[1]
 
 
 class TextRecognition(BaseModel):
@@ -40,7 +24,7 @@ class TextRecognition(BaseModel):
 # noinspection PyTypeChecker
 def determine_category_and_format_text(message: str, category_enum: list[str] = None) -> TextRecognition | None:
     if category_enum is None:
-        category_enum = list(Categories.__members__.keys())
+        category_enum = list(AIMessageCategories.__members__.keys())
 
     logger.debug(f'Sending message to genai: {message}')
     result = model.generate_content(

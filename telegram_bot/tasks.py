@@ -5,6 +5,13 @@ from django.utils.translation import activate
 from django.utils.translation import gettext as _
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, ReactionTypeEmoji
 
+from ai.constants import AIMessageCategories
+from ai.services.text_recognation import (
+    determine_category_and_format_text,
+    free_speech_to_text,
+    transcribe_using_genai,
+    transcribe_using_openai,
+)
 from app import settings
 from app.celery import LoggingTask, app
 from telegram_bot.models import File
@@ -13,13 +20,6 @@ from users.models import User
 from utils.logging import logger
 
 from .loader import get_sync_bot
-from .services.text_recognation import (
-    Categories,
-    determine_category_and_format_text,
-    free_speech_to_text,
-    transcribe_using_genai,
-    transcribe_using_openai,
-)
 
 
 @app.task(base=LoggingTask)
@@ -159,7 +159,7 @@ def determine_category_task(chat_id: int, user_id: int, message: str, message_id
 
     markup = InlineKeyboardMarkup()
     for category in result.category_predictions:
-        text = Categories[category].label
+        text = str(AIMessageCategories[category].label)
         markup.add(InlineKeyboardButton(text, callback_data=f'category_{category}'))
 
     bot.send_message(
