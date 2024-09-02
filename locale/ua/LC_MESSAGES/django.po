@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-02 14:49+0700\n"
+"POT-Creation-Date: 2024-09-02 16:29+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #: ai/admin.py:62 courses/admin.py:48 courses/admin.py:101 courses/admin.py:149
-#: telegram_bot/admin.py:62 users/admin.py:65
+#: telegram_bot/admin.py:59 users/admin.py:65
 msgid "General"
 msgstr "Загальне"
 
@@ -26,34 +26,46 @@ msgid "AI"
 msgstr "Штучний інтелект"
 
 #: ai/constants.py:7
+msgid "Voice Recognition"
+msgstr "Розпізнавання голосу"
+
+#: ai/constants.py:8
+msgid "Text Recognition"
+msgstr "Розпізнавання тексту"
+
+#: ai/constants.py:9
+msgid "Task Recognition"
+msgstr "Розпізнавання завдань"
+
+#: ai/constants.py:17
 msgid "Notes"
 msgstr "Нотатки"
 
-#: ai/constants.py:8
+#: ai/constants.py:18
 msgid "Workout"
 msgstr "Тренування"
 
-#: ai/constants.py:9
+#: ai/constants.py:19
 msgid "Meals"
 msgstr "Їжа"
 
-#: ai/constants.py:10
+#: ai/constants.py:20
 msgid "Expenses"
 msgstr "Витрати"
 
-#: ai/constants.py:11
+#: ai/constants.py:21
 msgid "Tasks"
 msgstr "Завдання"
 
-#: ai/constants.py:12
+#: ai/constants.py:22
 msgid "Reminders"
 msgstr "Нагадування"
 
-#: ai/constants.py:13
+#: ai/constants.py:23
 msgid "Reading"
 msgstr "Читання"
 
-#: ai/constants.py:14 courses/apps.py:9 courses/inlines.py:21
+#: ai/constants.py:24 courses/apps.py:9 courses/inlines.py:21
 #: courses/models.py:8
 msgid "Courses"
 msgstr "Курси"
@@ -108,7 +120,7 @@ msgstr "Повідомлення"
 msgid "Messages"
 msgstr "Повідомлення"
 
-#: ai/tasks.py:250
+#: ai/tasks.py:256
 #, python-brace-format
 msgid ""
 "Message: {text}\n"
@@ -141,7 +153,6 @@ msgid "Groups"
 msgstr "Групи"
 
 #: courses/models.py:12 courses/models.py:48 courses/models.py:87
-#: telegram_bot/models.py:22
 msgid "Title"
 msgstr "Заголовок"
 
@@ -161,28 +172,37 @@ msgstr "Контент"
 msgid "File"
 msgstr "Файл"
 
-#: telegram_bot/admin.py:84
+#: telegram_bot/admin.py:85
+#| msgid "File ID"
+msgid "Short File ID"
+msgstr "Короткий айді файлу"
+
+#: telegram_bot/admin.py:90
+msgid "Short File Unique ID"
+msgstr "Короткий унікальний айді файлу"
+
+#: telegram_bot/admin.py:92
 msgid "Send to telegram"
 msgstr "Відправити в телеграм"
 
-#: telegram_bot/admin.py:89
+#: telegram_bot/admin.py:97
 msgid "Files sent to telegram"
 msgstr "Файли відправлені в телеграм"
 
-#: telegram_bot/admin.py:91
+#: telegram_bot/admin.py:99
 msgid "Transcribe audio to text"
 msgstr "Транскрибувати аудіо в текст"
 
-#: telegram_bot/admin.py:95
+#: telegram_bot/admin.py:103
 msgid "Only audio files are supported for transcription"
 msgstr "Підтримуються тільки аудіо файли для транскрипції"
 
-#: telegram_bot/admin.py:99
+#: telegram_bot/admin.py:107
 #, python-brace-format
 msgid "File {file_id} is not an audio file"
 msgstr "Файл {file_id} не є аудіо файлом"
 
-#: telegram_bot/admin.py:109
+#: telegram_bot/admin.py:117
 msgid "Files sent to transcription"
 msgstr "Файли відправлені на транскрипцію"
 
@@ -227,7 +247,6 @@ msgid "get file"
 msgstr "отримати файл"
 
 #: telegram_bot/commands/admin.py:27
-#| msgid "Upload file 📁"
 msgid "upload files"
 msgstr "завантажити файли"
 
@@ -384,13 +403,18 @@ msgstr "Файли"
 msgid "Content Type"
 msgstr "Тип контенту"
 
-#: telegram_bot/models.py:27
+#: telegram_bot/models.py:20
 msgid "File ID"
 msgstr "Айді файлу"
 
+#: telegram_bot/models.py:25
+#| msgid "File ID"
+msgid "File Unique ID"
+msgstr "Унікальний айді файлу"
+
 #: telegram_bot/models.py:34
-msgid "Thumbnail ID"
-msgstr "Айді прев'ю"
+msgid "MIME Type"
+msgstr "MIME Тип"
 
 #: telegram_bot/models.py:40
 msgid "Raw Data"
@@ -401,13 +425,10 @@ msgid "Uploaded By"
 msgstr "Завантажив користувач"
 
 #: telegram_bot/services/files.py:21
-#, python-brace-format
 msgid ""
 "New file uploaded:\n"
 "<b>File type</b>: <code>{content_type}</code>\n"
-"<b>Title</b>: <code>{title}</code>\n"
 "<b>File ID</b>: <code>{file_id}</code>\n"
-"<b>Thumbnail ID</b>: <code>{thumbnail_id}</code>\n"
 "<b>Uploaded by</b>: <a href=\"tg://user?id={uploaded_by_id}\">{uploaded_by}</"
 "a>\n"
 "\n"
@@ -416,16 +437,14 @@ msgid ""
 msgstr ""
 "Новий файл завантажено:\n"
 "<b>Тип файлу</b>: {content_type}\n"
-"<b>Заголовок</b>: {title}\n"
 "<b>Айді файлу</b>: {file_id}\n"
-"<b>Айді прев'ю</b>: {thumbnail_id}\n"
 "<b>Завантажив</b>: <a href=\"tg://user?id={uploaded_by_id}\">{uploaded_by}</"
 "a>\n"
 "\n"
 "<b>Сирі дані</b>:\n"
 "{raw_data}"
 
-#: telegram_bot/services/files.py:83 telegram_bot/services/files.py:133
+#: telegram_bot/services/files.py:74 telegram_bot/services/files.py:119
 msgid "Unknown content type"
 msgstr "Невідомий тип контенту"
 

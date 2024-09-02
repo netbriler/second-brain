@@ -39,19 +39,16 @@ async def send_file_to_user(bot: Bot, file: File, user: User) -> tuple[int, int]
         message = await bot.send_audio(
             user.telegram_id,
             file.file_id,
-            caption=file.title,
         )
     elif file.content_type == ContentType.DOCUMENT:
         message = await bot.send_document(
             user.telegram_id,
             file.file_id,
-            caption=file.title,
         )
     elif file.content_type == ContentType.PHOTO:
         message = await bot.send_photo(
             user.telegram_id,
             file.file_id,
-            caption=file.title,
         )
     elif file.content_type == ContentType.STICKER:
         message = await bot.send_sticker(
@@ -62,7 +59,6 @@ async def send_file_to_user(bot: Bot, file: File, user: User) -> tuple[int, int]
         message = await bot.send_video(
             user.telegram_id,
             file.file_id,
-            caption=file.title,
         )
     elif file.content_type == ContentType.VIDEO_NOTE:
         message = await bot.send_video_note(
@@ -73,7 +69,6 @@ async def send_file_to_user(bot: Bot, file: File, user: User) -> tuple[int, int]
         message = await bot.send_voice(
             user.telegram_id,
             file.file_id,
-            caption=file.title,
         )
     else:
         message = await bot.send_message(user.telegram_id, _('Unknown content type'))
@@ -89,19 +84,16 @@ def sync_send_file_to_user(bot: TeleBot, file: File, user: User) -> tuple[int, i
         message = bot.send_audio(
             user.telegram_id,
             file.file_id,
-            caption=file.title,
         )
     elif file.content_type == ContentType.DOCUMENT:
         message = bot.send_document(
             user.telegram_id,
             file.file_id,
-            caption=file.title,
         )
     elif file.content_type == ContentType.PHOTO:
         message = bot.send_photo(
             user.telegram_id,
             file.file_id,
-            caption=file.title,
         )
     elif file.content_type == ContentType.STICKER:
         message = bot.send_sticker(
@@ -112,7 +104,6 @@ def sync_send_file_to_user(bot: TeleBot, file: File, user: User) -> tuple[int, i
         message = bot.send_video(
             user.telegram_id,
             file.file_id,
-            caption=file.title,
         )
     elif file.content_type == ContentType.VIDEO_NOTE:
         message = bot.send_video_note(
@@ -123,7 +114,6 @@ def sync_send_file_to_user(bot: TeleBot, file: File, user: User) -> tuple[int, i
         message = bot.send_voice(
             user.telegram_id,
             file.file_id,
-            caption=file.title,
         )
     else:
         message = bot.send_message(user.telegram_id, _('Unknown content type'))

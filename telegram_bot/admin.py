@@ -79,11 +79,16 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         'transcribe_audio_to_text',
     ]
 
+    # add title translation here
     def short_file_id(self, obj):
         return obj.file_id[:10] + '...' if obj.file_id else ''
 
+    short_file_id.short_description = _('Short File ID')
+
     def short_file_unique_id(self, obj):
         return obj.file_unique_id[:10] + '...' if obj.file_unique_id else ''
+
+    short_file_unique_id.short_description = _('Short File Unique ID')
 
     @admin.action(description=_('Send to telegram'))
     def send_to_telegram(self, request, queryset):
