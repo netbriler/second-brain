@@ -1,5 +1,4 @@
 from pathlib import Path
-from time import time
 
 from django.utils.translation import activate
 from django.utils.translation import gettext as _
@@ -8,7 +7,7 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, ReactionTy
 from ai.constants import AIMessageCategories
 from ai.services.text_recognation import (
     determine_category_and_format_text,
-    free_speech_to_text,
+    google_translate_speech_to_text,
     transcribe_using_genai,
     transcribe_using_openai,
 )
@@ -22,78 +21,134 @@ from utils.logging import logger
 from .loader import get_sync_bot
 
 
-@app.task(base=LoggingTask)
+@app.task(
+    base=LoggingTask,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 3},
+    retry_backoff=True,
+)
 def transcribe_genai_task(chat_id: int, file_id: int, destination: str, message_id: int = None):
     bot = get_sync_bot()
 
     file = File.objects.get(id=file_id)
 
-    time_start = time()
     transcription_genai = transcribe_using_genai(Path(destination), mime_type=file.raw_data.get('mime_type', None))
+    if transcription_genai.error_message:
+        bot.send_message(
+            chat_id,
+            f'Genai error:\n\n{transcription_genai.error_message}\n\nTook{transcription_genai.time_spent:.6f}s',
+            reply_to_message_id=message_id,
+        )
+        raise Exception('Error transcribing using Genai')
+
     bot.send_message(
         chat_id,
-        f'GenaI:\n\n{transcription_genai}\n\nTook {time() - time_start:.6f}s',
+        f'GenaI:\n\n{transcription_genai.text_recognition}\n\nTook {transcription_genai.time_spent:.6f}s',
         reply_to_message_id=message_id,
     )
 
     file.refresh_from_db()
-    file.raw_data['transcription_genai'] = transcription_genai
+    file.raw_data['transcription_genai'] = transcription_genai.text_recognition
     file.save(
         update_fields=[
             'raw_data',
         ],
     )
 
+    determine_category_task.delay(chat_id, file.uploaded_by.id, transcription_genai.text_recognition, message_id)
 
-@app.task(base=LoggingTask)
+    return True
+
+
+@app.task(
+    base=LoggingTask,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 3},
+    retry_backoff=True,
+)
 def transcribe_openai_task(chat_id: int, file_id: int, destination: str, message_id: int = None):
     bot = get_sync_bot()
 
     file = File.objects.get(id=file_id)
 
-    time_start = time()
     transcription_openai = transcribe_using_openai(Path(destination))
+    if transcription_openai.error_message:
+        bot.send_message(
+            chat_id,
+            f'Openai error:\n\n{transcription_openai.error_message}\n\nTook {transcription_openai.time_spent:.6f}s',
+            reply_to_message_id=message_id,
+        )
+        raise Exception('Error transcribing using OpenAI')
     bot.send_message(
         chat_id,
-        f'Openai:\n\n{transcription_openai}\n\nTook {time() - time_start:.6f}s',
+        f'Openai:\n\n{transcription_openai.text_recognition}\n\nTook {transcription_openai.time_spent:.6f}s',
         reply_to_message_id=message_id,
     )
 
     file.refresh_from_db()
-    file.raw_data['transcription_openai'] = transcription_openai
+    file.raw_data['transcription_openai'] = transcription_openai.text_recognition
     file.save(
         update_fields=[
             'raw_data',
         ],
     )
 
-    determine_category_task.delay(chat_id, file.uploaded_by.id, transcription_openai, message_id)
+    determine_category_task.delay(chat_id, file.uploaded_by.id, transcription_openai.text_recognition, message_id)
+
+    return True
 
 
-@app.task(base=LoggingTask)
-def transcribe_free_task(chat_id: int, file_id: int, destination: str, message_id: int = None):
+@app.task(
+    base=LoggingTask,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 3},
+    retry_backoff=True,
+)
+def transcribe_google_translate_task(chat_id: int, file_id: int, destination: str, message_id: int = None):
     bot = get_sync_bot()
 
     file = File.objects.get(id=file_id)
 
-    time_start = time()
-    transcription_free = free_speech_to_text(Path(destination), 'ru-RU')
+    transcription_google_translate = google_translate_speech_to_text(Path(destination), 'ru-RU')
+    if not transcription_google_translate:
+        bot.send_message(
+            chat_id,
+            f'Google translate error:\n\n{transcription_google_translate.error_message}\n\n'
+            f'Took {transcription_google_translate.time_spent:.6f}s',
+            reply_to_message_id=message_id,
+        )
+        raise Exception('Error transcribing using Google Translate')
     bot.send_message(
         chat_id,
-        f'Free:\n\n{transcription_free}\n\nTook {time() - time_start:.6f}s',
+        f'google_translate:\n\n{transcription_google_translate.text_recognition}'
+        f'\n\nTook {transcription_google_translate.time_spent:.6f}s',
         reply_to_message_id=message_id,
     )
 
     file.refresh_from_db()
-    file.raw_data['transcription_free'] = transcription_free
+    file.raw_data['transcription_google_translate'] = transcription_google_translate.text_recognition
     file.save(
         update_fields=[
             'raw_data',
         ],
     )
 
+    determine_category_task.delay(
+        chat_id,
+        file.uploaded_by.id,
+        transcription_google_translate.text_recognition,
+        message_id,
+    )
 
-@app.task(base=LoggingTask)
+    return True
+
+
+@app.task(
+    base=LoggingTask,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 3},
+    retry_backoff=True,
+)
 def transcribe_file_task(chat_id: int, file_id: int, user_id: int, message_id: int = None):
     bot = get_sync_bot()
     logger.debug(f'Transcribing file {file_id} for user {user_id}')
@@ -119,10 +174,19 @@ def transcribe_file_task(chat_id: int, file_id: int, user_id: int, message_id: i
     with Path.open(destination, 'wb') as new_file:
         new_file.write(downloaded_file)
 
+    transcribe_genai_task.delay(chat_id, db_file.id, str(destination), message_id)
     transcribe_openai_task.delay(chat_id, db_file.id, str(destination), message_id)
+    transcribe_google_translate_task.delay(chat_id, db_file.id, str(destination), message_id)
+
+    return True
 
 
-@app.task(base=LoggingTask)
+@app.task(
+    base=LoggingTask,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 3},
+    retry_backoff=True,
+)
 def send_file_to_user_task(file_id: int, user_id: int):
     bot = get_sync_bot()
     user = User.objects.get(id=user_id)
@@ -132,6 +196,8 @@ def send_file_to_user_task(file_id: int, user_id: int):
     file = File.objects.get(id=file_id)
 
     sync_send_file_to_user(bot, file, user)
+
+    return True
 
 
 @app.task(
@@ -149,22 +215,24 @@ def determine_category_task(chat_id: int, user_id: int, message: str, message_id
 
     result = determine_category_and_format_text(message)
 
-    if not result:
+    if result.error_message:
         bot.send_message(
             chat_id,
-            'Error determining category',
+            f'Error determining category {result.error_message}',
             reply_to_message_id=message_id,
         )
         raise Exception('Error determining category')
 
     markup = InlineKeyboardMarkup()
-    for category in result.category_predictions:
+    for category in result.text_recognition.category_predictions:
         text = str(AIMessageCategories[category].label)
         markup.add(InlineKeyboardButton(text, callback_data=f'category_{category}'))
 
     bot.send_message(
         chat_id,
-        _('Message: {text}\n\nChoose the category:').format(text=result.text),
+        _('Message: {text}\n\nChoose the category:').format(text=result.text_recognition.text),
         reply_to_message_id=message_id,
         reply_markup=markup,
     )
+
+    return True
