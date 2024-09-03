@@ -78,4 +78,4 @@ class Message(models.Model):
         verbose_name_plural = _('Messages')
 
     def __str__(self):
-        return self.text
+        return f'AI message {self.id}'

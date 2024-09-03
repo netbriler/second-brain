@@ -3,11 +3,12 @@ from typing import NoReturn
 
 from aiogram import Bot
 from aiogram.enums import ContentType
-from aiogram.types import Message
+from aiogram.types import Message as AiogramMessage
 from django.utils.translation import gettext as _
 from telebot import TeleBot
 
-from telegram_bot.models import File
+from telegram_bot.constants import MessageRoles
+from telegram_bot.models import File, Message
 from users.models import User
 from utils.logging import logger
 
@@ -123,7 +124,7 @@ def sync_send_file_to_user(bot: TeleBot, file: File, user: User) -> tuple[int, i
     return message.message_id, message2.message_id
 
 
-async def save_file(message: Message, user: User) -> NoReturn:
+async def save_file(message: AiogramMessage, user: User) -> NoReturn:
     logger.debug(f'User {user} uploaded file {message.content_type}')
     raw_json = None
     if message.content_type == ContentType.AUDIO:
@@ -165,3 +166,28 @@ async def save_file(message: Message, user: User) -> NoReturn:
         )
 
     return file
+
+
+async def create_message(
+    message_id: int,
+    chat_id: int,
+    user: User,
+    text: str,
+    raw_data: dict,
+    role: MessageRoles = None,
+    file: File = None,
+) -> Message:
+    if not role:
+        role = MessageRoles.SIMPLE
+
+    role = role.value[0] if isinstance(role, MessageRoles) else role
+
+    return await Message.objects.acreate(
+        message_id=message_id,
+        chat_id=chat_id,
+        text=text,
+        raw_data=raw_data,
+        role=role,
+        user=user,
+        file=file,
+    )

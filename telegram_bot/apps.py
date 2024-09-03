@@ -7,3 +7,6 @@ class UserbotConfig(AppConfig):
     name = 'telegram_bot'
 
     verbose_name = _('Telegram Bot')
+
+    def ready(self):
+        import telegram_bot.receivers  # noqa

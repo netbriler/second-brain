@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-02 16:29+0700\n"
+"POT-Creation-Date: 2024-09-03 10:44+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,8 +19,8 @@ msgstr ""
 "n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
 "(n%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: ai/admin.py:62 courses/admin.py:48 courses/admin.py:101 courses/admin.py:149
-#: telegram_bot/admin.py:59 users/admin.py:65
+#: ai/admin.py:64 courses/admin.py:48 courses/admin.py:101 courses/admin.py:149
+#: telegram_bot/admin.py:60 telegram_bot/admin.py:182 users/admin.py:65
 msgid "General"
 msgstr "Общее"
 
@@ -28,11 +28,11 @@ msgstr "Общее"
 msgid "AI"
 msgstr "Искусственный интеллект"
 
-#: ai/constants.py:7
+#: ai/constants.py:7 telegram_bot/constants.py:31
 msgid "Voice Recognition"
 msgstr "Голосовое распознавание"
 
-#: ai/constants.py:8
+#: ai/constants.py:8 telegram_bot/constants.py:32
 msgid "Text Recognition"
 msgstr "Распознавание текста"
 
@@ -40,7 +40,7 @@ msgstr "Распознавание текста"
 msgid "Task Recognition"
 msgstr "Распознавание задач"
 
-#: ai/constants.py:17
+#: ai/constants.py:17 notes/apps.py:9
 msgid "Notes"
 msgstr "Заметки"
 
@@ -73,7 +73,7 @@ msgstr "Чтение"
 msgid "Courses"
 msgstr "Курсы"
 
-#: ai/models.py:11
+#: ai/models.py:11 telegram_bot/models.py:82
 msgid "Text"
 msgstr "Текст"
 
@@ -106,20 +106,20 @@ msgid "Requested By"
 msgstr "Запрошено кем"
 
 #: ai/models.py:68 courses/models.py:23 courses/models.py:68
-#: courses/models.py:107 telegram_bot/models.py:45
+#: courses/models.py:107 telegram_bot/models.py:45 telegram_bot/models.py:116
 msgid "Created At"
 msgstr "Создано в"
 
 #: ai/models.py:73 courses/models.py:28 courses/models.py:73
-#: courses/models.py:112 telegram_bot/models.py:50
+#: courses/models.py:112 telegram_bot/models.py:50 telegram_bot/models.py:121
 msgid "Updated At"
 msgstr "Обновлено в"
 
-#: ai/models.py:77
+#: ai/models.py:77 telegram_bot/models.py:68
 msgid "Message"
 msgstr "Сообщение"
 
-#: ai/models.py:78
+#: ai/models.py:78 telegram_bot/models.py:69
 msgid "Messages"
 msgstr "Сообщения"
 
@@ -171,41 +171,40 @@ msgstr "Родительская группа"
 msgid "Content"
 msgstr "Содержание"
 
-#: courses/models.py:102 telegram_bot/models.py:9
+#: courses/models.py:102 telegram_bot/models.py:9 telegram_bot/models.py:96
 msgid "File"
 msgstr "Файл"
 
-#: telegram_bot/admin.py:85
-#| msgid "File ID"
+#: telegram_bot/admin.py:86
 msgid "Short File ID"
 msgstr "Короткий айди файла"
 
-#: telegram_bot/admin.py:90
+#: telegram_bot/admin.py:91
 msgid "Short File Unique ID"
 msgstr "Короткий уникальный айди файла"
 
-#: telegram_bot/admin.py:92
+#: telegram_bot/admin.py:93
 msgid "Send to telegram"
 msgstr "Отправить в телеграм"
 
-#: telegram_bot/admin.py:97
+#: telegram_bot/admin.py:98
 msgid "Files sent to telegram"
 msgstr "Файлы отправлены в телеграм"
 
-#: telegram_bot/admin.py:99
+#: telegram_bot/admin.py:100
 msgid "Transcribe audio to text"
 msgstr "Транскрибировать аудио в текст"
 
-#: telegram_bot/admin.py:103
+#: telegram_bot/admin.py:104
 msgid "Only audio files are supported for transcription"
 msgstr "Только аудиофайлы поддерживаются для транскрипции"
 
-#: telegram_bot/admin.py:107
+#: telegram_bot/admin.py:108
 #, python-brace-format
 msgid "File {file_id} is not an audio file"
 msgstr "Файл {file_id} не является аудиофайлом"
 
-#: telegram_bot/admin.py:117
+#: telegram_bot/admin.py:118
 msgid "Files sent to transcription"
 msgstr "Файлы отправлены на транскрипцию"
 
@@ -268,6 +267,10 @@ msgstr "изменить язык"
 #: telegram_bot/commands/default.py:16
 msgid "open bot settings"
 msgstr "открыть настройки бота"
+
+#: telegram_bot/constants.py:30
+msgid "Simple"
+msgstr "Простой"
 
 #: telegram_bot/handlers/admin/files.py:29
 msgid ""
@@ -339,12 +342,12 @@ msgid "Something went wrong."
 msgstr "Что-то пошло не так."
 
 #: telegram_bot/handlers/users/helpers.py:22
-#: telegram_bot/handlers/users/helpers.py:57
-#: telegram_bot/handlers/users/helpers.py:63
+#: telegram_bot/handlers/users/helpers.py:52
+#: telegram_bot/handlers/users/helpers.py:58
 msgid "Choose an action from the menu 👇"
 msgstr "Выберите действие из меню 👇"
 
-#: telegram_bot/handlers/users/helpers.py:62
+#: telegram_bot/handlers/users/helpers.py:57
 msgid "Unknown action"
 msgstr "Неизвестное действие"
 
@@ -411,7 +414,6 @@ msgid "File ID"
 msgstr "Айди файла"
 
 #: telegram_bot/models.py:25
-#| msgid "File ID"
 msgid "File Unique ID"
 msgstr "Уникальный айди файла"
 
@@ -419,7 +421,7 @@ msgstr "Уникальный айди файла"
 msgid "MIME Type"
 msgstr "MIME тип"
 
-#: telegram_bot/models.py:40
+#: telegram_bot/models.py:40 telegram_bot/models.py:86
 msgid "Raw Data"
 msgstr "Сырые данные"
 
@@ -427,7 +429,25 @@ msgstr "Сырые данные"
 msgid "Uploaded By"
 msgstr "Загружено пользователем"
 
-#: telegram_bot/services/files.py:21
+#: telegram_bot/models.py:72
+#| msgid "Message"
+msgid "Message ID"
+msgstr "Айди сообщения"
+
+#: telegram_bot/models.py:76
+msgid "Chat ID"
+msgstr "Айди чата"
+
+#: telegram_bot/models.py:104
+msgid "Role"
+msgstr "Роль"
+
+#: telegram_bot/models.py:111 users/models.py:18
+msgid "User"
+msgstr "Пользователь"
+
+#: telegram_bot/services/files.py:22
+#, python-brace-format
 msgid ""
 "New file uploaded:\n"
 "<b>File type</b>: <code>{content_type}</code>\n"
@@ -447,7 +467,7 @@ msgstr ""
 "<b>Сырые данные</b>:\n"
 "{raw_data}"
 
-#: telegram_bot/services/files.py:74 telegram_bot/services/files.py:119
+#: telegram_bot/services/files.py:75 telegram_bot/services/files.py:120
 msgid "Unknown content type"
 msgstr "Неизвестный тип контента"
 
@@ -462,10 +482,6 @@ msgstr "Телеграм"
 #: users/apps.py:9 users/models.py:19
 msgid "Users"
 msgstr "Пользователи"
-
-#: users/models.py:18
-msgid "User"
-msgstr "Пользователь"
 
 #: users/models.py:35
 msgid "Active"

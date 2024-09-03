@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import activate
 from django.utils.translation import gettext as _
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, ReactionTypeEmoji
@@ -27,7 +29,15 @@ from utils.logging import logger
     retry_kwargs={'max_retries': 3},
     retry_backoff=True,
 )
-def transcribe_genai_task(chat_id: int, file_id: int, destination: str, message_id: int = None, debug: bool = False):
+def transcribe_genai_task(
+    chat_id: int,
+    file_id: int,
+    destination: str,
+    message_id: int = None,
+    debug: bool = False,
+    source_id: int = None,
+    source_type_id: int = None,
+):
     bot = get_sync_bot()
 
     file = File.objects.get(id=file_id)
@@ -56,9 +66,17 @@ def transcribe_genai_task(chat_id: int, file_id: int, destination: str, message_
         ],
     )
 
-    determine_category_task.delay(chat_id, file.uploaded_by.id, transcription_genai.text_recognition, message_id)
+    source = ContentType.objects.get_for_id(source_type_id).model_class().objects.get(id=source_id)
+    ai_response = save_ai_response(transcription_genai, source=source, requested_by=file.uploaded_by)
 
-    save_ai_response(transcription_genai, source=file, requested_by=file.uploaded_by)
+    determine_category_task.delay(
+        chat_id=chat_id,
+        user_id=file.uploaded_by.id,
+        message=transcription_genai.text_recognition,
+        message_id=message_id,
+        source_id=ai_response.id,
+        source_type_id=ContentType.objects.get_for_model(ai_response).id,
+    )
 
     return True
 
@@ -69,7 +87,15 @@ def transcribe_genai_task(chat_id: int, file_id: int, destination: str, message_
     retry_kwargs={'max_retries': 3},
     retry_backoff=True,
 )
-def transcribe_openai_task(chat_id: int, file_id: int, destination: str, message_id: int = None, debug: bool = False):
+def transcribe_openai_task(
+    chat_id: int,
+    file_id: int,
+    destination: str,
+    message_id: int = None,
+    debug: bool = False,
+    source_id: int = None,
+    source_type_id: int = None,
+):
     bot = get_sync_bot()
 
     file = File.objects.get(id=file_id)
@@ -98,9 +124,17 @@ def transcribe_openai_task(chat_id: int, file_id: int, destination: str, message
         ],
     )
 
-    determine_category_task.delay(chat_id, file.uploaded_by.id, transcription_openai.text_recognition, message_id)
+    source = ContentType.objects.get_for_id(source_type_id).model_class().objects.get(id=source_id)
+    ai_response = save_ai_response(transcription_openai, source=source, requested_by=file.uploaded_by)
 
-    save_ai_response(transcription_openai, source=file, requested_by=file.uploaded_by)
+    determine_category_task.delay(
+        chat_id=chat_id,
+        user_id=file.uploaded_by.id,
+        message=transcription_openai.text_recognition,
+        message_id=message_id,
+        source_id=ai_response.id,
+        source_type_id=ContentType.objects.get_for_model(ai_response).id,
+    )
 
     return True
 
@@ -117,6 +151,8 @@ def transcribe_google_translate_task(
     destination: str,
     message_id: int = None,
     debug: bool = False,
+    source_id: int = None,
+    source_type_id: int = None,
 ):
     bot = get_sync_bot()
 
@@ -148,14 +184,17 @@ def transcribe_google_translate_task(
         ],
     )
 
-    determine_category_task.delay(
-        chat_id,
-        file.uploaded_by.id,
-        transcription_google_translate.text_recognition,
-        message_id,
-    )
+    source = ContentType.objects.get_for_id(source_type_id).model_class().objects.get(id=source_id)
+    ai_response = save_ai_response(transcription_google_translate, source=source, requested_by=file.uploaded_by)
 
-    save_ai_response(transcription_google_translate, source=file, requested_by=file.uploaded_by)
+    determine_category_task.delay(
+        chat_id=chat_id,
+        user_id=file.uploaded_by.id,
+        message=transcription_google_translate.text_recognition,
+        message_id=message_id,
+        source_id=ai_response.id,
+        source_type_id=ContentType.objects.get_for_model(ai_response).id,
+    )
 
     return True
 
@@ -166,7 +205,14 @@ def transcribe_google_translate_task(
     retry_kwargs={'max_retries': 3},
     retry_backoff=True,
 )
-def transcribe_file_task(chat_id: int, file_id: int, user_id: int, message_id: int = None):
+def transcribe_file_task(
+    chat_id: int,
+    file_id: int,
+    user_id: int,
+    message_id: int = None,
+    source_id: int = None,
+    source_type_id: int = None,
+):
     bot = get_sync_bot()
     logger.debug(f'Transcribing file {file_id} for user {user_id}')
 
@@ -198,9 +244,20 @@ def transcribe_file_task(chat_id: int, file_id: int, user_id: int, message_id: i
         with Path.open(destination, 'wb') as new_file:
             new_file.write(downloaded_file)
 
-    # transcribe_genai_task.delay(chat_id, db_file.id, str(destination), message_id)
-    transcribe_openai_task.delay(chat_id, db_file.id, str(destination), message_id)
-    # transcribe_google_translate_task.delay(chat_id, db_file.id, str(destination), message_id)
+    # transcribe_genai_task.delay(
+    #     chat_id, db_file.id, str(destination), message_id, source_id=source_id, source_type_id=source_type_id
+    # )
+    transcribe_openai_task.delay(
+        chat_id,
+        db_file.id,
+        str(destination),
+        message_id,
+        source_id=source_id,
+        source_type_id=source_type_id,
+    )
+    # transcribe_google_translate_task.delay(
+    #     chat_id, db_file.id, str(destination), message_id, source_id=source_id, source_type_id=source_type_id
+    # )
 
     return True
 
@@ -230,7 +287,14 @@ def send_file_to_user_task(file_id: int, user_id: int):
     retry_kwargs={'max_retries': 3},
     retry_backoff=True,
 )
-def determine_category_task(chat_id: int, user_id: int, message: str, message_id: int = None):
+def determine_category_task(
+    chat_id: int,
+    user_id: int,
+    message: str,
+    message_id: int = None,
+    source_id: int = None,
+    source_type_id: int = None,
+):
     bot = get_sync_bot()
 
     user = User.objects.get(id=user_id)
@@ -258,6 +322,14 @@ def determine_category_task(chat_id: int, user_id: int, message: str, message_id
         reply_markup=markup,
     )
 
-    save_ai_response(result, requested_by=user)
+    try:
+        model_class = ContentType.objects.get_for_id(source_type_id).model_class()
+        source = model_class.objects.get(id=source_id)
+    except ContentType.DoesNotExist:
+        source = None
+    except ObjectDoesNotExist:
+        source = None
+
+    save_ai_response(result, requested_by=user, source=source)
 
     return True

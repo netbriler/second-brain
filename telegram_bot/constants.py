@@ -1,5 +1,7 @@
 from enum import Enum
 
+from django.utils.translation import gettext_lazy as _
+
 
 class FileContentType(str, Enum):
     AUDIO = 'audio'
@@ -22,3 +24,13 @@ FILE_CONTENT_TYPES = (
     (FileContentType.VOICE.value, 'voice'),
     (FileContentType.LOCATION.value, 'location'),
 )
+
+
+class MessageRoles(Enum):
+    SIMPLE = 'simple', _('Simple')
+    VOICE_RECOGNITION = 'voice_recognition', _('Voice Recognition')
+    TEXT_RECOGNITION = 'text_recognition', _('Text Recognition')
+
+    @property
+    def label(self):
+        return self.value[1]

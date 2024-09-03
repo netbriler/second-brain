@@ -2,11 +2,8 @@ from django.apps import AppConfig
 from django.utils.translation import gettext_lazy as _
 
 
-class AiConfig(AppConfig):
+class NotesConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'ai'
+    name = 'notes'
 
-    verbose_name = _('AI')
-
-    def ready(self):
-        import ai.receivers  # noqa
+    verbose_name = _('Notes')
