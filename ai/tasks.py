@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from django.contrib.contenttypes.models import ContentType
@@ -7,10 +8,12 @@ from django.utils.translation import gettext as _
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, ReactionTypeEmoji
 
 from ai.constants import AITasksCategories
+from ai.models import Message
 from ai.services.base import save_ai_response
 from ai.services.text_recognation import (
     determine_category_and_format_text,
     google_translate_speech_to_text,
+    parse_reminder,
     transcribe_using_genai,
     transcribe_using_openai,
 )
@@ -310,18 +313,6 @@ def determine_category_task(
         )
         raise Exception('Error determining category')
 
-    markup = InlineKeyboardMarkup()
-    for category in result.text_recognition.category_predictions:
-        text = str(AITasksCategories[category].label)
-        markup.add(InlineKeyboardButton(text, callback_data=f'category_{category}'))
-
-    bot.send_message(
-        chat_id,
-        _('Message: {text}\n\nChoose the category:').format(text=result.text_recognition.text),
-        reply_to_message_id=message_id,
-        reply_markup=markup,
-    )
-
     try:
         model_class = ContentType.objects.get_for_id(source_type_id).model_class()
         source = model_class.objects.get(id=source_id)
@@ -330,6 +321,65 @@ def determine_category_task(
     except ObjectDoesNotExist:
         source = None
 
-    save_ai_response(result, requested_by=user, source=source)
+    ai_message = save_ai_response(result, requested_by=user, source=source)
+
+    markup = InlineKeyboardMarkup()
+    for category in result.text_recognition.category_predictions:
+        text = str(AITasksCategories[category].label)
+        markup.add(InlineKeyboardButton(text, callback_data=f'ai_task:category_{category}_{ai_message.id}'))
+
+    bot.send_message(
+        chat_id,
+        _('Message: {text}\n\nChoose the category:').format(text=result.text_recognition.text),
+        reply_to_message_id=message_id,
+        reply_markup=markup,
+    )
 
     return True
+
+
+@app.task(
+    base=LoggingTask,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 3},
+    retry_backoff=True,
+)
+def category_reminder_task(
+    ai_message_id: int,
+):
+    bot = get_sync_bot()
+
+    ai_message = Message.objects.get(id=ai_message_id)
+    logger.debug(f'Sending category reminder for message {ai_message}')
+    activate(ai_message.requested_by.language_code)
+
+    result = parse_reminder(json.loads(ai_message.response).get('text'))
+    if result.error_message:
+        bot.send_message(
+            ai_message.requested_by.telegram_id,
+            f'Error parsing reminder {result.error_message}',
+        )
+        raise Exception('Error parsing reminder')
+
+    new_ai_message = save_ai_response(result, requested_by=ai_message.requested_by, source=ai_message)
+
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton('Save', callback_data=f'ai_task:reminder_create_{new_ai_message.id}'))
+
+    text = _(
+        'Title: {title}\n'
+        'Description: {description}\n'
+        'Crontab string: {crontab_string}\n\n'
+        'Message: {message}\n\n'
+        'Choose the action:',
+    ).format(
+        title=result.text_recognition.title,
+        description=result.text_recognition.description,
+        crontab_string=result.text_recognition.crontab_string,
+        message=result.text_recognition.message,
+    )
+    bot.send_message(
+        ai_message.requested_by.telegram_id,
+        text,
+        reply_markup=markup,
+    )

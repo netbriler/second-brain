@@ -11,6 +11,8 @@ from pydub import AudioSegment
 
 from ai.constants import AIMessageCategories, AITasksCategories
 from ai.services.base import (
+    ReminderRecognition,
+    ReminderRecognitionResponse,
     TextRecognition,
     TextRecognitionResponse,
     VoiceRecognitionResponse,
@@ -211,3 +213,67 @@ def google_translate_speech_to_text(path: Path, language: str) -> VoiceRecogniti
         is_successful=not error_message,
         text_recognition=result,
     )
+
+
+def parse_reminder(message: str) -> ReminderRecognitionResponse:
+    logger.debug(f'Sending message to genai: {message}')
+
+    prompt = 'Parse the reminder and extract all data.'
+
+    # noinspection PyTypeChecker
+    response_schema = Schema(
+        type_=Type.OBJECT,
+        properties=dict(
+            title=Schema(
+                type_=Type.STRING,
+            ),
+            message=Schema(
+                type_=Type.STRING,
+            ),
+            description=Schema(
+                type_=Type.STRING,
+            ),
+            crontab_string=Schema(
+                type_=Type.STRING,
+            ),
+        ),
+        required=[
+            'title',
+            'message',
+            'crontab_string',
+        ],
+    )
+
+    result = None
+    error_message = None
+    time_start = time()
+    try:
+        result = model.generate_content(
+            f'{prompt}\n\n{message}',
+            generation_config=genai.GenerationConfig(
+                response_mime_type='application/json',
+                response_schema=response_schema,
+            ),
+        )
+        logger.debug(f'Genai result: {result}')
+        result = result.text
+    except Exception as e:  # noqa
+        logger.exception(f'Error generating content from genai: {e}')
+        error_message = str(e)
+
+    time_spent = time() - time_start
+
+    response = ReminderRecognitionResponse(
+        prompt=prompt,
+        response=result,
+        text=message,
+        category=AIMessageCategories.TEXT_RECOGNITION.value[0],
+        time_spent=time_spent,
+        error_message=error_message,
+        is_successful=not error_message,
+    )
+
+    if result:
+        response.text_recognition = ReminderRecognition.model_validate_json(result)
+
+    return response

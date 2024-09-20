@@ -16,6 +16,13 @@ class AIResponse(BaseModel):
     is_successful: bool = True
 
 
+class ReminderRecognition(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    crontab_string: str | None = None
+    message: str | None = None
+
+
 class TextRecognition(BaseModel):
     text: str | None = None
     category_predictions: list[str] | None = None
@@ -27,6 +34,10 @@ class TextRecognitionResponse(AIResponse):
 
 class VoiceRecognitionResponse(AIResponse):
     text_recognition: str | None = None
+
+
+class ReminderRecognitionResponse(AIResponse):
+    text_recognition: ReminderRecognition | None = None
 
 
 def save_ai_response(response: AIResponse, source: Model = None, requested_by: User = None) -> Message:
