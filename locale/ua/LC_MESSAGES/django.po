@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-03 10:44+0700\n"
+"POT-Creation-Date: 2024-09-20 17:27+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,10 +16,19 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ai/admin.py:64 courses/admin.py:48 courses/admin.py:101 courses/admin.py:149
-#: telegram_bot/admin.py:60 telegram_bot/admin.py:182 users/admin.py:65
+#: ai/admin.py:45 ai/admin.py:114 ai/models.py:63
+msgid "Requested By"
+msgstr "Запитано ким"
+
+#: ai/admin.py:67 courses/admin.py:48 courses/admin.py:101 courses/admin.py:149
+#: telegram_bot/admin.py:65 telegram_bot/admin.py:203 users/admin.py:65
 msgid "General"
 msgstr "Загальне"
+
+#: ai/admin.py:99
+#| msgid "Source ID"
+msgid "Source"
+msgstr "Джерело"
 
 #: ai/apps.py:9
 msgid "AI"
@@ -57,7 +66,7 @@ msgstr "Витрати"
 msgid "Tasks"
 msgstr "Завдання"
 
-#: ai/constants.py:22
+#: ai/constants.py:22 reminders/models.py:10
 msgid "Reminders"
 msgstr "Нагадування"
 
@@ -98,17 +107,15 @@ msgstr "Тип контенту"
 msgid "Source ID"
 msgstr "Айді джерела"
 
-#: ai/models.py:63
-msgid "Requested By"
-msgstr "Запитано ким"
-
 #: ai/models.py:68 courses/models.py:23 courses/models.py:68
-#: courses/models.py:107 telegram_bot/models.py:45 telegram_bot/models.py:116
+#: courses/models.py:107 reminders/models.py:54 telegram_bot/models.py:45
+#: telegram_bot/models.py:116
 msgid "Created At"
 msgstr "Створено в"
 
 #: ai/models.py:73 courses/models.py:28 courses/models.py:73
-#: courses/models.py:112 telegram_bot/models.py:50 telegram_bot/models.py:121
+#: courses/models.py:112 reminders/models.py:59 telegram_bot/models.py:50
+#: telegram_bot/models.py:121
 msgid "Updated At"
 msgstr "Оновлено в"
 
@@ -120,7 +127,17 @@ msgstr "Повідомлення"
 msgid "Messages"
 msgstr "Повідомлення"
 
-#: ai/tasks.py:256
+#: ai/tasks.py:328
+msgid ""
+"Message: {text}\n"
+"\n"
+"Processing category: {category}..."
+msgstr ""
+"Повідомлення: {text}\n"
+"\n"
+"Обробка категорії: {category}..."
+
+#: ai/tasks.py:344
 #, python-brace-format
 msgid ""
 "Message: {text}\n"
@@ -130,6 +147,25 @@ msgstr ""
 "Повідомлення: {text}\n"
 "\n"
 "Виберіть категорію:"
+
+#: ai/tasks.py:381
+#, python-brace-format
+msgid ""
+"Title: {title}\n"
+"Description: {description}\n"
+"Crontab string: {crontab_string}\n"
+"\n"
+"Message: {message}\n"
+"\n"
+"Choose the action:"
+msgstr ""
+"Заголовок: {title}\n"
+"Опис: {description}\n"
+"Стрічка crontab: {crontab_string}\n"
+"\n"
+"Повідомлення: {message}\n"
+"\n"
+"Виберіть дію:"
 
 #: courses/inlines.py:20 courses/models.py:7
 msgid "Course"
@@ -153,10 +189,11 @@ msgid "Groups"
 msgstr "Групи"
 
 #: courses/models.py:12 courses/models.py:48 courses/models.py:87
+#: reminders/models.py:21
 msgid "Title"
 msgstr "Заголовок"
 
-#: courses/models.py:18 courses/models.py:54
+#: courses/models.py:18 courses/models.py:54 reminders/models.py:27
 msgid "Description"
 msgstr "Опис"
 
@@ -168,40 +205,69 @@ msgstr "Батьківська група"
 msgid "Content"
 msgstr "Контент"
 
-#: courses/models.py:102 telegram_bot/models.py:9 telegram_bot/models.py:96
+#: courses/models.py:102 telegram_bot/admin.py:186 telegram_bot/admin.py:246
+#: telegram_bot/models.py:9 telegram_bot/models.py:96
 msgid "File"
 msgstr "Файл"
 
-#: telegram_bot/admin.py:86
+#: reminders/admin.py:34 reminders/models.py:16 telegram_bot/admin.py:185
+#: telegram_bot/admin.py:232 telegram_bot/models.py:111 users/models.py:18
+msgid "User"
+msgstr "Користувач"
+
+#: reminders/models.py:9
+#| msgid "Reminders"
+msgid "Reminder"
+msgstr "Нагадування"
+
+#: reminders/models.py:32
+#| msgid "Tasks"
+msgid "Task Class"
+msgstr "Клас завдання"
+
+#: reminders/models.py:39
+#| msgid "Raw Data"
+msgid "Data"
+msgstr "Дані"
+
+#: reminders/models.py:47
+msgid "Periodic Task"
+msgstr "Періодичне завдання"
+
+#: telegram_bot/admin.py:46 telegram_bot/admin.py:110 telegram_bot/models.py:59
+msgid "Uploaded By"
+msgstr "Завантажив користувач"
+
+#: telegram_bot/admin.py:91
 msgid "Short File ID"
 msgstr "Короткий айді файлу"
 
-#: telegram_bot/admin.py:91
+#: telegram_bot/admin.py:96
 msgid "Short File Unique ID"
 msgstr "Короткий унікальний айді файлу"
 
-#: telegram_bot/admin.py:93
+#: telegram_bot/admin.py:112
 msgid "Send to telegram"
 msgstr "Відправити в телеграм"
 
-#: telegram_bot/admin.py:98
+#: telegram_bot/admin.py:117
 msgid "Files sent to telegram"
 msgstr "Файли відправлені в телеграм"
 
-#: telegram_bot/admin.py:100
+#: telegram_bot/admin.py:119
 msgid "Transcribe audio to text"
 msgstr "Транскрибувати аудіо в текст"
 
-#: telegram_bot/admin.py:104
+#: telegram_bot/admin.py:123
 msgid "Only audio files are supported for transcription"
 msgstr "Підтримуються тільки аудіо файли для транскрипції"
 
-#: telegram_bot/admin.py:108
+#: telegram_bot/admin.py:127
 #, python-brace-format
 msgid "File {file_id} is not an audio file"
 msgstr "Файл {file_id} не є аудіо файлом"
 
-#: telegram_bot/admin.py:118
+#: telegram_bot/admin.py:139
 msgid "Files sent to transcription"
 msgstr "Файли відправлені на транскрипцію"
 
@@ -338,13 +404,42 @@ msgstr ""
 msgid "Something went wrong."
 msgstr "Щось пішло не так."
 
-#: telegram_bot/handlers/users/helpers.py:22
-#: telegram_bot/handlers/users/helpers.py:52
-#: telegram_bot/handlers/users/helpers.py:58
+#: telegram_bot/handlers/users/ai.py:28 telegram_bot/handlers/users/ai.py:54
+#| msgid "User not found"
+msgid "Message not found"
+msgstr "Повідомлення не знайдено"
+
+#: telegram_bot/handlers/users/ai.py:35
+#, python-brace-format
+msgid ""
+"Category: {category}\n"
+"\n"
+"{text}"
+msgstr ""
+"Категорія: {category}\n"
+"\n"
+"{text}"
+
+#: telegram_bot/handlers/users/ai.py:38
+#| msgid "Unknown action"
+msgid "Unknown category"
+msgstr "Невідома категорія"
+
+#: telegram_bot/handlers/users/ai.py:41
+msgid "Parsing message..."
+msgstr "Аналіз повідомлення..."
+
+#: telegram_bot/handlers/users/ai.py:72
+msgid "Reminder saved successfully"
+msgstr "Нагадування успішно збережено"
+
+#: telegram_bot/handlers/users/helpers.py:23
+#: telegram_bot/handlers/users/helpers.py:53
+#: telegram_bot/handlers/users/helpers.py:59
 msgid "Choose an action from the menu 👇"
 msgstr "Виберіть дію з меню 👇"
 
-#: telegram_bot/handlers/users/helpers.py:57
+#: telegram_bot/handlers/users/helpers.py:58
 msgid "Unknown action"
 msgstr "Невідома дія"
 
@@ -422,12 +517,7 @@ msgstr "MIME Тип"
 msgid "Raw Data"
 msgstr "Сирі дані"
 
-#: telegram_bot/models.py:59
-msgid "Uploaded By"
-msgstr "Завантажив користувач"
-
 #: telegram_bot/models.py:72
-#| msgid "Message"
 msgid "Message ID"
 msgstr "Айді повідомлення"
 
@@ -438,10 +528,6 @@ msgstr "Айді чату"
 #: telegram_bot/models.py:104
 msgid "Role"
 msgstr "Роль"
-
-#: telegram_bot/models.py:111 users/models.py:18
-msgid "User"
-msgstr "Користувач"
 
 #: telegram_bot/services/files.py:22
 #, python-brace-format

@@ -322,18 +322,29 @@ def determine_category_task(
         source = None
 
     ai_message = save_ai_response(result, requested_by=user, source=source)
+    if len(result.text_recognition.category_predictions) == 1:
+        bot.send_message(
+            chat_id,
+            _('Message: {text}\n\nProcessing category: {category}...').format(
+                text=result.text_recognition.text,
+                category=result.text_recognition.category_predictions[0],
+            ),
+            reply_to_message_id=message_id,
+        )
 
-    markup = InlineKeyboardMarkup()
-    for category in result.text_recognition.category_predictions:
-        text = str(AITasksCategories[category].label)
-        markup.add(InlineKeyboardButton(text, callback_data=f'ai_task:category_{category}_{ai_message.id}'))
+        process_category_massage(ai_message.id, result.text_recognition.category_predictions[0])
+    else:
+        markup = InlineKeyboardMarkup()
+        for category in result.text_recognition.category_predictions:
+            text = str(AITasksCategories[category].label)
+            markup.add(InlineKeyboardButton(text, callback_data=f'ai_task:category_{category}_{ai_message.id}'))
 
-    bot.send_message(
-        chat_id,
-        _('Message: {text}\n\nChoose the category:').format(text=result.text_recognition.text),
-        reply_to_message_id=message_id,
-        reply_markup=markup,
-    )
+        bot.send_message(
+            chat_id,
+            _('Message: {text}\n\nChoose the category:').format(text=result.text_recognition.text),
+            reply_to_message_id=message_id,
+            reply_markup=markup,
+        )
 
     return True
 
@@ -383,3 +394,12 @@ def category_reminder_task(
         text,
         reply_markup=markup,
     )
+
+
+def process_category_massage(ai_message_id: int, category: str) -> bool:
+    if AITasksCategories[category] == AITasksCategories.REMINDERS:
+        category_reminder_task.delay(ai_message_id)
+    else:
+        return False
+
+    return True

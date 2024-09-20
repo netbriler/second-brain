@@ -5,10 +5,9 @@ from aiogram import Router
 from aiogram.types import CallbackQuery, ReactionTypeEmoji
 from django.utils.translation import gettext as _
 
-from ai.constants import AITasksCategories
 from ai.models import Message as AiMessage
 from ai.services.base import ReminderRecognition, TextRecognition
-from ai.tasks import category_reminder_task
+from ai.tasks import process_category_massage
 from reminders.reminders_tasks.telegram_reminder import TelegramReminderTask
 from reminders.services import create_reminder
 from telegram_bot.filters.regexp import Regexp
@@ -35,9 +34,7 @@ async def _category(callback_query: CallbackQuery, regexp: re.Match) -> NoReturn
 
     await callback_query.message.answer(_('Category: {category}\n\n{text}').format(category=category, text=text))
 
-    if AITasksCategories[category] == AITasksCategories.REMINDERS:
-        category_reminder_task.delay(ai_message_id)
-    else:
+    if not process_category_massage(ai_message_id, category):
         return await callback_query.answer(_('Unknown category'))
 
     await callback_query.bot.send_chat_action(callback_query.message.chat.id, 'typing')
