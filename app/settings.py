@@ -53,6 +53,8 @@ INSTALLED_APPS = [
     'telegram_bot',
     'courses',
     'ai',
+    'reminders',
+    'workflows',
 ]
 
 if not DEBUG:
