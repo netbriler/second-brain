@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import activate
 from django.utils.translation import gettext as _
+from telebot.apihelper import ApiTelegramException
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, ReactionTypeEmoji
 
 from ai.constants import AITasksCategories
@@ -229,8 +230,23 @@ def transcribe_file_task(
 
     bot.set_message_reaction(chat_id, message_id, [ReactionTypeEmoji('👀')])
 
-    # Download the file
-    file = bot.get_file(db_file.file_id)
+    if not db_file.mime_type or 'audio' not in db_file.mime_type:
+        logger.error(f'File {db_file.file_id} is not an audio file')
+        return False
+
+    try:
+        # Download the file
+        file = bot.get_file(db_file.file_id)
+    except ApiTelegramException as e:
+        if 'file is too big' in str(e):
+            bot.send_message(
+                chat_id,
+                _('File is too big to process. Please upload a smaller file.'),
+                reply_to_message_id=message_id,
+            )
+            return False
+        logger.error(f'Error downloading file {db_file.file_id}: {e}')
+        return False
     file_path = file.file_path
     file_extension = file_path.split('.')[-1]
 

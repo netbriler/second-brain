@@ -30,9 +30,9 @@ async def _default_menu(message: Message, user: User, state: FSMContext) -> NoRe
 
     file = None
     role = None
-    if message.content_type in ContentType.TEXT:
+    if message.content_type == ContentType.TEXT:
         role = MessageRoles.TEXT_RECOGNITION
-    elif message.content_type in ContentType.VOICE:
+    elif message.content_type in [ContentType.VOICE]:
         role = MessageRoles.VOICE_RECOGNITION
         file = await save_file(
             message=message,

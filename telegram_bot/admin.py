@@ -123,7 +123,7 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
                 self.message_user(request, _('Only audio files are supported for transcription'))
                 return
 
-            if not file.mime_type:
+            if not file.mime_type or 'audio' not in file.mime_type:
                 self.message_user(request, _('File {file_id} is not an audio file').format(file_id=file.file_id))
                 continue
 

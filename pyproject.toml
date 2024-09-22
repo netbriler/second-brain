@@ -175,6 +175,8 @@ openai = "^1.43.0"
 speechrecognition = "^3.10.4"
 pydub = "^0.25.1"
 django-admin-autocomplete-filter = "^0.7.1"
+pyrogram = "^2.0.106"
+tgcrypto = "^1.2.5"
 
 
 [tool.poetry.group.dev.dependencies]
