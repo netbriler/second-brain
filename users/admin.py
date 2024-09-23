@@ -55,7 +55,6 @@ class UserAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         'telegram_username',
         'first_name',
         'last_name',
-        'is_superuser',
         'telegram_is_active',
         'telegram_activity_at',
     )

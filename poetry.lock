@@ -672,6 +672,20 @@ django-colorfield = ">=0.8.0,<1.0.0"
 python-slugify = ">=7.0.0,<9.0.0"
 
 [[package]]
+name = "django-admin-sortable2"
+version = "2.2.3"
+description = "Generic drag-and-drop sorting for the List, the Stacked- and the Tabular-Inlines Views in the Django Admin"
+optional = false
+python-versions = "*"
+files = [
+    {file = "django_admin_sortable2-2.2.3-py3-none-any.whl", hash = "sha256:bda5f8f73590f7696595a86fc23c145d7c96b68fbb43478c74376484ee12ce81"},
+    {file = "django_admin_sortable2-2.2.3.tar.gz", hash = "sha256:38f95a956b5c23df2a46449f0a3268d47408a641cfb45961cde0c41d2a686397"},
+]
+
+[package.dependencies]
+Django = ">=4.2"
+
+[[package]]
 name = "django-celery-beat"
 version = "2.7.0"
 description = "Database-backed Periodic Tasks."
@@ -2715,4 +2729,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "9894e60cfac16190a5de14fcfc8b2076d50bd98e7df4322c7cb998a493e9987d"
+content-hash = "87a855ea76c1197ccc86737f7161391c288bb39576f4cb5b7522123fb4ca6a26"

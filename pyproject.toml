@@ -177,6 +177,7 @@ pydub = "^0.25.1"
 django-admin-autocomplete-filter = "^0.7.1"
 pyrogram = "^2.0.106"
 tgcrypto = "^1.2.5"
+django-admin-sortable2 = "^2.2.3"
 
 
 [tool.poetry.group.dev.dependencies]

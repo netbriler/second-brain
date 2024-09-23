@@ -7,13 +7,14 @@ from django.utils.translation import gettext_lazy as _
 from djangoql.admin import DjangoQLSearchMixin
 
 from ai.tasks import send_file_to_user_task, transcribe_file_task
+from courses.models import Lesson, LessonEntity
 
 from . import models
 from .constants import FileContentType
 
 
 @admin.register(models.File)
-class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
+class FileAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = (
         'id',
         'content_type',
@@ -55,6 +56,7 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         'file_unique_id',
         'mime_type',
         'raw_data',
+        'caption',
         'created_at',
         'updated_at',
         'uploaded_by',
@@ -70,6 +72,7 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
                     'file_id',
                     'file_unique_id',
                     'mime_type',
+                    'caption',
                     'raw_data',
                     'created_at',
                     'updated_at',
@@ -82,6 +85,7 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     actions = [
         'send_to_telegram',
         'transcribe_audio_to_text',
+        'create_lessons_from_files',
     ]
 
     # add title translation here
@@ -137,6 +141,19 @@ class CourseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
             )
 
         self.message_user(request, _('Files sent to transcription'))
+
+    @admin.action(description=_('Create lessons from files'))
+    def create_lessons_from_files(self, request, queryset):
+        for file in queryset:
+            LessonEntity.objects.create(
+                lesson=Lesson.objects.create(
+                    title=file.caption or '',
+                ),
+                content=file.caption,
+                file=file,
+            )
+
+        self.message_user(request, _('Lessons created'))
 
     def has_add_permission(self, request):
         return False

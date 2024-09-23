@@ -6,7 +6,7 @@ from aiogram.enums import ContentType
 from aiogram.filters import Command, CommandObject, or_f
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import Message
+from aiogram.types import Message, ReactionTypeEmoji
 from django.utils.translation import gettext as _
 
 from telegram_bot.filters.admin import IsAdmin
@@ -70,9 +70,9 @@ async def _upload_files(message: Message, state: FSMContext) -> NoReturn:
     ),
 )
 async def _upload_file(message: Message, user: User, bot: Bot) -> NoReturn:
-    file = await save_file(
+    await message.react([ReactionTypeEmoji(emoji='👀')])
+    await save_file(
         message=message,
         user=user,
     )
-
-    await send_file_to_user(bot, file, user)
+    await message.react([ReactionTypeEmoji(emoji='👍')])

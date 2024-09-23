@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'django_celery_beat',
     'djangoql',
+    'adminsortable2',
     'users',
     'telegram_bot',
     'courses',

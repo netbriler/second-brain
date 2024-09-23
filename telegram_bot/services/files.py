@@ -154,6 +154,7 @@ async def save_file(message: AiogramMessage, user: User) -> NoReturn:
             'raw_data': data,
             'file_unique_id': data.get('file_unique_id', None),
             'mime_type': data.get('mime_type', None),
+            'caption': message.caption,
         },
     )
 
