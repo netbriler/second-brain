@@ -4,11 +4,12 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from djangoql.admin import DjangoQLSearchMixin
 
-from . import models
+from .forms import GroupAndCourseForm
 from .inlines import GroupInline, LessonEntityInline, LessonInline
+from .models import Course, Group, Lesson, LessonEntity
 
 
-@admin.register(models.Course)
+@admin.register(Course)
 class CourseAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
     list_display = (
         'title',
@@ -62,12 +63,13 @@ class CourseAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
     inlines = [GroupInline, LessonInline]
 
 
-@admin.register(models.Group)
+@admin.register(Group)
 class GroupAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
     list_display = (
         'title',
         'description',
         'parent',
+        'course',
         'created_at',
         'updated_at',
     )
@@ -77,6 +79,7 @@ class GroupAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
         'title',
         'description',
         'parent',
+        'course',
         'created_at',
         'updated_at',
     )
@@ -114,6 +117,7 @@ class GroupAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
                     'title',
                     'description',
                     'parent',
+                    'course',
                     'created_at',
                     'updated_at',
                 ],
@@ -123,8 +127,23 @@ class GroupAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
 
     inlines = [GroupInline, LessonInline]
 
+    action_form = GroupAndCourseForm
+    actions = ['assign_group_and_course']
 
-@admin.register(models.Lesson)
+    @admin.action(description=_('Assign selected group or course to lessons'))
+    def assign_group_and_course(self, request, queryset):
+        selected_group = request.POST.get('group_field')
+        selected_course = request.POST.get('course_field')
+        if selected_group or selected_course:
+            for obj in queryset:
+                if selected_group:
+                    obj.parent_id = selected_group
+                if selected_course:
+                    obj.course_id = selected_course
+                obj.save()
+
+
+@admin.register(Lesson)
 class LessonAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
     list_display = (
         'title',
@@ -173,8 +192,23 @@ class LessonAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
 
     inlines = [LessonEntityInline]
 
+    action_form = GroupAndCourseForm
+    actions = ['assign_group_and_course']
 
-@admin.register(models.LessonEntity)
+    @admin.action(description=_('Assign selected group or course to lessons'))
+    def assign_group_and_course(self, request, queryset):
+        selected_group = request.POST.get('group_field')
+        selected_course = request.POST.get('course_field')
+        if selected_group or selected_course:
+            for obj in queryset:
+                if selected_group:
+                    obj.group_id = selected_group
+                if selected_course:
+                    obj.course_id = selected_course
+                obj.save()
+
+
+@admin.register(LessonEntity)
 class LessonEntityAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
     list_display = (
         'lesson',
