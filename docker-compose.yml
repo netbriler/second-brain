@@ -27,6 +27,8 @@ services:
 
   backend:
     <<: *x-backend-service
+    depends_on:
+      - migrate
     expose:
       - 8000
     command: [ "gunicorn", "-c", "/app/app/gunicorn.py", "app.wsgi" ]
