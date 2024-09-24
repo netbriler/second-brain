@@ -22,6 +22,5 @@ COPY --from=requirements-stage /tmp/requirements.txt ./requirements.txt
 RUN /usr/local/bin/python -m pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-RUN python manage.py collectstatic --clear
 RUN django-admin compilemessages
 CMD ["gunicorn", "-c", "/app/app/gunicorn.py", "app.wsgi"]
