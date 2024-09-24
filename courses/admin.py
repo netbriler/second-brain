@@ -109,6 +109,8 @@ class GroupAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
         'description',
         AutocompleteFilterFactory(_('Parent'), 'parent'),
         AutocompleteFilterFactory(_('Course'), 'course'),
+        ('parent', admin.EmptyFieldListFilter),
+        ('course', admin.EmptyFieldListFilter),
         'created_at',
         'updated_at',
     )
@@ -205,6 +207,8 @@ class LessonAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
     list_filter = (
         AutocompleteFilterFactory(_('Group'), 'group'),
         AutocompleteFilterFactory(_('Course'), 'course'),
+        ('group', admin.EmptyFieldListFilter),
+        ('course', admin.EmptyFieldListFilter),
         'created_at',
         'updated_at',
     )
@@ -352,6 +356,7 @@ class LearningProgressAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         'lesson_link',
         'lesson_entity_link',
         'timecode',
+        'is_finished',
         'created_at',
         'updated_at',
     )
@@ -363,6 +368,7 @@ class LearningProgressAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         'lesson',
         'lesson_entity',
         'timecode',
+        'is_finished',
         'created_at',
         'updated_at',
     )
@@ -374,6 +380,8 @@ class LearningProgressAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         AutocompleteFilterFactory(_('Course'), 'course'),
         AutocompleteFilterFactory(_('Lesson'), 'lesson'),
         AutocompleteFilterFactory(_('Lesson Entity'), 'lesson_entity'),
+        ('lesson_entity', admin.EmptyFieldListFilter),
+        'is_finished',
         'created_at',
         'updated_at',
     )
@@ -397,6 +405,7 @@ class LearningProgressAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
                     'lesson',
                     'lesson_entity',
                     'timecode',
+                    'is_finished',
                     'created_at',
                     'updated_at',
                 ],

@@ -6,6 +6,7 @@ class Course(models.Model):
     class Meta:
         verbose_name = _('Course')
         verbose_name_plural = _('Courses')
+        ordering = ('position',)
 
     position = models.PositiveIntegerField(
         default=100,
@@ -43,6 +44,7 @@ class Group(models.Model):
     class Meta:
         verbose_name = _('Group')
         verbose_name_plural = _('Groups')
+        ordering = ('position',)
 
     position = models.PositiveIntegerField(
         default=100,
@@ -98,6 +100,7 @@ class Lesson(models.Model):
     class Meta:
         verbose_name = _('Lesson')
         verbose_name_plural = _('Lessons')
+        ordering = ('position',)
 
     position = models.PositiveIntegerField(
         default=100,
@@ -147,6 +150,7 @@ class LessonEntity(models.Model):
     class Meta:
         verbose_name = _('Lesson Entity')
         verbose_name_plural = _('Lesson Entities')
+        ordering = ('position',)
 
     position = models.PositiveIntegerField(
         default=100,
@@ -230,6 +234,11 @@ class LearningProgress(models.Model):
     timecode = models.PositiveIntegerField(
         default=0,
         verbose_name=_('Timecode (in seconds)'),
+    )
+
+    is_finished = models.BooleanField(
+        default=False,
+        verbose_name=_('Is Finished'),
     )
 
     created_at = models.DateTimeField(

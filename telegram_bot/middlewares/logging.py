@@ -39,8 +39,8 @@ class LoggingMiddleware(BaseMiddleware):
                 )
             elif event.inline_query:
                 logger.debug(
-                    f'Received inline query [query:{event.inline_queryquery}]\n'
-                    'from user [ID:{event.inline_queryfrom_user.id}]',
+                    f'Received inline query [query:{event.inline_query.query}]\n'
+                    f'from user [ID:{event.inline_query.from_user.id}]',
                 )
             elif event.message_reaction:
                 new_reactions = ''

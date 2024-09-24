@@ -18,4 +18,6 @@ def get_help_text(user: User) -> str:
         else:
             text += f'<b>{command.command}</b> - {command.description}\n'
 
+    text += '\n' + _('You can also use inline commands to interact with me')
+
     return text
