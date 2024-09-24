@@ -1,12 +1,10 @@
 from admin_auto_filters.filters import AutocompleteFilterFactory
 from django.contrib import admin
-from django.contrib.contenttypes.models import ContentType
-from django.urls import reverse
-from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from djangoql.admin import DjangoQLSearchMixin
 
 from ai import models
+from utils.helpers import model_link
 
 
 @admin.register(models.Message)
@@ -84,31 +82,14 @@ class MessageAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 
     def source_link(self, obj):
         if obj.source:
-            content_type = ContentType.objects.get_for_model(obj.source)
-            url = reverse(
-                f'admin:{content_type.app_label}_{content_type.model}_change',
-                args=[obj.source.pk],
-            )
-            return format_html(
-                '<a href="{url}">{text}</a>',
-                url=url,
-                text=str(obj.source),
-            )
+            return model_link(obj.source)
         return '-'
 
     source_link.short_description = _('Source')
 
     def requested_by_link(self, obj):
         if obj.requested_by:
-            url = reverse(
-                'admin:users_user_change',
-                args=[obj.requested_by.pk],
-            )
-            return format_html(
-                '<a href="{url}">{text}</a>',
-                url=url,
-                text=str(obj.requested_by),
-            )
+            return model_link(obj.source)
         return '-'
 
     requested_by_link.short_description = _('Requested By')

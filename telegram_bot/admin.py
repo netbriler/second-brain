@@ -1,13 +1,12 @@
 from admin_auto_filters.filters import AutocompleteFilterFactory
 from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
-from django.urls import reverse
-from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from djangoql.admin import DjangoQLSearchMixin
 
 from ai.tasks import send_file_to_user_task, transcribe_file_task
 from courses.models import Lesson, LessonEntity
+from utils.helpers import model_link
 
 from . import models
 from .constants import FileContentType
@@ -101,15 +100,8 @@ class FileAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 
     def uploaded_by_link(self, obj):
         if obj.uploaded_by:
-            url = reverse(
-                f'admin:{obj.uploaded_by._meta.app_label}_{obj.uploaded_by._meta.model_name}_change',  # noqa: SLF001
-                args=[obj.uploaded_by.pk],
-            )
-            return format_html(
-                '<a href="{url}">{text}</a>',
-                url=url,
-                text=str(obj.uploaded_by),
-            )
+            return model_link(obj.uploaded_by)
+        return '-'
 
     uploaded_by_link.short_description = _('Uploaded By')
 
@@ -236,29 +228,15 @@ class MessageAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 
     def user_link(self, obj):
         if obj.user:
-            url = reverse(
-                f'admin:{obj.user._meta.app_label}_{obj.user._meta.model_name}_change',  # noqa: SLF001
-                args=[obj.user.pk],
-            )
-            return format_html(
-                '<a href="{url}">{text}</a>',
-                url=url,
-                text=str(obj.user),
-            )
+            return model_link(obj.user)
+        return '-'
 
     user_link.short_description = _('User')
 
     def file_link(self, obj):
         if obj.file:
-            url = reverse(
-                f'admin:{obj.file._meta.app_label}_{obj.file._meta.model_name}_change',  # noqa: SLF001
-                args=[obj.file.pk],
-            )
-            return format_html(
-                '<a href="{url}">{text}</a>',
-                url=url,
-                text=str(obj.file),
-            )
+            return model_link(obj.file)
+        return '-'
 
     file_link.short_description = _('File')
 

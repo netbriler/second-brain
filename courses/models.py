@@ -189,3 +189,58 @@ class LessonEntity(models.Model):
 
     def __str__(self):
         return self.content
+
+
+class LearningProgress(models.Model):
+    class Meta:
+        verbose_name = _('Learning Progress')
+        verbose_name_plural = _('Learning Progresses')
+        unique_together = ('user', 'course', 'lesson', 'lesson_entity')
+
+    user = models.ForeignKey(
+        'users.User',
+        related_name='progresses',
+        on_delete=models.CASCADE,
+        verbose_name=_('User'),
+    )
+
+    course = models.ForeignKey(
+        'courses.Course',
+        related_name='progresses',
+        on_delete=models.CASCADE,
+        verbose_name=_('Course'),
+    )
+
+    lesson = models.ForeignKey(
+        'courses.Lesson',
+        related_name='progresses',
+        on_delete=models.CASCADE,
+        verbose_name=_('Lesson'),
+    )
+
+    lesson_entity = models.ForeignKey(
+        'courses.LessonEntity',
+        related_name='progresses',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name=_('Lesson Entity'),
+    )
+
+    timecode = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_('Timecode (in seconds)'),
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('Created At'),
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_('Updated At'),
+    )
+
+    def __str__(self):
+        return f'{self.user_id=} - {self.course_id=} - {self.lesson_id=}'
