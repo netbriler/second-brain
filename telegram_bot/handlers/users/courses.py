@@ -239,6 +239,58 @@ async def message_group(message: Message, regexp: re.Match, state: FSMContext) -
     await message.delete()
 
 
+async def set_lesson(message: Message, lesson: Lesson, user: User, state: FSMContext) -> NoReturn:
+    await message.answer(
+        text=get_lesson_text(lesson),
+        reply_markup=get_lesson_inline_markup(lesson),
+    )
+    state_data = await state.get_data()
+    lesson_entity_messages = state_data.get('lesson_entity_messages', {})
+    async for lesson_entity in lesson.lesson_entities.select_related('file').all():
+        if lesson_entity.file:
+            lesson_entity_message_id, __ = await send_file_to_user(
+                bot=message.bot,
+                file=lesson_entity.file,
+                user=user,
+                caption=lesson_entity.content,
+            )
+        else:
+            lesson_entity_message_id = (
+                await message.answer(
+                    text=lesson_entity.content,
+                )
+            ).message_id
+
+        progress = await get_last_actual_progress(
+            user=user,
+            course=lesson.course,
+            lesson=lesson,
+            lesson_entity=lesson_entity,
+        )
+        if progress and progress.timecode:
+            await message.answer(
+                text=_('Saved time: {time}').format(
+                    time=seconds_to_time(progress.timecode),
+                ),
+                reply_to_message_id=lesson_entity_message_id,
+            )
+
+        lesson_entity_messages[str(lesson_entity_message_id)] = str(lesson_entity.id)
+
+    await create_or_update_learning_progress(
+        user=user,
+        course=lesson.course,
+        lesson=lesson,
+    )
+
+    await state.update_data(
+        {
+            'lesson_id': lesson.id,
+            'lesson_entity_messages': lesson_entity_messages,
+        },
+    )
+
+
 @router.message(
     or_f(
         Regexp(r'^/start lesson_(?P<lesson_id>\d+)$'),
@@ -250,55 +302,7 @@ async def message_lesson(message: Message, regexp: re.Match, user: User, state: 
     lesson_id = regexp.group('lesson_id')
     try:
         lesson = await Lesson.objects.select_related('group', 'course').aget(id=lesson_id)
-        await message.answer(
-            text=get_lesson_text(lesson),
-            reply_markup=get_lesson_inline_markup(lesson),
-        )
-        state_data = await state.get_data()
-        lesson_entity_messages = state_data.get('lesson_entity_messages', {})
-        async for lesson_entity in lesson.lesson_entities.select_related('file').all():
-            if lesson_entity.file:
-                lesson_entity_message_id, __ = await send_file_to_user(
-                    bot=message.bot,
-                    file=lesson_entity.file,
-                    user=user,
-                    caption=lesson_entity.content,
-                )
-            else:
-                lesson_entity_message_id = (
-                    await message.answer(
-                        text=lesson_entity.content,
-                    )
-                ).message_id
-
-            progress = await get_last_actual_progress(
-                user=user,
-                course=lesson.course,
-                lesson=lesson,
-                lesson_entity=lesson_entity,
-            )
-            if progress and progress.timecode:
-                await message.answer(
-                    text=_('Saved time: {time}').format(
-                        time=seconds_to_time(progress.timecode),
-                    ),
-                    reply_to_message_id=lesson_entity_message_id,
-                )
-
-            lesson_entity_messages[str(lesson_entity_message_id)] = str(lesson_entity.id)
-
-        await create_or_update_learning_progress(
-            user=user,
-            course=lesson.course,
-            lesson=lesson,
-        )
-
-        await state.update_data(
-            {
-                'lesson_id': regexp.group('lesson_id'),
-                'lesson_entity_messages': lesson_entity_messages,
-            },
-        )
+        await set_lesson(message, lesson, user, state)
     except Lesson.DoesNotExist:
         await message.answer(
             text=_('Lesson id not found'),
@@ -390,3 +394,59 @@ async def message_stop_learning_session(message: Message, user: User, state: FSM
         _('Learning session stopped 📚'),
         reply_markup=get_default_markup(user),
     )
+
+
+@router.message(
+    CourseForm.learning_session,
+    or_f(
+        Command(commands=['finish_current_lesson']),
+        I18nText(_('Finish current lesson ✅')),
+    ),
+)
+async def message_finish_current_lesson(message: Message, state: FSMContext, user: User) -> NoReturn:
+    data = await state.get_data()
+    lesson_id = data.get('lesson_id')
+    if not lesson_id:
+        return await message.answer(
+            _('Lesson not found'),
+        )
+
+    try:
+        lesson = await Lesson.objects.select_related('course', 'group').aget(id=lesson_id)
+
+        await create_or_update_learning_progress(
+            user=user,
+            course=lesson.course,
+            lesson=lesson,
+            is_finished=True,
+        )
+
+        await message.answer(
+            _('Lesson finished ✅'),
+            reply_markup=get_learning_session_keyboard(),
+        )
+
+        next_lesson = (
+            await Lesson.objects.filter(
+                course=lesson.course,
+                position__gt=lesson.position,
+                group=lesson.group,
+            )
+            .order_by('position')
+            .select_related(
+                'course',
+                'group',
+            )
+            .afirst()
+        )
+        if not next_lesson:
+            return await message.answer(
+                _('No more lessons in this group'),
+                reply_markup=get_learning_session_keyboard(has_next_lesson=False),
+            )
+        else:
+            await set_lesson(message, next_lesson, user, state)
+    except Lesson.DoesNotExist:
+        return await message.answer(
+            _('Lesson not found'),
+        )

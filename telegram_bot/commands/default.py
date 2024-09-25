@@ -16,6 +16,7 @@ def get_default_commands(lang: str = 'en', with_categories: bool = False) -> lis
             BotCommand(command='/settings', description=_('open bot settings')),
             _('\nLearning commands 📚'),
             BotCommand(command='/stop_learning_session', description=_('stop learning session')),
+            BotCommand(command='/finish_current_lesson', description=_('finish current lesson')),
         ]
 
         if not with_categories:
