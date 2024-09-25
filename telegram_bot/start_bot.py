@@ -34,8 +34,8 @@ async def on_shutdown(bot: Bot) -> NoReturn:
 
 
 async def on_startup_polling(bot: Bot) -> NoReturn:
-    await on_startup(bot)
     await bot.delete_webhook()
+    await on_startup(bot)
 
 
 async def start_polling() -> NoReturn:
@@ -45,13 +45,13 @@ async def start_polling() -> NoReturn:
 
 
 async def on_startup_webhook(bot: Bot) -> NoReturn:
-    await on_startup(bot)
-    webhook_url = f'{settings.TELEGRAM_BASE_WEBHOOK_URL}{settings.TELEGRAM_WEBHOOK_PATH}'
-    await bot.set_webhook(
-        webhook_url,
-        secret_token=settings.TELEGRAM_WEBHOOK_SECRET,
-    )
-    logger.info(f'Webhook set to {webhook_url}')
+    if settings.TELEGRAM_BASE_WEBHOOK_URL and settings.TELEGRAM_WEBHOOK_PATH:
+        webhook_url = f'{settings.TELEGRAM_BASE_WEBHOOK_URL}{settings.TELEGRAM_WEBHOOK_PATH}'
+        await bot.set_webhook(
+            webhook_url,
+            secret_token=settings.TELEGRAM_WEBHOOK_SECRET,
+        )
+        logger.info(f'Webhook set to {webhook_url}')
 
 
 def start_webhook() -> NoReturn:
