@@ -392,8 +392,6 @@ class LearningProgressAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         'updated_at',
     )
 
-    ordering = ('id',)
-
     fieldsets = [
         (
             _('General'),

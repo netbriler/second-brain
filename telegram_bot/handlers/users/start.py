@@ -6,6 +6,7 @@ from aiogram.types import Message
 from django.utils.translation import gettext as _
 
 from telegram_bot.commands.admin import set_admin_commands
+from telegram_bot.commands.default import set_user_commands
 from telegram_bot.filters.i18n_text import I18nText
 from telegram_bot.keyboards.inline.help import get_help_inline_markup
 from telegram_bot.keyboards.inline.language import get_language_inline_markup
@@ -30,6 +31,16 @@ async def _help(message: Message, user: User) -> NoReturn:
 
     text = get_help_text(user)
     await message.answer(text, reply_markup=get_help_inline_markup())
+
+    await set_admin_commands(
+        message.bot,
+        user.telegram_id,
+        user.language_code,
+    ) if user.is_superuser else await set_user_commands(
+        message.bot,
+        user.telegram_id,
+        user.language_code,
+    )
 
 
 @router.message(CommandStart())

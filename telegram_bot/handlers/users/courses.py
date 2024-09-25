@@ -4,7 +4,7 @@ from typing import NoReturn
 
 from aiogram import F, Router
 from aiogram.enums import ContentType
-from aiogram.filters import or_f
+from aiogram.filters import Command, or_f
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
     CallbackQuery,
@@ -18,7 +18,14 @@ from django.utils.translation import gettext as _
 
 from courses.helpers import seconds_to_time, time_to_seconds
 from courses.models import Course, Group, Lesson, LessonEntity
+from courses.services import (
+    create_or_update_learning_progress,
+    get_last_actual_progress,
+)
+from telegram_bot.filters.i18n_text import I18nText
 from telegram_bot.filters.regexp import Regexp
+from telegram_bot.keyboards.default.courses import get_learning_session_keyboard
+from telegram_bot.keyboards.default.default import get_default_markup
 from telegram_bot.keyboards.inline.course import (
     get_course_inline_markup,
     get_group_inline_markup,
@@ -175,6 +182,17 @@ async def inline_query(query: CallbackQuery) -> NoReturn:
     )
 
 
+async def check_learning_session(message: Message, state: FSMContext) -> FSMContext:
+    if await state.get_state() != CourseForm.learning_session:
+        await state.set_state(CourseForm.learning_session)
+        await message.answer(
+            _('Learning session started 📚'),
+            reply_markup=get_learning_session_keyboard(),
+        )
+        # TODO: Create a new learning session in the database
+    return state
+
+
 @router.message(
     or_f(
         Regexp(r'^/start course_(?P<course_id>\d+)$'),
@@ -182,7 +200,7 @@ async def inline_query(query: CallbackQuery) -> NoReturn:
     ),
 )
 async def message_course(message: Message, regexp: re.Match, state: FSMContext) -> NoReturn:
-    await state.set_state(CourseForm.start_learning)
+    await check_learning_session(message, state)
     course_id = regexp.group('course_id')
     try:
         course = await Course.objects.aget(id=course_id)
@@ -205,7 +223,7 @@ async def message_course(message: Message, regexp: re.Match, state: FSMContext) 
     ),
 )
 async def message_group(message: Message, regexp: re.Match, state: FSMContext) -> NoReturn:
-    await state.set_state(CourseForm.start_learning)
+    await check_learning_session(message, state)
     group_id = regexp.group('group_id')
     try:
         group = await Group.objects.select_related('parent', 'course').aget(id=group_id)
@@ -228,7 +246,7 @@ async def message_group(message: Message, regexp: re.Match, state: FSMContext) -
     ),
 )
 async def message_lesson(message: Message, regexp: re.Match, user: User, state: FSMContext) -> NoReturn:
-    await state.set_state(CourseForm.start_learning)
+    state = await check_learning_session(message, state)
     lesson_id = regexp.group('lesson_id')
     try:
         lesson = await Lesson.objects.select_related('group', 'course').aget(id=lesson_id)
@@ -253,7 +271,27 @@ async def message_lesson(message: Message, regexp: re.Match, user: User, state: 
                     )
                 ).message_id
 
+            progress = await get_last_actual_progress(
+                user=user,
+                course=lesson.course,
+                lesson=lesson,
+                lesson_entity=lesson_entity,
+            )
+            if progress and progress.timecode:
+                await message.answer(
+                    text=_('Saved time: {time}').format(
+                        time=seconds_to_time(progress.timecode),
+                    ),
+                    reply_to_message_id=lesson_entity_message_id,
+                )
+
             lesson_entity_messages[str(lesson_entity_message_id)] = str(lesson_entity.id)
+
+        await create_or_update_learning_progress(
+            user=user,
+            course=lesson.course,
+            lesson=lesson,
+        )
 
         await state.update_data(
             {
@@ -270,7 +308,7 @@ async def message_lesson(message: Message, regexp: re.Match, user: User, state: 
 
 
 @router.message(
-    CourseForm.start_learning,
+    CourseForm.learning_session,
     F.reply_to_message.content_type.in_(
         {
             ContentType.AUDIO,
@@ -281,7 +319,7 @@ async def message_lesson(message: Message, regexp: re.Match, user: User, state: 
     ),
     Regexp(r'^(((?P<hours>\d\d?):)?(?P<minutes>[0-5]?\d)?:)?(?P<seconds>[0-5]?\d)$'),
 )
-async def message_time(message: Message, regexp: re.Match, state: FSMContext) -> NoReturn:
+async def message_time(message: Message, regexp: re.Match, state: FSMContext, user: User) -> NoReturn:
     data = await state.get_data()
     lesson_entity_messages = data.get('lesson_entity_messages', {})
     lesson_entity_id = lesson_entity_messages.get(str(message.reply_to_message.message_id))
@@ -290,7 +328,9 @@ async def message_time(message: Message, regexp: re.Match, state: FSMContext) ->
             text=_('Please reply to the lesson entity message'),
         )
     try:
-        await LessonEntity.objects.select_related('lesson').aget(id=int(lesson_entity_id))
+        lesson_entry = await LessonEntity.objects.select_related('lesson', 'lesson__course').aget(
+            id=int(lesson_entity_id),
+        )
     except LessonEntity.DoesNotExist:
         return await message.answer(
             text=_('Lesson entity not found'),
@@ -306,8 +346,18 @@ async def message_time(message: Message, regexp: re.Match, state: FSMContext) ->
             text=_('The duration of the content is less than the specified time'),
         )
 
+    await create_or_update_learning_progress(
+        user=user,
+        lesson=lesson_entry.lesson,
+        course=lesson_entry.lesson.course,
+        lesson_entity=lesson_entry,
+        timecode=seconds,
+    )
+
     progress_message = await message.answer(
-        text=f'Saved time: {seconds_to_time(seconds)}',
+        text=_('Saved time: {time}').format(
+            time=seconds_to_time(seconds),
+        ),
         reply_to_message_id=message.reply_to_message.message_id,
     )
     await message.delete()
@@ -324,4 +374,19 @@ async def message_time(message: Message, regexp: re.Match, state: FSMContext) ->
         {
             'progres_messages': progress_messages,
         },
+    )
+
+
+@router.message(
+    CourseForm.learning_session,
+    or_f(
+        Command(commands=['stop_learning_session']),
+        I18nText(_('Stop learning session 🛑')),
+    ),
+)
+async def message_stop_learning_session(message: Message, user: User, state: FSMContext) -> NoReturn:
+    await state.clear()
+    await message.answer(
+        _('Learning session stopped 📚'),
+        reply_markup=get_default_markup(user),
     )

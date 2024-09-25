@@ -199,7 +199,7 @@ class LearningProgress(models.Model):
     class Meta:
         verbose_name = _('Learning Progress')
         verbose_name_plural = _('Learning Progresses')
-        unique_together = ('user', 'course', 'lesson', 'lesson_entity')
+        ordering = ('-updated_at',)
 
     user = models.ForeignKey(
         'users.User',
@@ -213,6 +213,8 @@ class LearningProgress(models.Model):
         related_name='progresses',
         on_delete=models.CASCADE,
         verbose_name=_('Course'),
+        blank=True,
+        null=True,
     )
 
     lesson = models.ForeignKey(

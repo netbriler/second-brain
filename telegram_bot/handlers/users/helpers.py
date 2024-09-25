@@ -27,7 +27,7 @@ async def _cancel(message: Message, user: User, state: FSMContext) -> NoReturn:
 @router.message()
 async def _default_menu(message: Message, user: User, state: FSMContext) -> NoReturn:
     state_form = await state.get_state()
-    if state_form == CourseForm.start_learning:
+    if state_form == CourseForm.learning_session:
         pass
     else:
         return await _cancel(message, user, state)
