@@ -13,6 +13,7 @@ class ReminderAdmin(admin.ModelAdmin):
         'title',
         'description',
         'task_class',
+        'is_enabled',
         'created_at',
         'updated_at',
     )
@@ -24,6 +25,7 @@ class ReminderAdmin(admin.ModelAdmin):
         'title',
         'description',
         'task_class',
+        'is_enabled',
         'created_at',
         'updated_at',
     )
@@ -32,6 +34,7 @@ class ReminderAdmin(admin.ModelAdmin):
         'created_at',
         'updated_at',
         AutocompleteFilterFactory(_('User'), 'user'),
+        'is_enabled',
     )
 
     autocomplete_fields = ('user', 'periodic_task')
@@ -40,6 +43,7 @@ class ReminderAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         'id',
+        'periodic_task',
         'created_at',
         'updated_at',
     )
