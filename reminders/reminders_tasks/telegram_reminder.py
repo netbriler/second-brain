@@ -11,7 +11,7 @@ class TelegramReminderTask(ReminderTaskBase):
         file = File.objects.get(id=self.reminder.data.get('file_id')) if self.reminder.data.get('file_id') else None
         user = self.reminder.user
         if file:
-            sync_send_file_to_user(bot, file, user)
+            sync_send_file_to_user(bot, file, user, send_file_info=True)
 
         bot.send_message(
             chat_id=user.telegram_id,

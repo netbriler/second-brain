@@ -33,23 +33,30 @@ def generate_file_text(file: File) -> str:
     )
 
 
-async def send_file_to_user(bot: Bot, file: File, user: User) -> tuple[int, int]:
-    text = generate_file_text(file)
-
+async def send_file_to_user(
+    bot: Bot,
+    file: File,
+    user: User,
+    send_file_info: bool = False,
+    caption: str = None,
+) -> tuple[int, int]:
     if file.content_type == ContentType.AUDIO:
         message = await bot.send_audio(
             user.telegram_id,
             file.file_id,
+            caption=caption,
         )
     elif file.content_type == ContentType.DOCUMENT:
         message = await bot.send_document(
             user.telegram_id,
             file.file_id,
+            caption=caption,
         )
     elif file.content_type == ContentType.PHOTO:
         message = await bot.send_photo(
             user.telegram_id,
             file.file_id,
+            caption=caption,
         )
     elif file.content_type == ContentType.STICKER:
         message = await bot.send_sticker(
@@ -60,6 +67,7 @@ async def send_file_to_user(bot: Bot, file: File, user: User) -> tuple[int, int]
         message = await bot.send_video(
             user.telegram_id,
             file.file_id,
+            caption=caption,
         )
     elif file.content_type == ContentType.VIDEO_NOTE:
         message = await bot.send_video_note(
@@ -74,27 +82,39 @@ async def send_file_to_user(bot: Bot, file: File, user: User) -> tuple[int, int]
     else:
         message = await bot.send_message(user.telegram_id, _('Unknown content type'))
 
-    message2 = await bot.send_message(user.telegram_id, text, reply_to_message_id=message.message_id)
-    return message.message_id, message2.message_id
+    message2_id = None
+    if send_file_info:
+        text = generate_file_text(file)
+        message2 = await bot.send_message(user.telegram_id, text, reply_to_message_id=message.message_id)
+        message2_id = message2.message_id
+
+    return message.message_id, message2_id
 
 
-def sync_send_file_to_user(bot: TeleBot, file: File, user: User) -> tuple[int, int]:
-    text = generate_file_text(file)
-
+def sync_send_file_to_user(
+    bot: TeleBot,
+    file: File,
+    user: User,
+    send_file_info: bool = False,
+    caption: str = None,
+) -> tuple[int, int]:
     if file.content_type == ContentType.AUDIO:
         message = bot.send_audio(
             user.telegram_id,
             file.file_id,
+            caption=caption,
         )
     elif file.content_type == ContentType.DOCUMENT:
         message = bot.send_document(
             user.telegram_id,
             file.file_id,
+            caption=caption,
         )
     elif file.content_type == ContentType.PHOTO:
         message = bot.send_photo(
             user.telegram_id,
             file.file_id,
+            caption=caption,
         )
     elif file.content_type == ContentType.STICKER:
         message = bot.send_sticker(
@@ -105,6 +125,7 @@ def sync_send_file_to_user(bot: TeleBot, file: File, user: User) -> tuple[int, i
         message = bot.send_video(
             user.telegram_id,
             file.file_id,
+            caption=caption,
         )
     elif file.content_type == ContentType.VIDEO_NOTE:
         message = bot.send_video_note(
@@ -119,9 +140,12 @@ def sync_send_file_to_user(bot: TeleBot, file: File, user: User) -> tuple[int, i
     else:
         message = bot.send_message(user.telegram_id, _('Unknown content type'))
 
-    message2 = bot.send_message(user.telegram_id, text, reply_to_message_id=message.message_id)
-
-    return message.message_id, message2.message_id
+    message2_id = None
+    if send_file_info:
+        text = generate_file_text(file)
+        message2 = bot.send_message(user.telegram_id, text, reply_to_message_id=message.message_id)
+        message2_id = message2.message_id
+    return message.message_id, message2_id
 
 
 async def save_file(message: AiogramMessage, user: User) -> NoReturn:

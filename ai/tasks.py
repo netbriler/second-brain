@@ -226,7 +226,7 @@ def transcribe_file_task(
 
     db_file = File.objects.get(id=file_id)
     if not message_id:
-        message_id, message_id2 = sync_send_file_to_user(bot, db_file, user)
+        message_id, message_id2 = sync_send_file_to_user(bot, db_file, user, send_file_info=True)
 
     bot.set_message_reaction(chat_id, message_id, [ReactionTypeEmoji('👀')])
 
@@ -295,7 +295,7 @@ def send_file_to_user_task(file_id: int, user_id: int):
 
     file = File.objects.get(id=file_id)
 
-    sync_send_file_to_user(bot, file, user)
+    sync_send_file_to_user(bot, file, user, send_file_info=True)
 
     return True
 

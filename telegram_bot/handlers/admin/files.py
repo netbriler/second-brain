@@ -34,7 +34,7 @@ async def _file(message: Message, bot: Bot, command: CommandObject, user: User) 
         await message.answer(_('file not found'))
         return NoReturn
 
-    await send_file_to_user(bot, file, user)
+    await send_file_to_user(bot, file, user, send_file_info=True)
 
 
 class FilesAddForm(StatesGroup):

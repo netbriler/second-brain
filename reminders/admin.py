@@ -47,3 +47,13 @@ class ReminderAdmin(admin.ModelAdmin):
         'created_at',
         'updated_at',
     )
+
+    @admin.action(description=_('Enable selected reminders'))
+    def enable_selected_reminders(self, request, queryset):
+        queryset.update(is_enabled=True)
+
+    @admin.action(description=_('Disable selected reminders'))
+    def disable_selected_reminders(self, request, queryset):
+        queryset.update(is_enabled=False)
+
+    actions = ['enable_selected_reminders', 'disable_selected_reminders']
