@@ -199,13 +199,13 @@ async def check_learning_session(message: Message, state: FSMContext) -> FSMCont
         Regexp(r'^/course_(?P<course_id>\d+)$'),
     ),
 )
-async def message_course(message: Message, regexp: re.Match, state: FSMContext) -> NoReturn:
+async def message_course(message: Message, regexp: re.Match, state: FSMContext, user: User) -> NoReturn:
     await check_learning_session(message, state)
     course_id = regexp.group('course_id')
     try:
         course = await Course.objects.aget(id=course_id)
         await message.answer(
-            text=get_course_text(course),
+            text=await get_course_text(course, user),
             reply_markup=get_course_inline_markup(course),
         )
     except Course.DoesNotExist:

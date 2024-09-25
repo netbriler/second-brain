@@ -1,13 +1,29 @@
 from django.utils.translation import gettext as _
 
 from courses.models import Course, Group, Lesson
+from courses.services import get_lessons_progress
+from users.models import User
 
 
-def get_course_text(course: Course):
-    return _('<b>Course Information</b>\n\n<b>Title:</b> {title}\n<b>Description:</b> {description}\n').format(
+async def get_course_text(course: Course, user: User):
+    stats = await get_lessons_progress(user_id=user.id, course_id=course.id)
+    stats_text = _('<b>Course Progress</b>\n<b>Total Finished:</b> {finished_count}/{total_count}\n\n').format(
+        finished_count=stats.finished_count,
+        total_count=stats.total_count,
+    )
+    for group_stats in stats.groups:
+        stats_text += _('<b>Group: {title}</b>\n<b>Finished:</b> {finished_count}/{total_count}\n\n').format(
+            title=group_stats.group.title if group_stats.group else _('No group'),
+            finished_count=group_stats.finished_count,
+            total_count=group_stats.total_count,
+        )
+    return _(
+        '<b>Course Information</b>\n\n<b>Title:</b> {title}\n<b>Description:</b> {description}\n\n{stats_text}',
+    ).format(
         title=course.title,
         id=course.id,
         description=course.description if course.description else _('No description provided'),
+        stats_text=stats_text,
     )
 
 
