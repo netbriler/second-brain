@@ -25,6 +25,9 @@ def get_admin_commands(lang: str = 'en', with_categories: bool = False) -> list[
                 _('\n<b>File commands 📁</b>'),
                 BotCommand(command='/file', description=_('get file')),
                 BotCommand(command='/upload_files', description=_('upload files')),
+                _('\n<b>Helpers commands 🛠</b>'),
+                BotCommand(command='/dump_state', description=_('dump state')),
+                BotCommand(command='/clear_state', description=_('clear state')),
             ],
         )
 
