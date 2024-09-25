@@ -6,7 +6,6 @@ from aiogram import F, Router
 from aiogram.enums import ContentType
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import (
     CallbackQuery,
     InlineQueryResultArticle,
@@ -31,6 +30,7 @@ from telegram_bot.services.courses import (
     get_lesson_text,
 )
 from telegram_bot.services.files import get_message_duration, send_file_to_user
+from telegram_bot.states.courses import CourseForm
 from users.models import User
 
 router = Router(name=__name__)
@@ -175,10 +175,6 @@ async def inline_query(query: CallbackQuery) -> NoReturn:
     )
 
 
-class CourseForm(StatesGroup):
-    start_learning = State()
-
-
 @router.message(
     or_f(
         Regexp(r'^/start course_(?P<course_id>\d+)$'),
@@ -257,7 +253,7 @@ async def message_lesson(message: Message, regexp: re.Match, user: User, state: 
                     )
                 ).message_id
 
-            lesson_entity_messages[lesson_entity_message_id] = lesson_entity.id
+            lesson_entity_messages[str(lesson_entity_message_id)] = str(lesson_entity.id)
 
         await state.update_data(
             {
@@ -288,13 +284,13 @@ async def message_lesson(message: Message, regexp: re.Match, user: User, state: 
 async def message_time(message: Message, regexp: re.Match, state: FSMContext) -> NoReturn:
     data = await state.get_data()
     lesson_entity_messages = data.get('lesson_entity_messages', {})
-    lesson_entity_id = lesson_entity_messages.get(message.reply_to_message.message_id)
+    lesson_entity_id = lesson_entity_messages.get(str(message.reply_to_message.message_id))
     if not lesson_entity_id:
         return await message.answer(
             text=_('Please reply to the lesson entity message'),
         )
     try:
-        await LessonEntity.objects.select_related('lesson').aget(id=lesson_entity_id)
+        await LessonEntity.objects.select_related('lesson').aget(id=int(lesson_entity_id))
     except LessonEntity.DoesNotExist:
         return await message.answer(
             text=_('Lesson entity not found'),

@@ -5,7 +5,6 @@ from aiogram import Bot, F, Router
 from aiogram.enums import ContentType
 from aiogram.filters import Command, CommandObject, or_f
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, ReactionTypeEmoji
 from django.utils.translation import gettext as _
 
@@ -14,6 +13,7 @@ from telegram_bot.filters.i18n_text import I18nText
 from telegram_bot.keyboards.default.cancel import get_cancel_markup
 from telegram_bot.models import File
 from telegram_bot.services.files import save_file, send_file_to_user
+from telegram_bot.states.file import FilesAddForm
 from users.models import User
 
 router = Router(name=__name__)
@@ -35,10 +35,6 @@ async def _file(message: Message, bot: Bot, command: CommandObject, user: User) 
         return NoReturn
 
     await send_file_to_user(bot, file, user, send_file_info=True)
-
-
-class FilesAddForm(StatesGroup):
-    add_file = State()
 
 
 @router.message(

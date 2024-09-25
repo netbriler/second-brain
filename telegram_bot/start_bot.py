@@ -1,6 +1,7 @@
 from typing import NoReturn
 
 from aiogram import Bot, Dispatcher
+from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 from django.conf import settings
@@ -12,7 +13,9 @@ from utils.logging import logger
 
 from .loader import default_bot
 
-dp = Dispatcher()
+dp = Dispatcher(
+    storage=RedisStorage.from_url(settings.TELEGRAM_BOT_STORAGE_REDIS_URL),
+)
 
 dp.include_router(router)
 setup_middleware(dp)

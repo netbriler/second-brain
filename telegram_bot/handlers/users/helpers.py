@@ -12,6 +12,7 @@ from telegram_bot.constants import MessageRoles
 from telegram_bot.filters.i18n_text import I18nText
 from telegram_bot.keyboards.default.default import get_default_markup
 from telegram_bot.services.files import create_message, save_file
+from telegram_bot.states.courses import CourseForm
 from users.models import User
 
 router = Router(name=__name__)
@@ -25,7 +26,10 @@ async def _cancel(message: Message, user: User, state: FSMContext) -> NoReturn:
 
 @router.message()
 async def _default_menu(message: Message, user: User, state: FSMContext) -> NoReturn:
-    if await state.get_state():
+    state_form = await state.get_state()
+    if state_form == CourseForm.start_learning:
+        pass
+    else:
         return await _cancel(message, user, state)
 
     file = None
