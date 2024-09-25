@@ -216,3 +216,16 @@ async def create_message(
         user=user,
         file=file,
     )
+
+
+def get_message_duration(message: AiogramMessage) -> int:
+    if message.content_type == ContentType.AUDIO:
+        return message.audio.duration
+    elif message.content_type == ContentType.VIDEO:
+        return message.video.duration
+    elif message.content_type == ContentType.VOICE:
+        return message.voice.duration
+    elif message.content_type == ContentType.VIDEO_NOTE:
+        return message.video_note.duration
+
+    raise ValueError('Unknown content type')
