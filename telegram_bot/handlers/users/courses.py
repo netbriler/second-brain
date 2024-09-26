@@ -22,6 +22,8 @@ from courses.services import (
     get_course_lessons_progress,
     get_group_lessons_progress,
     get_last_actual_progress,
+    get_next_lesson,
+    get_stats_emoji,
 )
 from telegram_bot.filters.i18n_text import I18nText
 from telegram_bot.filters.regexp import Regexp
@@ -49,7 +51,7 @@ router = Router(name=__name__)
 
 
 @router.inline_query(Regexp(r'^courses:course_(?P<course_id>\d+)?$'))
-async def inline_query_course(query: CallbackQuery, regexp: re.Match) -> NoReturn:
+async def inline_query_course(query: CallbackQuery, regexp: re.Match, user: User) -> NoReturn:
     course_id = regexp.group('course_id')
     results = []
     if course_id:
@@ -62,11 +64,12 @@ async def inline_query_course(query: CallbackQuery, regexp: re.Match) -> NoRetur
                 text=_('📚 {course_title}').format(course_title=course.title),
                 start_parameter=f'course_{course.id}',
             )
+            stats = await get_course_lessons_progress(course_id=course.id, user_id=user.id)
             async for group in course.groups.all():
                 results.append(
                     InlineQueryResultArticle(
                         id=str(group.id),
-                        title=group.title,
+                        title=f'{get_stats_emoji(stats, group.id)} {group.title}',
                         description=group.description,
                         input_message_content=InputTextMessageContent(
                             message_text=f'/start group_{group.id}',
@@ -78,7 +81,7 @@ async def inline_query_course(query: CallbackQuery, regexp: re.Match) -> NoRetur
                 results.append(
                     InlineQueryResultArticle(
                         id=str(lesson.id),
-                        title=lesson.title,
+                        title=f'{get_stats_emoji(stats, lesson_id=lesson.id)} {lesson.title}',
                         input_message_content=InputTextMessageContent(
                             message_text=f'/start lesson_{lesson.id}',
                         ),
@@ -104,7 +107,7 @@ async def inline_query_course(query: CallbackQuery, regexp: re.Match) -> NoRetur
 
 
 @router.inline_query(Regexp(r'^courses:group_(?P<group_id>\d+)?$'))
-async def inline_query_group(query: CallbackQuery, regexp: re.Match) -> NoReturn:
+async def inline_query_group(query: CallbackQuery, regexp: re.Match, user: User) -> NoReturn:
     group_id = regexp.group('group_id')
     results = []
     if group_id:
@@ -114,11 +117,12 @@ async def inline_query_group(query: CallbackQuery, regexp: re.Match) -> NoReturn
                 text=_('📁 {group_title}').format(group_title=group.title),
                 start_parameter=f'group_{group.id}',
             )
+            stats = await get_group_lessons_progress(group_id=group.id, user_id=user.id)
             async for lesson in group.lessons.all():
                 results.append(
                     InlineQueryResultArticle(
                         id=str(lesson.id),
-                        title=lesson.title,
+                        title=f'{get_stats_emoji(stats, lesson_id=lesson.id)} {lesson.title}',
                         input_message_content=InputTextMessageContent(
                             message_text=f'/start lesson_{lesson.id}',
                         ),
@@ -202,22 +206,32 @@ async def callback_course_stats(
 @router.inline_query(
     Regexp(r'^courses:(?P<query>.+)?$'),
 )
-async def inline_query(query: CallbackQuery, regexp: re.Match) -> NoReturn:
+async def inline_query(query: CallbackQuery, regexp: re.Match, user: User) -> NoReturn:
     search_query = regexp.group('query') or ''
     results = list()
+    middle_results = list()
+    end_results = list()
     async for course in Course.objects.filter(
         Q(title__icontains=search_query) | Q(description__icontains=search_query),
     ):
-        results.append(
-            InlineQueryResultArticle(
-                id=str(course.id),
-                title=course.title,
-                description=course.description,
-                input_message_content=InputTextMessageContent(
-                    message_text=f'/start course_{course.id}',
-                ),
+        stats = await get_course_lessons_progress(course_id=course.id, user_id=user.id)
+        article = InlineQueryResultArticle(
+            id=str(course.id),
+            title=f'{get_stats_emoji(stats)} {course.title}',
+            description=course.description,
+            input_message_content=InputTextMessageContent(
+                message_text=f'/start course_{course.id}',
             ),
         )
+        if stats and stats.percent == 100:
+            end_results.append(article)
+        elif stats and stats.in_progress_count:
+            middle_results.append(article)
+        else:
+            results.append(article)
+
+    results.extend(middle_results)
+    results.extend(end_results)
 
     await query.answer(
         results=results,
@@ -561,25 +575,25 @@ async def message_finish_current_lesson(message: Message, state: FSMContext, use
             is_finished=True,
         )
 
-        next_lesson = (
-            await Lesson.objects.filter(
-                course=lesson.course,
-                position__gt=lesson.position,
-                group=lesson.group,
-            )
-            .order_by('position')
-            .select_related(
-                'course',
-                'group',
-            )
-            .afirst()
+        next_lesson, stats = await get_next_lesson(user, lesson)
+        answer_message = await message.answer(
+            _('Lesson finished ✅'),
+            reply_markup=get_learning_session_keyboard(lesson_selected=bool(next_lesson)),
         )
+        answer_messages_ids.append(answer_message.message_id)
         if not next_lesson:
-            answer_message = await message.answer(
-                _('No more lessons in this group\nPlease select another group or course'),
-                reply_markup=get_lesson_inline_markup(lesson),
-            )
-            answer_messages_ids.append(answer_message.message_id)
+            if stats and stats.percent == 100:
+                answer_message = await message.answer(
+                    _('All lessons in this course are completed ✅'),
+                    reply_markup=get_start_learning_inline_markup(),
+                )
+                answer_messages_ids.append(answer_message.message_id)
+            else:
+                answer_message = await message.answer(
+                    _('No more lessons in this group\nPlease select another group or course'),
+                    reply_markup=get_lesson_inline_markup(lesson),
+                )
+                answer_messages_ids.append(answer_message.message_id)
         else:
             lesson_messages_ids = await set_lesson(message, next_lesson, user, state)
             answer_messages_ids += lesson_messages_ids

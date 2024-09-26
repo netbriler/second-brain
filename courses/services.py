@@ -79,16 +79,60 @@ async def get_last_actual_progress(
 @dataclass
 class GroupLessonsStats:
     group: Group | None
-    finished_count: int
-    unfinished_count: int
-    total_count: int
+    finished_ids: list[int]
+    in_progress_ids: list[int]
+    unstarted_ids: list[int]
+
+    @property
+    def finished_count(self) -> int:
+        return len(self.finished_ids)
+
+    @property
+    def in_progress_count(self) -> int:
+        return len(self.in_progress_ids)
+
+    @property
+    def unstarted_count(self) -> int:
+        return len(self.unstarted_ids)
+
+    @property
+    def total_count(self) -> int:
+        return self.finished_count + self.in_progress_count + self.unstarted_count
+
+    @property
+    def percent(self) -> float:
+        percent = self.finished_count / self.total_count if self.total_count else 0.0
+
+        return round(percent * 100, 2)
 
 
 @dataclass
 class LessonsStats:
-    finished_count: int
-    unfinished_count: int
-    total_count: int
+    finished_ids: list[int]
+    in_progress_ids: list[int]
+    unstarted_ids: list[int]
+
+    @property
+    def finished_count(self) -> int:
+        return len(self.finished_ids)
+
+    @property
+    def in_progress_count(self) -> int:
+        return len(self.in_progress_ids)
+
+    @property
+    def unstarted_count(self) -> int:
+        return len(self.unstarted_ids)
+
+    @property
+    def total_count(self) -> int:
+        return self.finished_count + self.in_progress_count + self.unstarted_count
+
+    @property
+    def percent(self) -> float:
+        percent = self.finished_count / self.total_count if self.total_count else 0.0
+
+        return round(percent * 100, 2)
 
     groups: dict[int, GroupLessonsStats]
 
@@ -98,27 +142,37 @@ async def get_course_lessons_progress(user_id: int, course_id: int) -> LessonsSt
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                            WITH lesson_progress AS (
-                                SELECT DISTINCT ON (l.id) l.group_id,
-                                                      l.id                            AS lesson_id,
-                                                      l.title                         AS lesson_title,
-                                                      COALESCE(lp.is_finished, false) AS is_finished
-                                FROM courses_lesson l
-                                         LEFT JOIN (SELECT lesson_id,
-                                                           is_finished
-                                                    FROM courses_learningprogress lp
-                                                    WHERE lp.user_id = %s
-                                                      AND lp.course_id = %s
-                                                    ORDER BY lp.updated_at DESC) lp ON l.id = lp.lesson_id
-                                WHERE l.course_id = %s
-                                ORDER BY l.id
-                            )
-                            SELECT group_id,
-                                   COUNT(CASE WHEN is_finished = true THEN 1 END) AS finished_count,
-                                   COUNT(CASE WHEN is_finished = false THEN 1 END) AS unfinished_count
-                            FROM lesson_progress
-                            GROUP BY group_id
-                            ORDER BY group_id;
+WITH lesson_progress AS (
+    SELECT DISTINCT ON (l.id)
+           l.group_id,
+           l.id AS lesson_id,
+           l.title AS lesson_title,
+           COALESCE(lp.is_finished, false) AS is_finished,
+           lp.updated_at AS updated_at,
+           l.position
+    FROM courses_lesson l
+    LEFT JOIN (
+        SELECT lesson_id,
+               is_finished,
+               updated_at
+        FROM courses_learningprogress lp
+        WHERE lp.user_id = %s
+          AND lp.course_id = %s
+        ORDER BY lp.updated_at DESC
+    ) lp ON l.id = lp.lesson_id
+    WHERE l.course_id = %s
+    ORDER BY l.id
+)
+SELECT
+    lesson_id,
+    group_id,
+    is_finished,
+    CASE
+        WHEN NOT is_finished AND updated_at IS NOT NULL THEN true
+        ELSE false
+    END AS is_in_progress
+FROM lesson_progress
+ORDER BY position;
                         """,
                 [user_id, course_id, course_id],
             )
@@ -129,19 +183,29 @@ async def get_course_lessons_progress(user_id: int, course_id: int) -> LessonsSt
 
     groups = {group.id: group async for group in Group.objects.filter(course_id=course_id)}
     data = {}
-    for group_id, finished_count, unfinished_count in result:
+    for lesson_id, group_id, is_finished, is_in_progress in result:
         group = groups.get(group_id)
-        data[int(group_id)] = GroupLessonsStats(
-            group=group,
-            finished_count=finished_count,
-            unfinished_count=unfinished_count,
-            total_count=finished_count + unfinished_count,
+        data.setdefault(
+            group_id,
+            GroupLessonsStats(
+                group=group,
+                finished_ids=[],
+                in_progress_ids=[],
+                unstarted_ids=[],
+            ),
         )
 
+        if is_finished:
+            data[group_id].finished_ids.append(lesson_id)
+        elif is_in_progress:
+            data[group_id].in_progress_ids.append(lesson_id)
+        else:
+            data[group_id].unstarted_ids.append(lesson_id)
+
     return LessonsStats(
-        finished_count=sum(stats.finished_count for stats in data.values()),
-        unfinished_count=sum(stats.unfinished_count for stats in data.values()),
-        total_count=sum(stats.total_count for stats in data.values()),
+        finished_ids=sum((group.finished_ids for group in data.values()), []),
+        in_progress_ids=sum((group.in_progress_ids for group in data.values()), []),
+        unstarted_ids=sum((group.unstarted_ids for group in data.values()), []),
         groups=data,
     )
 
@@ -151,29 +215,36 @@ async def get_group_lessons_progress(user_id: int, group_id: int) -> GroupLesson
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                            WITH lesson_progress AS (
-                            SELECT DISTINCT ON (l.id)
-                               l.group_id,
-                               l.id AS lesson_id,
-                               l.title AS lesson_title,
-                               COALESCE(lp.is_finished, false) AS is_finished
-                                FROM courses_lesson l
-                                LEFT JOIN (
-                                    SELECT lesson_id,
-                                           is_finished
-                                    FROM courses_learningprogress lp
-                                    WHERE lp.user_id = %s
-                                    ORDER BY lp.updated_at DESC
-                                ) lp ON l.id = lp.lesson_id
-                                WHERE l.group_id = %s
-                                ORDER BY l.id
-                            )
-                            SELECT group_id, COUNT(CASE WHEN is_finished = true THEN 1 END) AS finished_count,
-                                   COUNT(CASE WHEN is_finished = false THEN 1 END) AS unfinished_count
-                            FROM lesson_progress
-                            WHERE group_id = %s
-                            GROUP BY group_id;
-                        """,
+                WITH lesson_progress AS (
+                    SELECT DISTINCT ON (l.id)
+                           l.group_id,
+                           l.id AS lesson_id,
+                           l.title AS lesson_title,
+                           lp.updated_at AS updated_at,
+                           COALESCE(lp.is_finished, false) AS is_finished
+                    FROM courses_lesson l
+                    LEFT JOIN (
+                        SELECT lesson_id,
+                               is_finished,
+                               updated_at
+                        FROM courses_learningprogress lp
+                        WHERE lp.user_id = %s
+                        ORDER BY lp.updated_at DESC
+                    ) lp ON l.id = lp.lesson_id
+                    WHERE l.group_id = %s
+                    ORDER BY l.id
+                )
+                SELECT
+                    lesson_id,
+                    group_id,
+                    is_finished,
+                    CASE
+                        WHEN NOT is_finished AND updated_at IS NOT NULL THEN true
+                        ELSE false
+                    END AS is_in_progress
+                FROM lesson_progress
+                WHERE group_id = %s;
+                                        """,
                 [user_id, group_id, group_id],
             )
 
@@ -181,10 +252,87 @@ async def get_group_lessons_progress(user_id: int, group_id: int) -> GroupLesson
 
     result = await sync_to_async(raw_sql)()
 
-    for group_id, finished_count, unfinished_count in result:
-        return GroupLessonsStats(
-            group=await Group.objects.aget(id=group_id),
-            finished_count=finished_count,
-            unfinished_count=unfinished_count,
-            total_count=finished_count + unfinished_count,
+    data = GroupLessonsStats(
+        group=await Group.objects.aget(id=group_id),
+        finished_ids=[],
+        in_progress_ids=[],
+        unstarted_ids=[],
+    )
+    for lesson_id, group_id, is_finished, is_in_progress in result:  # noqa: B007
+        if is_finished:
+            data.finished_ids.append(lesson_id)
+        elif is_in_progress:
+            data.in_progress_ids.append(lesson_id)
+        else:
+            data.unstarted_ids.append(lesson_id)
+
+    return data
+
+
+FINISHED_EMOJI = '✅'
+IN_PROGRESS_EMOJI = '⏳'
+UNSTARTED_EMOJI = '🔒'
+
+
+def get_stats_emoji(
+    stats: GroupLessonsStats | LessonsStats,
+    group_id: int = None,
+    lesson_id: int = None,
+) -> str:
+    if isinstance(stats, LessonsStats) and group_id:
+        stats = stats.groups.get(group_id) if stats else None
+
+    emoji = ''
+    if stats:
+        if lesson_id:
+            if lesson_id in stats.finished_ids:
+                emoji = FINISHED_EMOJI
+            elif not stats.finished_count and not stats.in_progress_count:
+                emoji = UNSTARTED_EMOJI
+            else:
+                emoji = IN_PROGRESS_EMOJI
+        elif stats.percent == 100:
+            emoji = FINISHED_EMOJI
+        elif not stats.finished_count and not stats.in_progress_count:
+            emoji = UNSTARTED_EMOJI
+        else:
+            emoji = IN_PROGRESS_EMOJI
+
+    return emoji
+
+
+def get_progress_emoji(
+    learning_progress: LearningProgress,
+) -> str:
+    if not learning_progress:
+        return UNSTARTED_EMOJI
+
+    if learning_progress.is_finished:
+        return FINISHED_EMOJI
+
+    return IN_PROGRESS_EMOJI
+
+
+async def get_next_lesson(user: User, lesson: Lesson) -> tuple[Lesson | None, LessonsStats | None]:
+    if lesson.group_id:
+        stats = await get_group_lessons_progress(user.id, lesson.group_id)
+    elif lesson.course_id:
+        stats = await get_course_lessons_progress(user.id, lesson.course_id)
+    else:
+        return None, None
+
+    return (
+        await Lesson.objects.filter(
+            course=lesson.course,
+            group=lesson.group,
         )
+        .exclude(
+            id__in=stats.finished_ids,
+        )
+        .order_by('position')
+        .select_related(
+            'course',
+            'group',
+        )
+        .afirst()
+    ), stats

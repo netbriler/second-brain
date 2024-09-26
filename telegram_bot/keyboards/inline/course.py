@@ -79,7 +79,7 @@ def get_lesson_inline_markup(lesson: Lesson) -> InlineKeyboardMarkup | None:
     return builder.as_markup()
 
 
-def get_start_learning_inline_markup(lesson: Lesson) -> InlineKeyboardMarkup:
+def get_start_learning_inline_markup(lesson: Lesson = None) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
     if lesson:
@@ -94,7 +94,7 @@ def get_start_learning_inline_markup(lesson: Lesson) -> InlineKeyboardMarkup:
     else:
         builder.button(
             text=_('📚 Start learning'),
-            switch_inline_query_current_chat='courses:lesson_',
+            switch_inline_query_current_chat='courses:',
         )
 
     builder.adjust(1)
