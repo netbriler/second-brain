@@ -90,7 +90,7 @@ class LessonsStats:
     unfinished_count: int
     total_count: int
 
-    groups: list[GroupLessonsStats]
+    groups: dict[int, GroupLessonsStats]
 
 
 async def get_lessons_progress(user_id: int, course_id: int) -> LessonsStats:
@@ -128,21 +128,19 @@ async def get_lessons_progress(user_id: int, course_id: int) -> LessonsStats:
     result = await sync_to_async(raw_sql)()
 
     groups = {group.id: group async for group in Group.objects.filter(course_id=course_id)}
-    data = []
+    data = {}
     for group_id, finished_count, unfinished_count in result:
         group = groups.get(group_id)
-        data.append(
-            GroupLessonsStats(
-                group=group,
-                finished_count=finished_count,
-                unfinished_count=unfinished_count,
-                total_count=finished_count + unfinished_count,
-            ),
+        data[int(group_id)] = GroupLessonsStats(
+            group=group,
+            finished_count=finished_count,
+            unfinished_count=unfinished_count,
+            total_count=finished_count + unfinished_count,
         )
 
     return LessonsStats(
-        finished_count=sum(stats.finished_count for stats in data),
-        unfinished_count=sum(stats.unfinished_count for stats in data),
-        total_count=sum(stats.total_count for stats in data),
+        finished_count=sum(stats.finished_count for stats in data.values()),
+        unfinished_count=sum(stats.unfinished_count for stats in data.values()),
+        total_count=sum(stats.total_count for stats in data.values()),
         groups=data,
     )

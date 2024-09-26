@@ -1,7 +1,7 @@
 from django.utils.translation import gettext as _
 
 from courses.models import Course, Group, Lesson
-from courses.services import LessonsStats
+from courses.services import GroupLessonsStats, LessonsStats
 
 
 def get_course_text(course: Course, stats: LessonsStats = None) -> str:
@@ -21,17 +21,26 @@ def get_course_text(course: Course, stats: LessonsStats = None) -> str:
     )
 
 
-def get_stats_text(stats: LessonsStats) -> str:
+def get_course_stats_text(stats: LessonsStats) -> str:
     stats_text = _('<b>Course Progress</b>\n<b>Total Finished:</b> {finished_count}/{total_count}\n\n').format(
         finished_count=stats.finished_count,
         total_count=stats.total_count,
     )
-    for group_stats in stats.groups:
+    for group_stats in stats.groups.values():
         stats_text += _('<b>Group: {title}</b>\n<b>Finished:</b> {finished_count}/{total_count}\n\n').format(
             title=group_stats.group.title if group_stats.group else _('No group'),
             finished_count=group_stats.finished_count,
             total_count=group_stats.total_count,
         )
+
+    return stats_text
+
+
+def get_group_stats_text(stats: GroupLessonsStats) -> str:
+    stats_text = _('<b>Group Progress</b>\n<b>Total Finished:</b> {finished_count}/{total_count}\n\n').format(
+        finished_count=stats.finished_count,
+        total_count=stats.total_count,
+    )
 
     return stats_text
 

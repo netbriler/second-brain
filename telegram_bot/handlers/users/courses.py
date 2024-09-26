@@ -34,10 +34,10 @@ from telegram_bot.keyboards.inline.course import (
     get_start_learning_inline_markup,
 )
 from telegram_bot.services.courses import (
+    get_course_stats_text,
     get_course_text,
     get_group_text,
     get_lesson_text,
-    get_stats_text,
 )
 from telegram_bot.services.files import get_message_duration, send_file_to_user
 from telegram_bot.states.courses import CourseForm
@@ -181,7 +181,7 @@ async def callback_course_stats(callback_query: CallbackQuery, regexp: re.Match,
         stats = await get_lessons_progress(course_id=course.id, user_id=user.id)
 
         await callback_query.message.answer(
-            text=get_stats_text(stats),
+            text=get_course_stats_text(stats),
         )
     except Course.DoesNotExist:
         await callback_query.answer(
