@@ -45,11 +45,20 @@ def get_group_stats_text(stats: GroupLessonsStats) -> str:
     return stats_text
 
 
-def get_group_text(group: Group) -> str:
-    return _('<b>Group Information</b>\n\n<b>Title:</b> {title}\n<b>Description:</b> {description}\n\n').format(
+def get_group_text(group: Group, stats: GroupLessonsStats = None) -> str:
+    stats_text = ''
+    if stats:
+        stats_text = _('<b>Total Finished:</b> {finished_count}/{total_count}').format(
+            finished_count=stats.finished_count,
+            total_count=stats.total_count,
+        )
+    return _(
+        '<b>Group Information</b>\n\n<b>Title:</b> {title}\n<b>Description:</b> {description}\n\n{stats_text}',
+    ).format(
         title=group.title,
         id=group.id,
         description=group.description if group.description else _('No description provided'),
+        stats_text=stats_text,
     )
 
 

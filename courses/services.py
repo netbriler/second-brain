@@ -93,7 +93,7 @@ class LessonsStats:
     groups: dict[int, GroupLessonsStats]
 
 
-async def get_lessons_progress(user_id: int, course_id: int) -> LessonsStats:
+async def get_course_lessons_progress(user_id: int, course_id: int) -> LessonsStats:
     def raw_sql():
         with connection.cursor() as cursor:
             cursor.execute(
@@ -144,3 +144,47 @@ async def get_lessons_progress(user_id: int, course_id: int) -> LessonsStats:
         total_count=sum(stats.total_count for stats in data.values()),
         groups=data,
     )
+
+
+async def get_group_lessons_progress(user_id: int, group_id: int) -> GroupLessonsStats:
+    def raw_sql():
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                            WITH lesson_progress AS (
+                            SELECT DISTINCT ON (l.id)
+                               l.group_id,
+                               l.id AS lesson_id,
+                               l.title AS lesson_title,
+                               COALESCE(lp.is_finished, false) AS is_finished
+                                FROM courses_lesson l
+                                LEFT JOIN (
+                                    SELECT lesson_id,
+                                           is_finished
+                                    FROM courses_learningprogress lp
+                                    WHERE lp.user_id = %s
+                                    ORDER BY lp.updated_at DESC
+                                ) lp ON l.id = lp.lesson_id
+                                WHERE l.group_id = %s
+                                ORDER BY l.id
+                            )
+                            SELECT group_id, COUNT(CASE WHEN is_finished = true THEN 1 END) AS finished_count,
+                                   COUNT(CASE WHEN is_finished = false THEN 1 END) AS unfinished_count
+                            FROM lesson_progress
+                            WHERE group_id = %s
+                            GROUP BY group_id;
+                        """,
+                [user_id, group_id, group_id],
+            )
+
+            return cursor.fetchall()
+
+    result = await sync_to_async(raw_sql)()
+
+    for group_id, finished_count, unfinished_count in result:
+        return GroupLessonsStats(
+            group=await Group.objects.aget(id=group_id),
+            finished_count=finished_count,
+            unfinished_count=unfinished_count,
+            total_count=finished_count + unfinished_count,
+        )

@@ -20,8 +20,9 @@ from courses.helpers import seconds_to_time, time_to_seconds
 from courses.models import Course, Group, Lesson, LessonEntity
 from courses.services import (
     create_or_update_learning_progress,
+    get_course_lessons_progress,
+    get_group_lessons_progress,
     get_last_actual_progress,
-    get_lessons_progress,
 )
 from telegram_bot.filters.i18n_text import I18nText
 from telegram_bot.filters.regexp import Regexp
@@ -36,6 +37,7 @@ from telegram_bot.keyboards.inline.course import (
 from telegram_bot.services.courses import (
     get_course_stats_text,
     get_course_text,
+    get_group_stats_text,
     get_group_text,
     get_lesson_text,
 )
@@ -178,7 +180,7 @@ async def callback_course_stats(callback_query: CallbackQuery, regexp: re.Match,
     course_id = regexp.group('course_id')
     try:
         course = await Course.objects.prefetch_related('groups').aget(id=course_id)
-        stats = await get_lessons_progress(course_id=course.id, user_id=user.id)
+        stats = await get_course_lessons_progress(course_id=course.id, user_id=user.id)
 
         await callback_query.message.answer(
             text=get_course_stats_text(stats),
@@ -223,6 +225,26 @@ async def inline_query(query: CallbackQuery, regexp: re.Match) -> NoReturn:
     )
 
 
+@router.callback_query(
+    Regexp(r'^courses:group_(?P<group_id>\d+):stats$'),
+)
+async def callback_group_stats(callback_query: CallbackQuery, regexp: re.Match, user: User) -> NoReturn:
+    group_id = regexp.group('group_id')
+    try:
+        group = await Group.objects.select_related('course').aget(id=group_id)
+        stats = await get_group_lessons_progress(group_id=group.id, user_id=user.id)
+
+        await callback_query.message.answer(
+            text=get_group_stats_text(stats),
+        )
+    except Group.DoesNotExist:
+        await callback_query.answer(
+            text=_('Group id not found'),
+        )
+
+    await callback_query.answer()
+
+
 async def check_learning_session(message: Message, state: FSMContext, has_next_lesson: bool = True) -> FSMContext:
     if await state.get_state() != CourseForm.learning_session:
         await state.set_state(CourseForm.learning_session)
@@ -245,7 +267,7 @@ async def message_course(message: Message, regexp: re.Match, state: FSMContext, 
     course_id = regexp.group('course_id')
     try:
         course = await Course.objects.aget(id=course_id)
-        stats = await get_lessons_progress(course_id=course.id, user_id=user.id)
+        stats = await get_course_lessons_progress(course_id=course.id, user_id=user.id)
         await message.answer(
             text=get_course_text(course, stats),
             reply_markup=get_course_inline_markup(course),
@@ -264,13 +286,14 @@ async def message_course(message: Message, regexp: re.Match, state: FSMContext, 
         Regexp(r'^/group_(?P<group_id>\d+)$'),
     ),
 )
-async def message_group(message: Message, regexp: re.Match, state: FSMContext) -> NoReturn:
+async def message_group(message: Message, regexp: re.Match, state: FSMContext, user: User) -> NoReturn:
     await check_learning_session(message, state)
     group_id = regexp.group('group_id')
     try:
         group = await Group.objects.select_related('parent', 'course').aget(id=group_id)
+        stats = await get_group_lessons_progress(group_id=group.id, user_id=user.id)
         await message.answer(
-            text=get_group_text(group),
+            text=get_group_text(group, stats),
             reply_markup=get_group_inline_markup(group),
         )
     except Group.DoesNotExist:

@@ -12,6 +12,11 @@ def get_course_inline_markup(course: Course) -> InlineKeyboardMarkup:
         text=_('📁 Groups & Lessons'),
         switch_inline_query_current_chat=f'courses:course_{course.id}',
     )
+    # all courses
+    builder.button(
+        text=_('🔍 Search Courses'),
+        switch_inline_query_current_chat='courses:',
+    )
     builder.button(
         text=_('📊 Statistics'),
         callback_data=f'courses:course_{course.id}:stats',
