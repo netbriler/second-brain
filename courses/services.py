@@ -64,10 +64,14 @@ async def get_last_actual_progress(
     }
 
     try:
-        return await LearningProgress.objects.filter(
-            user=user,
-            **kwargs,
-        ).alatest('updated_at')
+        return (
+            await LearningProgress.objects.filter(
+                user=user,
+                **kwargs,
+            )
+            .select_related('lesson', 'lesson_entity', 'course', 'user')
+            .alatest('updated_at')
+        )
     except LearningProgress.DoesNotExist:
         return None
 

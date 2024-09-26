@@ -8,13 +8,13 @@ def get_default_markup(user):
 
     builder.button(text=_('Help 🆘'))
     builder.button(text=_('Settings 🛠'))
+    builder.button(text=_('Start learning 📚'))
 
     if user.is_superuser:
         builder.button(text=_('Upload file 📁'))
         builder.button(text=_('Export users 📁'))
         builder.button(text=_('Count users 👥'))
         builder.button(text=_('Count active users 👥'))
-        builder.button(text=_('Courses 📚'))
 
     if len(builder.export()) > 1:
         return ReplyKeyboardRemove()

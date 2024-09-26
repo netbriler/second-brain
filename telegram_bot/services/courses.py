@@ -1,21 +1,15 @@
 from django.utils.translation import gettext as _
 
 from courses.models import Course, Group, Lesson
-from courses.services import get_lessons_progress
-from users.models import User
+from courses.services import LessonsStats
 
 
-async def get_course_text(course: Course, user: User):
-    stats = await get_lessons_progress(user_id=user.id, course_id=course.id)
-    stats_text = _('<b>Course Progress</b>\n<b>Total Finished:</b> {finished_count}/{total_count}\n\n').format(
-        finished_count=stats.finished_count,
-        total_count=stats.total_count,
-    )
-    for group_stats in stats.groups:
-        stats_text += _('<b>Group: {title}</b>\n<b>Finished:</b> {finished_count}/{total_count}\n\n').format(
-            title=group_stats.group.title if group_stats.group else _('No group'),
-            finished_count=group_stats.finished_count,
-            total_count=group_stats.total_count,
+def get_course_text(course: Course, stats: LessonsStats = None) -> str:
+    stats_text = ''
+    if stats:
+        stats_text = _('<b>Total Finished:</b> {finished_count}/{total_count}').format(
+            finished_count=stats.finished_count,
+            total_count=stats.total_count,
         )
     return _(
         '<b>Course Information</b>\n\n<b>Title:</b> {title}\n<b>Description:</b> {description}\n\n{stats_text}',
@@ -27,7 +21,22 @@ async def get_course_text(course: Course, user: User):
     )
 
 
-def get_group_text(group: Group):
+def get_stats_text(stats: LessonsStats) -> str:
+    stats_text = _('<b>Course Progress</b>\n<b>Total Finished:</b> {finished_count}/{total_count}\n\n').format(
+        finished_count=stats.finished_count,
+        total_count=stats.total_count,
+    )
+    for group_stats in stats.groups:
+        stats_text += _('<b>Group: {title}</b>\n<b>Finished:</b> {finished_count}/{total_count}\n\n').format(
+            title=group_stats.group.title if group_stats.group else _('No group'),
+            finished_count=group_stats.finished_count,
+            total_count=group_stats.total_count,
+        )
+
+    return stats_text
+
+
+def get_group_text(group: Group) -> str:
     return _('<b>Group Information</b>\n\n<b>Title:</b> {title}\n<b>Description:</b> {description}\n\n').format(
         title=group.title,
         id=group.id,
@@ -35,7 +44,7 @@ def get_group_text(group: Group):
     )
 
 
-def get_lesson_text(lesson: Lesson):
+def get_lesson_text(lesson: Lesson) -> str:
     return _('<b>Lesson Information</b>\n\n<b>Title:</b> {title}\n\n').format(
         title=lesson.title,
     )

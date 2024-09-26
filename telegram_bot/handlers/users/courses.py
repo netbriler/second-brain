@@ -21,6 +21,7 @@ from courses.models import Course, Group, Lesson, LessonEntity
 from courses.services import (
     create_or_update_learning_progress,
     get_last_actual_progress,
+    get_lessons_progress,
 )
 from telegram_bot.filters.i18n_text import I18nText
 from telegram_bot.filters.regexp import Regexp
@@ -30,11 +31,13 @@ from telegram_bot.keyboards.inline.course import (
     get_course_inline_markup,
     get_group_inline_markup,
     get_lesson_inline_markup,
+    get_start_learning_inline_markup,
 )
 from telegram_bot.services.courses import (
     get_course_text,
     get_group_text,
     get_lesson_text,
+    get_stats_text,
 )
 from telegram_bot.services.files import get_message_duration, send_file_to_user
 from telegram_bot.states.courses import CourseForm
@@ -43,18 +46,33 @@ from users.models import User
 router = Router(name=__name__)
 
 
-@router.inline_query(Regexp(r'^course_(?P<course_id>\d+)?$'))
+@router.inline_query(Regexp(r'^courses:course_(?P<course_id>\d+)?$'))
 async def inline_query_course(query: CallbackQuery, regexp: re.Match) -> NoReturn:
     course_id = regexp.group('course_id')
     results = []
     if course_id:
         try:
-            course = await Course.objects.aget(id=course_id)
+            course = await Course.objects.prefetch_related(
+                'groups',
+                'lessons',
+            ).aget(id=course_id)
             button = InlineQueryResultsButton(
                 text=_('📚 {course_title}').format(course_title=course.title),
                 start_parameter=f'course_{course.id}',
             )
-            async for lesson in course.lessons.all():
+            async for group in course.groups.all():
+                results.append(
+                    InlineQueryResultArticle(
+                        id=str(group.id),
+                        title=group.title,
+                        description=group.description,
+                        input_message_content=InputTextMessageContent(
+                            message_text=f'/start group_{group.id}',
+                        ),
+                    ),
+                )
+
+            async for lesson in course.lessons.filter(group__isnull=True):
                 results.append(
                     InlineQueryResultArticle(
                         id=str(lesson.id),
@@ -83,7 +101,7 @@ async def inline_query_course(query: CallbackQuery, regexp: re.Match) -> NoRetur
     )
 
 
-@router.inline_query(Regexp(r'^group_(?P<group_id>\d+)?$'))
+@router.inline_query(Regexp(r'^courses:group_(?P<group_id>\d+)?$'))
 async def inline_query_group(query: CallbackQuery, regexp: re.Match) -> NoReturn:
     group_id = regexp.group('group_id')
     results = []
@@ -123,7 +141,7 @@ async def inline_query_group(query: CallbackQuery, regexp: re.Match) -> NoReturn
     )
 
 
-@router.inline_query(Regexp(r'^lesson_(?P<lesson_id>\d+)?$'))
+@router.inline_query(Regexp(r'^courses:lesson_(?P<lesson_id>\d+)?$'))
 async def inline_query_lesson(query: CallbackQuery, regexp: re.Match) -> NoReturn:
     lesson_id = regexp.group('lesson_id')
     results = []
@@ -153,11 +171,34 @@ async def inline_query_lesson(query: CallbackQuery, regexp: re.Match) -> NoRetur
     )
 
 
-@router.inline_query()
-async def inline_query(query: CallbackQuery) -> NoReturn:
+@router.callback_query(
+    Regexp(r'^courses:course_(?P<course_id>\d+):stats$'),
+)
+async def callback_course_stats(callback_query: CallbackQuery, regexp: re.Match, user: User) -> NoReturn:
+    course_id = regexp.group('course_id')
+    try:
+        course = await Course.objects.prefetch_related('groups').aget(id=course_id)
+        stats = await get_lessons_progress(course_id=course.id, user_id=user.id)
+
+        await callback_query.message.answer(
+            text=get_stats_text(stats),
+        )
+    except Course.DoesNotExist:
+        await callback_query.answer(
+            text=_('Course id not found'),
+        )
+
+    await callback_query.answer()
+
+
+@router.inline_query(
+    Regexp(r'^courses:(?P<query>.+)?$'),
+)
+async def inline_query(query: CallbackQuery, regexp: re.Match) -> NoReturn:
+    search_query = regexp.group('query') or ''
     results = list()
     async for course in Course.objects.filter(
-        Q(title__icontains=query.query) | Q(description__icontains=query.query),
+        Q(title__icontains=search_query) | Q(description__icontains=search_query),
     ):
         results.append(
             InlineQueryResultArticle(
@@ -182,12 +223,12 @@ async def inline_query(query: CallbackQuery) -> NoReturn:
     )
 
 
-async def check_learning_session(message: Message, state: FSMContext) -> FSMContext:
+async def check_learning_session(message: Message, state: FSMContext, has_next_lesson: bool = True) -> FSMContext:
     if await state.get_state() != CourseForm.learning_session:
         await state.set_state(CourseForm.learning_session)
         await message.answer(
             _('Learning session started 📚'),
-            reply_markup=get_learning_session_keyboard(),
+            reply_markup=get_learning_session_keyboard(has_next_lesson=has_next_lesson),
         )
         # TODO: Create a new learning session in the database
     return state
@@ -204,8 +245,9 @@ async def message_course(message: Message, regexp: re.Match, state: FSMContext, 
     course_id = regexp.group('course_id')
     try:
         course = await Course.objects.aget(id=course_id)
+        stats = await get_lessons_progress(course_id=course.id, user_id=user.id)
         await message.answer(
-            text=await get_course_text(course, user),
+            text=get_course_text(course, stats),
             reply_markup=get_course_inline_markup(course),
         )
     except Course.DoesNotExist:
@@ -289,6 +331,22 @@ async def set_lesson(message: Message, lesson: Lesson, user: User, state: FSMCon
             'lesson_entity_messages': lesson_entity_messages,
         },
     )
+
+
+@router.callback_query(
+    Regexp(r'^courses:lesson_(?P<lesson_id>\d+)$'),
+)
+async def callback_lesson(callback_query: CallbackQuery, regexp: re.Match, user: User, state: FSMContext) -> NoReturn:
+    lesson_id = regexp.group('lesson_id')
+    try:
+        lesson = await Lesson.objects.select_related('group', 'course').aget(id=lesson_id)
+        await set_lesson(callback_query.message, lesson, user, state)
+    except Lesson.DoesNotExist:
+        await callback_query.answer(
+            text=_('Lesson id not found'),
+        )
+
+    await callback_query.message.delete()
 
 
 @router.message(
@@ -450,3 +508,21 @@ async def message_finish_current_lesson(message: Message, state: FSMContext, use
         return await message.answer(
             _('Lesson not found'),
         )
+
+
+# Start learning 📚
+@router.message(
+    or_f(
+        Command(commands=['start_learning']),
+        I18nText(_('Start learning 📚')),
+    ),
+)
+async def message_start_learning(message: Message, state: FSMContext, user: User) -> NoReturn:
+    await check_learning_session(message, state, has_next_lesson=False)
+
+    latest_process = await get_last_actual_progress(user)
+
+    await message.answer(
+        _('Please select the course, group or lesson to start learning'),
+        reply_markup=get_start_learning_inline_markup(latest_process.lesson if latest_process else None),
+    )

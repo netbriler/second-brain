@@ -7,19 +7,19 @@ def get_help_inline_markup():
 
     builder.button(
         text=_('🔍 Search Courses'),
-        switch_inline_query_current_chat='',
+        switch_inline_query_current_chat='courses:',
     )
     builder.button(
         text=_('📚 Course by ID'),
-        switch_inline_query_current_chat='course_',
+        switch_inline_query_current_chat='courses:course_',
     )
     builder.button(
         text=_('📁 Group by ID'),
-        switch_inline_query_current_chat='group_',
+        switch_inline_query_current_chat='courses:group_',
     )
     builder.button(
         text=_('📝 Lesson by ID'),
-        switch_inline_query_current_chat='lesson_',
+        switch_inline_query_current_chat='courses:lesson_',
     )
 
     builder.adjust(1, 3)
