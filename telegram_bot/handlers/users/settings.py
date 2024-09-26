@@ -11,6 +11,7 @@ from telegram_bot.commands.admin import set_admin_commands
 from telegram_bot.commands.default import set_user_commands
 from telegram_bot.filters.i18n_text import I18nText
 from telegram_bot.filters.regexp import Regexp
+from telegram_bot.keyboards.default.default import get_default_markup
 from telegram_bot.keyboards.inline.help import get_help_inline_markup
 from telegram_bot.keyboards.inline.language import get_language_inline_markup
 from telegram_bot.services.messages import get_help_text
@@ -31,8 +32,9 @@ async def _change_language(callback_query: CallbackQuery, user: User, regexp: re
     )
 
     with override(user.language_code):
-        await callback_query.answer(
+        await callback_query.message.answer(
             _('Language changed to {language}').format(language=user.language_code),
+            reply_markup=get_default_markup(user),
         )
         text = get_help_text(user)
         await callback_query.message.answer(text, reply_markup=get_help_inline_markup())

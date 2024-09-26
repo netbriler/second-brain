@@ -1,5 +1,4 @@
 import re
-from contextlib import suppress
 from typing import NoReturn
 
 from aiogram import F, Router
@@ -34,6 +33,7 @@ from telegram_bot.keyboards.inline.course import (
     get_lesson_inline_markup,
     get_start_learning_inline_markup,
 )
+from telegram_bot.services.cleaner import add_message_to_clean, clean_messages
 from telegram_bot.services.courses import (
     get_course_stats_text,
     get_course_text,
@@ -182,15 +182,15 @@ async def callback_course_stats(callback_query: CallbackQuery, regexp: re.Match,
         course = await Course.objects.prefetch_related('groups').aget(id=course_id)
         stats = await get_course_lessons_progress(course_id=course.id, user_id=user.id)
 
-        await callback_query.message.answer(
+        answer_message = await callback_query.message.answer(
             text=get_course_stats_text(stats),
         )
+        await add_message_to_clean(callback_query.state, answer_message.message_id)
+        await callback_query.answer()
     except Course.DoesNotExist:
         await callback_query.answer(
             text=_('Course id not found'),
         )
-
-    await callback_query.answer()
 
 
 @router.inline_query(
@@ -234,19 +234,24 @@ async def callback_group_stats(callback_query: CallbackQuery, regexp: re.Match, 
         group = await Group.objects.select_related('course').aget(id=group_id)
         stats = await get_group_lessons_progress(group_id=group.id, user_id=user.id)
 
-        await callback_query.message.answer(
+        answer_message = await callback_query.message.answer(
             text=get_group_stats_text(stats),
         )
+        await add_message_to_clean(callback_query.state, answer_message.message_id)
+        await callback_query.answer()
     except Group.DoesNotExist:
         await callback_query.answer(
             text=_('Group id not found'),
         )
 
-    await callback_query.answer()
 
-
-async def check_learning_session(message: Message, state: FSMContext, has_next_lesson: bool = True) -> FSMContext:
-    if await state.get_state() != CourseForm.learning_session:
+async def check_learning_session(
+    message: Message,
+    state: FSMContext,
+    has_next_lesson: bool = True,
+    send_keyboard: bool = False,
+) -> FSMContext:
+    if await state.get_state() != CourseForm.learning_session or send_keyboard:
         await state.set_state(CourseForm.learning_session)
         await message.answer(
             _('Learning session started 📚'),
@@ -268,16 +273,18 @@ async def message_course(message: Message, regexp: re.Match, state: FSMContext, 
     try:
         course = await Course.objects.aget(id=course_id)
         stats = await get_course_lessons_progress(course_id=course.id, user_id=user.id)
-        await message.answer(
+        answer_message = await message.answer(
             text=get_course_text(course, stats),
             reply_markup=get_course_inline_markup(course),
         )
     except Course.DoesNotExist:
-        await message.answer(
+        answer_message = await message.answer(
             text=_('Course id not found'),
         )
 
     await message.delete()
+    await clean_messages(bot=message.bot, chat_id=message.chat.id, state=state)
+    await add_message_to_clean(state, answer_message.message_id)
 
 
 @router.message(
@@ -292,23 +299,27 @@ async def message_group(message: Message, regexp: re.Match, state: FSMContext, u
     try:
         group = await Group.objects.select_related('parent', 'course').aget(id=group_id)
         stats = await get_group_lessons_progress(group_id=group.id, user_id=user.id)
-        await message.answer(
+        answer_message = await message.answer(
             text=get_group_text(group, stats),
             reply_markup=get_group_inline_markup(group),
         )
     except Group.DoesNotExist:
-        await message.answer(
+        answer_message = await message.answer(
             text=_('Group id not found'),
         )
 
     await message.delete()
+    await clean_messages(bot=message.bot, chat_id=message.chat.id, state=state)
+    await add_message_to_clean(state, answer_message.message_id)
 
 
-async def set_lesson(message: Message, lesson: Lesson, user: User, state: FSMContext) -> NoReturn:
-    await message.answer(
+async def set_lesson(message: Message, lesson: Lesson, user: User, state: FSMContext) -> list[int]:
+    answer_messages_ids = []
+    answer_message = await message.answer(
         text=get_lesson_text(lesson),
         reply_markup=get_lesson_inline_markup(lesson),
     )
+    answer_messages_ids.append(answer_message.message_id)
     state_data = await state.get_data()
     lesson_entity_messages = state_data.get('lesson_entity_messages', {})
     async for lesson_entity in lesson.lesson_entities.select_related('file').all():
@@ -333,14 +344,16 @@ async def set_lesson(message: Message, lesson: Lesson, user: User, state: FSMCon
             lesson_entity=lesson_entity,
         )
         if progress and progress.timecode:
-            await message.answer(
+            progress_message = await message.answer(
                 text=_('Saved time: {time}').format(
                     time=seconds_to_time(progress.timecode),
                 ),
                 reply_to_message_id=lesson_entity_message_id,
             )
+            answer_messages_ids.append(progress_message.message_id)
 
         lesson_entity_messages[str(lesson_entity_message_id)] = str(lesson_entity.id)
+        answer_messages_ids.append(lesson_entity_message_id)
 
     await create_or_update_learning_progress(
         user=user,
@@ -355,6 +368,8 @@ async def set_lesson(message: Message, lesson: Lesson, user: User, state: FSMCon
         },
     )
 
+    return answer_messages_ids
+
 
 @router.callback_query(
     Regexp(r'^courses:lesson_(?P<lesson_id>\d+)$'),
@@ -363,7 +378,9 @@ async def callback_lesson(callback_query: CallbackQuery, regexp: re.Match, user:
     lesson_id = regexp.group('lesson_id')
     try:
         lesson = await Lesson.objects.select_related('group', 'course').aget(id=lesson_id)
-        await set_lesson(callback_query.message, lesson, user, state)
+        answer_messages_ids = await set_lesson(callback_query.message, lesson, user, state)
+        for answer_messages_id in answer_messages_ids:
+            await add_message_to_clean(state, answer_messages_id)
     except Lesson.DoesNotExist:
         await callback_query.answer(
             text=_('Lesson id not found'),
@@ -383,13 +400,17 @@ async def message_lesson(message: Message, regexp: re.Match, user: User, state: 
     lesson_id = regexp.group('lesson_id')
     try:
         lesson = await Lesson.objects.select_related('group', 'course').aget(id=lesson_id)
-        await set_lesson(message, lesson, user, state)
+        answer_messages_ids = await set_lesson(message, lesson, user, state)
     except Lesson.DoesNotExist:
-        await message.answer(
+        answer_message = await message.answer(
             text=_('Lesson id not found'),
         )
+        answer_messages_ids = [answer_message.message_id]
 
     await message.delete()
+    await clean_messages(bot=message.bot, chat_id=message.chat.id, state=state)
+    for answer_messages_id in answer_messages_ids:
+        await add_message_to_clean(state, answer_messages_id)
 
 
 @router.message(
@@ -446,20 +467,9 @@ async def message_time(message: Message, regexp: re.Match, state: FSMContext, us
         reply_to_message_id=message.reply_to_message.message_id,
     )
     await message.delete()
-
-    progress_messages = data.get('progres_messages', [])
-    for progress_message_id in progress_messages:
-        with suppress(Exception):
-            await message.bot.delete_message(
-                chat_id=message.chat.id,
-                message_id=progress_message_id,
-            )
-    progress_messages.append(progress_message.message_id)
-    await state.update_data(
-        {
-            'progres_messages': progress_messages,
-        },
-    )
+    await clean_messages(bot=message.bot, state=state, chat_id=message.chat.id, key='progress_messages')
+    await add_message_to_clean(state, progress_message.message_id, key='progress_messages')
+    await add_message_to_clean(state, progress_message.message_id)
 
 
 @router.message(
@@ -470,11 +480,14 @@ async def message_time(message: Message, regexp: re.Match, state: FSMContext, us
     ),
 )
 async def message_stop_learning_session(message: Message, user: User, state: FSMContext) -> NoReturn:
-    await state.clear()
     await message.answer(
         _('Learning session stopped 📚'),
         reply_markup=get_default_markup(user),
     )
+
+    await add_message_to_clean(state, message.message_id)
+    await clean_messages(bot=message.bot, chat_id=message.chat.id, state=state)
+    await state.clear()
 
 
 @router.message(
@@ -492,6 +505,7 @@ async def message_finish_current_lesson(message: Message, state: FSMContext, use
             _('Lesson not found'),
         )
 
+    answer_messages_ids = []
     try:
         lesson = await Lesson.objects.select_related('course', 'group').aget(id=lesson_id)
 
@@ -500,11 +514,6 @@ async def message_finish_current_lesson(message: Message, state: FSMContext, use
             course=lesson.course,
             lesson=lesson,
             is_finished=True,
-        )
-
-        await message.answer(
-            _('Lesson finished ✅'),
-            reply_markup=get_learning_session_keyboard(),
         )
 
         next_lesson = (
@@ -521,16 +530,24 @@ async def message_finish_current_lesson(message: Message, state: FSMContext, use
             .afirst()
         )
         if not next_lesson:
-            return await message.answer(
+            answer_message = await message.answer(
                 _('No more lessons in this group'),
                 reply_markup=get_learning_session_keyboard(has_next_lesson=False),
             )
+            answer_messages_ids.append(answer_message.message_id)
         else:
-            await set_lesson(message, next_lesson, user, state)
+            lesson_messages_ids = await set_lesson(message, next_lesson, user, state)
+            answer_messages_ids += lesson_messages_ids
     except Lesson.DoesNotExist:
-        return await message.answer(
+        answer_message = await message.answer(
             _('Lesson not found'),
         )
+        answer_messages_ids.append(answer_message.message_id)
+
+    await message.delete()
+    await clean_messages(bot=message.bot, chat_id=message.chat.id, state=state)
+    for answer_messages_id in answer_messages_ids:
+        await add_message_to_clean(state, answer_messages_id)
 
 
 # Start learning 📚
@@ -541,7 +558,7 @@ async def message_finish_current_lesson(message: Message, state: FSMContext, use
     ),
 )
 async def message_start_learning(message: Message, state: FSMContext, user: User) -> NoReturn:
-    await check_learning_session(message, state, has_next_lesson=False)
+    await check_learning_session(message, state, send_keyboard=True)
 
     latest_process = await get_last_actual_progress(user)
 
@@ -549,3 +566,6 @@ async def message_start_learning(message: Message, state: FSMContext, user: User
         _('Please select the course, group or lesson to start learning'),
         reply_markup=get_start_learning_inline_markup(latest_process.lesson if latest_process else None),
     )
+
+    await message.delete()
+    await clean_messages(bot=message.bot, chat_id=message.chat.id, state=state)
