@@ -4,13 +4,16 @@ from typing import NoReturn
 
 from aiogram import Router
 from aiogram.enums import ContentType
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from django.utils.translation import gettext as _
 
 from telegram_bot.constants import MessageRoles
 from telegram_bot.filters.i18n_text import I18nText
+from telegram_bot.keyboards.default.courses import get_learning_session_keyboard
 from telegram_bot.keyboards.default.default import get_default_markup
+from telegram_bot.services.cleaner import add_message_to_clean
 from telegram_bot.services.files import create_message, save_file
 from telegram_bot.states.courses import CourseForm
 from users.models import User
@@ -22,6 +25,23 @@ router = Router(name=__name__)
 async def _cancel(message: Message, user: User, state: FSMContext) -> NoReturn:
     await state.clear()
     await message.answer(_('Choose an action from the menu 👇'), reply_markup=get_default_markup(user))
+
+
+@router.message(
+    Command(commands=['keyboard']),
+)
+async def message_keyboard(message: Message, state: FSMContext, user: User) -> NoReturn:
+    state_form = await state.get_state()
+    if state_form == CourseForm.learning_session:
+        answer_message = await message.answer(
+            _('Learning session keyboard 📚'),
+            reply_markup=get_learning_session_keyboard(),
+        )
+        await add_message_to_clean(state, answer_message.message_id)
+    else:
+        await message.answer(_('Choose an action from the menu 👇'), reply_markup=get_default_markup(user))
+
+    await message.delete()
 
 
 @router.message()

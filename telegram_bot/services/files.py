@@ -1,9 +1,11 @@
-import json
+import json  # noqa: I001
 from typing import NoReturn
 
 from aiogram import Bot
 from aiogram.enums import ContentType
+from aiogram.types import ForceReply, InlineKeyboardMarkup
 from aiogram.types import Message as AiogramMessage
+from aiogram.types import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from django.utils.translation import gettext as _
 from telebot import TeleBot
 
@@ -39,45 +41,53 @@ async def send_file_to_user(
     user: User,
     send_file_info: bool = False,
     caption: str = None,
+    reply_markup: InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply = None,
 ) -> tuple[int, int]:
     if file.content_type == ContentType.AUDIO:
         message = await bot.send_audio(
             user.telegram_id,
             file.file_id,
             caption=caption,
+            reply_markup=reply_markup,
         )
     elif file.content_type == ContentType.DOCUMENT:
         message = await bot.send_document(
             user.telegram_id,
             file.file_id,
             caption=caption,
+            reply_markup=reply_markup,
         )
     elif file.content_type == ContentType.PHOTO:
         message = await bot.send_photo(
             user.telegram_id,
             file.file_id,
             caption=caption,
+            reply_markup=reply_markup,
         )
     elif file.content_type == ContentType.STICKER:
         message = await bot.send_sticker(
             user.telegram_id,
             file.file_id,
+            reply_markup=reply_markup,
         )
     elif file.content_type == ContentType.VIDEO:
         message = await bot.send_video(
             user.telegram_id,
             file.file_id,
             caption=caption,
+            reply_markup=reply_markup,
         )
     elif file.content_type == ContentType.VIDEO_NOTE:
         message = await bot.send_video_note(
             user.telegram_id,
             file.file_id,
+            reply_markup=reply_markup,
         )
     elif file.content_type == ContentType.VOICE:
         message = await bot.send_voice(
             user.telegram_id,
             file.file_id,
+            reply_markup=reply_markup,
         )
     else:
         message = await bot.send_message(user.telegram_id, _('Unknown content type'))

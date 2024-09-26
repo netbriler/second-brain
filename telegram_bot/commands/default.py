@@ -14,6 +14,7 @@ def get_default_commands(lang: str = 'en', with_categories: bool = False) -> lis
             BotCommand(command='/help', description=_('how it works?')),
             BotCommand(command='/lang', description=_('change language')),
             BotCommand(command='/settings', description=_('open bot settings')),
+            BotCommand(command='/keyboard', description=_('open current keyboard')),
             _('\nLearning commands 📚'),
             # start_learning
             BotCommand(command='/start_learning', description=_('start learning')),

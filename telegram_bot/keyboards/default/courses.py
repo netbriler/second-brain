@@ -3,11 +3,11 @@ from django.utils.translation import gettext as _
 from telebot.types import ReplyKeyboardMarkup
 
 
-def get_learning_session_keyboard(has_next_lesson: bool = True) -> ReplyKeyboardMarkup:
+def get_learning_session_keyboard(lesson_selected: bool = False) -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
 
     builder.button(text=_('Stop learning session 🛑'))
-    if has_next_lesson:
+    if lesson_selected:
         builder.button(text=_('Finish current lesson ✅'))
 
     builder.adjust(1)
