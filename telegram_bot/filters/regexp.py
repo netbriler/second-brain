@@ -22,6 +22,9 @@ class Regexp(Filter):
         else:
             return False
 
+        if not text:
+            return False
+
         match = self.regexp.match(text)
         if match:
             return {
