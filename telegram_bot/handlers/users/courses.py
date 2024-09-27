@@ -621,10 +621,11 @@ async def message_start_learning(message: Message, state: FSMContext, user: User
 
     latest_process = await get_last_actual_progress(user)
 
-    await message.answer(
+    answer_message = await message.answer(
         _('Please select the course, group or lesson to start learning'),
         reply_markup=get_start_learning_inline_markup(latest_process.lesson if latest_process else None),
     )
 
     await message.delete()
     await clean_messages(bot=message.bot, chat_id=message.chat.id, state=state)
+    await add_message_to_clean(state, answer_message.message_id)

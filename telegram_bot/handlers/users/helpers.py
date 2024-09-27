@@ -49,8 +49,6 @@ async def _default_menu(message: Message, user: User, state: FSMContext) -> NoRe
     state_form = await state.get_state()
     if state_form == CourseForm.learning_session:
         pass
-    else:
-        return await _cancel(message, user, state)
 
     file = None
     role = None
