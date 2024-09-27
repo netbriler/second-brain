@@ -415,6 +415,8 @@ def category_reminder_task(
 def process_category_massage(ai_message_id: int, category: str) -> bool:
     if AITasksCategories[category] == AITasksCategories.REMINDERS:
         category_reminder_task.delay(ai_message_id)
+    elif AITasksCategories[category] == AITasksCategories.NOTES:
+        pass
     else:
         return False
 

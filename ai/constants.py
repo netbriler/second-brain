@@ -15,13 +15,13 @@ class AIMessageCategories(Enum):
 
 class AITasksCategories(Enum):
     NOTES = 'notes', _('Notes')
-    WORKOUT = 'workout', _('Workout')
-    MEALS = 'meals', _('Meals')
-    EXPENSES = 'expenses', _('Expenses')
-    TASKS = 'tasks', _('Tasks')
+    # WORKOUT = 'workout', _('Workout')
+    # MEALS = 'meals', _('Meals')
+    # EXPENSES = 'expenses', _('Expenses')
+    # TASKS = 'tasks', _('Tasks')
     REMINDERS = 'reminders', _('Reminders')
-    READING = 'reading', _('Reading')
-    COURSES = 'courses', _('Courses')
+    # READING = 'reading', _('Reading')
+    # COURSES = 'courses', _('Courses')
 
     @property
     def label(self):
