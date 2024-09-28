@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
 
 
@@ -271,7 +272,7 @@ class LessonEntity(models.Model):
 
     @property
     def content_short(self):
-        text = self.content.split('\n')[0] if self.content else ''
+        text = strip_tags(self.content.split('\n')[0]) if self.content else ''
         return text[:30] + ('...' if len(text) > 30 else '') if self.content else ''
 
     def __str__(self):
