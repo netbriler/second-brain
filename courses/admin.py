@@ -500,7 +500,7 @@ class LinkAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
     )
 
     def lesson_entity_link(self, obj):
-        if obj.lesson:
+        if obj.lesson_entity:
             return model_link(obj.lesson_entity)
         return '-'
 
