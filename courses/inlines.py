@@ -30,3 +30,12 @@ class LessonEntityInline(SortableInlineAdminMixin, admin.TabularInline):
     autocomplete_fields = ('file',)
     verbose_name = _('Lesson Entity')
     verbose_name_plural = _('Lesson Entities')
+
+
+class LinkInline(SortableInlineAdminMixin, admin.TabularInline):
+    model = models.Link
+    extra = 1
+    ordering = ['position']
+    autocomplete_fields = ('lesson_entity',)
+    verbose_name = _('Link')
+    verbose_name_plural = _('Links')

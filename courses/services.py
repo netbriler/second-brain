@@ -287,10 +287,10 @@ def get_stats_emoji(
         if lesson_id:
             if lesson_id in stats.finished_ids:
                 emoji = FINISHED_EMOJI
-            elif not stats.finished_count and not stats.in_progress_count:
-                emoji = UNSTARTED_EMOJI
-            else:
+            elif lesson_id in stats.in_progress_ids:
                 emoji = IN_PROGRESS_EMOJI
+            else:
+                emoji = UNSTARTED_EMOJI
         elif stats.percent == 100:
             emoji = FINISHED_EMOJI
         elif not stats.finished_count and not stats.in_progress_count:

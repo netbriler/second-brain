@@ -32,6 +32,7 @@ from telegram_bot.keyboards.default.default import get_default_markup
 from telegram_bot.keyboards.inline.course import (
     get_course_inline_markup,
     get_group_inline_markup,
+    get_lesson_entity_inline_markup,
     get_lesson_inline_markup,
     get_start_learning_inline_markup,
 )
@@ -358,24 +359,28 @@ async def set_lesson(message: Message, lesson: Lesson, user: User, state: FSMCon
     state_data = await state.get_data()
     lesson_entity_messages = state_data.get('lesson_entity_messages', {})
     reply_markup_set = False
-    async for lesson_entity in lesson.lesson_entities.select_related('file').all():
+    async for lesson_entity in lesson.lesson_entities.select_related('file').prefetch_related('links').all():
+        if lesson_entity.links:
+            reply_markup = get_lesson_entity_inline_markup(lesson_entity)
+        else:
+            reply_markup = get_learning_session_keyboard(lesson_selected=True)
+            reply_markup_set = True
+
         if lesson_entity.file:
             lesson_entity_message_id, __ = await send_file_to_user(
                 bot=message.bot,
                 file=lesson_entity.file,
                 user=user,
                 caption=lesson_entity.content,
-                reply_markup=get_learning_session_keyboard(lesson_selected=True),
+                reply_markup=reply_markup,
             )
         else:
             lesson_entity_message_id = (
                 await message.answer(
                     text=lesson_entity.content,
-                    reply_markup=get_learning_session_keyboard(lesson_selected=True),
+                    reply_markup=reply_markup,
                 )
             ).message_id
-
-        reply_markup_set = True
 
         progress = await get_last_actual_progress(
             user=user,

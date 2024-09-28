@@ -100,3 +100,17 @@ def get_start_learning_inline_markup(lesson: Lesson = None) -> InlineKeyboardMar
     builder.adjust(1)
 
     return builder.as_markup()
+
+
+def get_lesson_entity_inline_markup(lesson_entity) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+
+    links = lesson_entity.links.all()
+    if links:
+        for link in links:
+            builder.button(
+                text=link.title,
+                url=link.url,
+            )
+
+    return builder.as_markup()

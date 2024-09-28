@@ -8,8 +8,8 @@ from djangoql.admin import DjangoQLSearchMixin
 from utils.helpers import model_link
 
 from .forms import GroupAndCourseForm
-from .inlines import GroupInline, LessonEntityInline, LessonInline
-from .models import Course, Group, LearningProgress, Lesson, LessonEntity
+from .inlines import GroupInline, LessonEntityInline, LessonInline, LinkInline
+from .models import Course, Group, LearningProgress, Lesson, LessonEntity, Link
 
 
 @admin.register(Course)
@@ -286,7 +286,7 @@ class LessonAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
 @admin.register(LessonEntity)
 class LessonEntityAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
     list_display = (
-        'content',
+        'content_short',
         'lesson_link',
         'lesson_course_link',
         'created_at',
@@ -297,6 +297,13 @@ class LessonEntityAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmi
         'id',
         'content',
     )
+
+    def content_short(self, obj):
+        return obj.content_short
+
+    content_short.short_description = _('Short Content')
+
+    inlines = [LinkInline]
 
     list_select_related = ('lesson', 'file', 'lesson__course')
     autocomplete_fields = ('lesson', 'file')
@@ -438,3 +445,63 @@ class LearningProgressAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         return '-'
 
     lesson_entity_link.short_description = _('Lesson Entity')
+
+
+@admin.register(Link)
+class LinkAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
+    list_display = (
+        'title',
+        'url',
+        'lesson_entity_link',
+        'created_at',
+        'updated_at',
+    )
+
+    search_fields = (
+        'id',
+        'title',
+        'url',
+    )
+
+    list_select_related = ('lesson_entity',)
+    autocomplete_fields = ('lesson_entity',)
+
+    list_filter = (
+        AutocompleteFilterFactory(_('Lesson entry'), 'lesson_entity'),
+        'created_at',
+        'updated_at',
+    )
+
+    readonly_fields = (
+        'id',
+        'created_at',
+        'updated_at',
+    )
+
+    fieldsets = [
+        (
+            _('General'),
+            {
+                'fields': [
+                    'id',
+                    'title',
+                    'url',
+                    'lesson_entity',
+                    'created_at',
+                    'updated_at',
+                ],
+            },
+        ),
+    ]
+
+    ordering = (
+        'lesson_entity',
+        'position',
+    )
+
+    def lesson_entity_link(self, obj):
+        if obj.lesson:
+            return model_link(obj.lesson_entity)
+        return '-'
+
+    lesson_entity_link.short_description = _('Lesson entry')
