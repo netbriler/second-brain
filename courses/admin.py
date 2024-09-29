@@ -45,10 +45,7 @@ class CourseAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
         'updated_at',
     )
 
-    ordering = (
-        'id',
-        'position',
-    )
+    ordering = ('position',)
 
     fieldsets = [
         (
@@ -122,10 +119,7 @@ class GroupAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
         'updated_at',
     )
 
-    ordering = (
-        'id',
-        'position',
-    )
+    ordering = ('position',)
 
     fieldsets = [
         (

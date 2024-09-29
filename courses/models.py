@@ -3,6 +3,8 @@ from django.db import models
 from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
 
+from utils.helpers import AutoIncrementalField
+
 
 class Course(models.Model):
     class Meta:
@@ -10,10 +12,7 @@ class Course(models.Model):
         verbose_name_plural = _('Courses')
         ordering = ('position',)
 
-    position = models.PositiveIntegerField(
-        default=100,
-        blank=False,
-        null=False,
+    position = AutoIncrementalField(
         verbose_name=_('Position'),
     )
 
@@ -48,10 +47,7 @@ class Group(models.Model):
         verbose_name_plural = _('Groups')
         ordering = ('position',)
 
-    position = models.PositiveIntegerField(
-        default=100,
-        blank=False,
-        null=False,
+    position = AutoIncrementalField(
         verbose_name=_('Position'),
     )
 
@@ -121,10 +117,7 @@ class Lesson(models.Model):
         verbose_name_plural = _('Lessons')
         ordering = ('position',)
 
-    position = models.PositiveIntegerField(
-        default=100,
-        blank=False,
-        null=False,
+    position = AutoIncrementalField(
         verbose_name=_('Position'),
     )
 
@@ -188,10 +181,7 @@ class Link(models.Model):
         verbose_name_plural = _('Links')
         ordering = ('position',)
 
-    position = models.PositiveIntegerField(
-        default=100,
-        blank=False,
-        null=False,
+    position = AutoIncrementalField(
         verbose_name=_('Position'),
     )
 
@@ -231,10 +221,7 @@ class LessonEntity(models.Model):
         verbose_name_plural = _('Lesson Entities')
         ordering = ('position',)
 
-    position = models.PositiveIntegerField(
-        default=100,
-        blank=False,
-        null=False,
+    position = AutoIncrementalField(
         verbose_name=_('Position'),
     )
 
@@ -317,7 +304,7 @@ class LearningProgress(models.Model):
         verbose_name=_('Lesson Entity'),
     )
 
-    timecode = models.PositiveIntegerField(
+    timecode = models.BigIntegerField(
         default=0,
         verbose_name=_('Timecode (in seconds)'),
     )
