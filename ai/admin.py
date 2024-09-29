@@ -81,16 +81,12 @@ class MessageAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     ]
 
     def source_link(self, obj):
-        if obj.source:
-            return model_link(obj.source)
-        return '-'
+        return model_link(obj.source)
 
     source_link.short_description = _('Source')
 
     def requested_by_link(self, obj):
-        if obj.requested_by:
-            return model_link(obj.source)
-        return '-'
+        return model_link(obj.source)
 
     requested_by_link.short_description = _('Requested By')
 

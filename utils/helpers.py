@@ -4,6 +4,9 @@ from django.utils.html import format_html
 
 
 def model_link(obj: Model):
+    if not obj:
+        return '-'
+
     url = reverse(
         f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change',  # noqa: SLF001
         args=[obj.pk],

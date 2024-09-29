@@ -163,16 +163,12 @@ class GroupAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
                 obj.save()
 
     def parent_link(self, obj):
-        if obj.parent:
-            return model_link(obj.parent)
-        return '-'
+        return model_link(obj.parent)
 
     parent_link.short_description = _('Parent')
 
     def course_link(self, obj):
-        if obj.course:
-            return model_link(obj.course)
-        return '-'
+        return model_link(obj.course)
 
     course_link.short_description = _('Course')
 
@@ -200,6 +196,8 @@ class LessonAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
     search_fields = (
         'id',
         'title',
+        'group',
+        'course',
         'created_at',
         'updated_at',
     )
@@ -260,16 +258,12 @@ class LessonAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
                 obj.save()
 
     def group_link(self, obj):
-        if obj.group:
-            return model_link(obj.group)
-        return '-'
+        return model_link(obj.group)
 
     group_link.short_description = _('Group')
 
     def course_link(self, obj):
-        if obj.course:
-            return model_link(obj.course)
-        return '-'
+        return model_link(obj.course)
 
     course_link.short_description = _('Course')
 
@@ -296,6 +290,8 @@ class LessonEntityAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmi
     search_fields = (
         'id',
         'content',
+        'lesson',
+        'file',
     )
 
     def content_short(self, obj):
@@ -336,22 +332,15 @@ class LessonEntityAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmi
         ),
     ]
 
-    ordering = (
-        'lesson',
-        'position',
-    )
+    ordering = ('position',)
 
     def lesson_course_link(self, obj):
-        if obj.lesson and obj.lesson.course:
-            return model_link(obj.lesson.course)
-        return '-'
+        return model_link(obj.lesson.course)
 
     lesson_course_link.short_description = _('Course')
 
     def lesson_link(self, obj):
-        if obj.lesson:
-            return model_link(obj.lesson)
-        return '-'
+        return model_link(obj.lesson)
 
 
 @admin.register(LearningProgress)
@@ -419,16 +408,12 @@ class LearningProgressAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     ]
 
     def user_link(self, obj):
-        if obj.user:
-            return model_link(obj.user)
-        return '-'
+        return model_link(obj.user)
 
     user_link.short_description = _('User')
 
     def course_link(self, obj):
-        if obj.course:
-            return model_link(obj.course)
-        return '-'
+        return model_link(obj.course)
 
     course_link.short_description = _('Course')
 
@@ -461,6 +446,7 @@ class LinkAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
         'id',
         'title',
         'url',
+        'lesson_entity',
     )
 
     list_select_related = ('lesson_entity',)
@@ -494,10 +480,7 @@ class LinkAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
         ),
     ]
 
-    ordering = (
-        'lesson_entity',
-        'position',
-    )
+    ordering = ('position',)
 
     def lesson_entity_link(self, obj):
         if obj.lesson_entity:
