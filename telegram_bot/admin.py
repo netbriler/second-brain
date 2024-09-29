@@ -136,16 +136,19 @@ class FileAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 
     @admin.action(description=_('Create lessons from files'))
     def create_lessons_from_files(self, request, queryset):
+        first_position = len(queryset) * 2
+        i = 1
         for file in queryset:
             title = (file.caption or '').strip().split('\n')[0]
             LessonEntity.objects.create(
                 lesson=Lesson.objects.create(
                     title=title,
-                    position=Lesson.objects.count() + 1,
+                    position=first_position - i,
                 ),
                 content=file.caption,
                 file=file,
             )
+            i += 1
 
         self.message_user(request, _('Lessons created'))
 
