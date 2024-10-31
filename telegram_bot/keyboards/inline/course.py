@@ -1,6 +1,6 @@
+from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from django.utils.translation import gettext as _
-from pyrogram.types import InlineKeyboardMarkup
 
 from courses.models import Course, Group, Lesson
 

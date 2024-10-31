@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'adminsortable2',
     'users',
     'telegram_bot',
+    'telegram_restricted_downloader',
     'courses',
     'ai',
     'reminders',
