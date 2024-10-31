@@ -39,13 +39,13 @@ class Account(models.Model):
     @staticmethod
     def encrypt(session_string: str) -> str:
         """Encrypt the session string."""
-        fernet = Fernet(settings.SECRET_KEY.encode())
+        fernet = Fernet(settings.TELEGRAM_SESSION_SECRET_KEY.encode())
         return fernet.encrypt(session_string.encode()).decode()
 
     @staticmethod
     def decrypt(encrypted_session_string: str) -> str:
         """Decrypt the encrypted session string."""
-        fernet = Fernet(settings.SECRET_KEY.encode())
+        fernet = Fernet(settings.TELEGRAM_SESSION_SECRET_KEY.encode())
         return fernet.decrypt(encrypted_session_string.encode()).decode()
 
     @staticmethod

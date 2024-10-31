@@ -9,6 +9,7 @@ def get_default_markup(user):
     builder.button(text=_('Help 🆘'))
     builder.button(text=_('Settings 🛠'))
     builder.button(text=_('Start learning 📚'))
+    builder.button(text=_('Restricted downloader 📥'))
 
     if user.is_superuser:
         builder.button(text=_('Upload file 📁'))
