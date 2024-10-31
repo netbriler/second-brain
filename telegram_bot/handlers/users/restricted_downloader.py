@@ -1,3 +1,4 @@
+import re
 from typing import NoReturn
 
 from aiogram import Router
@@ -10,6 +11,7 @@ from django_celery_beat.utils import now
 from loguru import logger
 from telethon.errors import SessionPasswordNeededError
 from telethon.sessions import StringSession
+from telethon.tl.types import MessageActionTopicCreate
 from telethon.utils import parse_phone
 
 from telegram_bot.filters.i18n_text import I18nText
@@ -64,7 +66,6 @@ async def _cancel(message: Message, user: User, state: FSMContext) -> NoReturn:
     await message.answer(_('Choose an action from the menu 👇'), reply_markup=get_default_markup(user))
 
 
-# Start downloading
 @router.message(
     or_f(
         Command(commands=['restricted_downloader']),
@@ -89,6 +90,8 @@ async def callback_add_account(
         callback_query: CallbackQuery,
         state: FSMContext,
 ) -> NoReturn:
+    await callback_query.answer()
+
     await check_restricted_downloader_session(callback_query.message, state)
 
     await callback_query.message.answer(
@@ -222,6 +225,23 @@ async def process_password(message: Message, state: FSMContext, user: User) -> N
         await message.answer(_('Failed to sign in. Please try again later or check your password'))
 
 
+def get_account_text(account: Account) -> str:
+    text = _(
+        'Account Information\n\n'
+        'ID: {id}\n'
+        'Name: {name}\n'
+        'Username: {username}\n'
+        'Last used at: {last_used_at}\n'
+    ).format(
+        id=account.telegram_id,
+        name=account.name,
+        username='@' + account.username if account.username else '',
+        last_used_at=f'{account.last_used_at:%Y-%m-%d %H:%M:%S}' if account.last_used_at else '',
+    )
+
+    return text
+
+
 async def save_account_data(
         message: Message,
         state: FSMContext,
@@ -230,13 +250,7 @@ async def save_account_data(
 ) -> Account:
     telethon_user = await client.get_me()
 
-    text = _('Account successfully added 🎉\n' '{id} {name} (@{username})').format(
-        id=telethon_user.id, name=telethon_user.first_name + (telethon_user.last_name or ''),
-        username=telethon_user.username
-    )
-
     session_string = client.get_session_string()
-
     account, created = await Account.objects.aupdate_or_create(
         telegram_id=telethon_user.id,
         user=user,
@@ -249,9 +263,195 @@ async def save_account_data(
         }
     )
 
+    text = _('Account successfully added 🎉\n') + get_account_text(account)
+
     await state.clear()
     await state.set_state(RestrictedDownloaderForm.restricted_downloader_session)
     await message.answer(text)
     await start_restricted_downloader(message, state, user)
 
     return account
+
+
+@router.callback_query(
+    RestrictedDownloaderForm.restricted_downloader_session,
+    Regexp(r'^restricted_downloader:select_account:(?P<account_id>\d+)$'),
+)
+async def callback_select_account(
+        callback_query: CallbackQuery,
+        state: FSMContext,
+        regexp: re.Match,
+        user: User,
+) -> NoReturn:
+    await callback_query.answer()
+
+    account_id = int(regexp.group('account_id'))
+    try:
+        account = await Account.objects.aget(id=account_id, user=user, is_active=True)
+    except Account.DoesNotExist:
+        await callback_query.message.edit_reply_markup(
+            reply_markup=get_restricted_downloader_select_account_inline_markup(
+                [a async for a in Account.objects.filter(user=user, is_active=True).select_related('user')]
+            ),
+        )
+        return await callback_query.answer(_('Account not found'), show_alert=True)
+
+    await callback_query.message.answer(
+        _('Selected account:\n') + get_account_text(account),
+    )
+
+    await callback_query.message.answer(
+        _('Checking account session...'),
+    )
+
+    me = None
+    try:
+        if account.session_string:
+            client = CustomTelethonClient(
+                StringSession(account.session_string), settings.TELEGRAM_API_ID, settings.TELEGRAM_API_HASH
+            )
+            await client.connect()
+            me = await client.get_me()
+    except Exception as e:
+        logger.exception(e)
+
+    if not me:
+        return await callback_query.message.answer(
+            _('Failed to check account session. Session is invalid. Please try again letter or re-add account'),
+        )
+
+    await callback_query.message.answer(
+        _('Account session is valid. Select dialog or share link to download'),
+    )
+
+    await state.clear()
+    await state.set_state(RestrictedDownloaderForm.select_dialog)
+    await state.set_data({'account_id': account_id})
+
+
+# https://t.me/c/2025969435/165/183
+
+@router.message(
+    RestrictedDownloaderForm.select_dialog,
+    Regexp(
+        r'^https:\/\/t\.me\/c\/'
+        r'(?P<chat_id>\d+)'
+        r'(\/(?P<chapter_id>\d+))?'
+        r'(\/(?P<message_id>\d+))?$'
+    ),
+)
+async def download_telegram_message(
+        message: Message,
+        regexp: re.Match,
+        state: FSMContext,
+        user: User,
+) -> NoReturn:
+    chat_id = int(regexp.group('chat_id')) if regexp.group('chat_id') else None
+    chapter_id = int(regexp.group('chapter_id')) if regexp.group('chapter_id') else None
+    message_id = int(regexp.group('message_id')) if regexp.group('message_id') else None
+    if not message_id and chapter_id:
+        message_id = chapter_id
+
+    await message.answer(
+        f'Chat ID: {chat_id}\n'
+        f'Chapter ID: {chapter_id}\n'
+        f'Message ID: {message_id}\n'
+    )
+
+    data = await state.get_data()
+    account_id = data.get('account_id')
+    try:
+        account = await Account.objects.aget(id=account_id, user=user, is_active=True)
+    except Account.DoesNotExist:
+        await message.answer(_('Account not found'), show_alert=True)
+        return await start_restricted_downloader(message, state, user)
+
+    await message.answer(_('Please wait for a moment'))
+
+    me = None
+    client = None
+    try:
+        if account.session_string:
+            client = CustomTelethonClient(
+                StringSession(account.session_string), settings.TELEGRAM_API_ID, settings.TELEGRAM_API_HASH
+            )
+            await client.connect()
+            me = await client.get_me()
+    except Exception as e:
+        logger.exception(e)
+
+    if not me:
+        await message.answer(
+            _('Failed to check account session. Session is invalid. Please try again letter or re-add account'),
+        )
+        return await start_restricted_downloader(message, state, user)
+
+    try:
+        channel = await client.get_entity(int(f'-100{chat_id}'))
+        text = _(
+            'Detected Type: {type}\n'
+            'ID: {id}\n'
+            'Title: {title}\n'
+        ).format(
+            type=channel.__class__.__name__,
+            id=channel.id,
+            title=channel.title,
+        )
+
+        await message.answer(text)
+    except Exception as e:
+        logger.exception(e)
+        return await message.answer(_('Failed to get channel information'))
+
+    if message_id != chapter_id:
+        try:
+            _message = (await client.get_messages(channel, ids=[chapter_id]))[0]
+            if isinstance(_message.action, MessageActionTopicCreate):
+                text = _(
+                    'Topic: {topic}\n'
+                    'Created At: {created_at}\n'
+                ).format(
+                    topic=_message.action.title,
+                    created_at=f'{_message.date:%Y-%m-%d %H:%M:%S}',
+                )
+            else:
+                text = _(
+                    'ID: {id}\n'
+                    'Text: {text}\n'
+                    'Document: {document}\n'
+                ).format(
+                    id=_message.id,
+                    text=_message.text,
+                    document=_message.document.mime_type if _message.document else '',
+                )
+
+            await message.answer(text)
+        except Exception as e:
+            logger.exception(e)
+            return await message.answer(_('Failed to get message'))
+
+    try:
+        _message = (await client.get_messages(channel, ids=[message_id]))[0]
+        if isinstance(_message.action, MessageActionTopicCreate):
+            text = _(
+                'Topic: {topic}\n'
+                'Created At: {created_at}\n'
+            ).format(
+                topic=_message.action.title,
+                created_at=f'{_message.date:%Y-%m-%d %H:%M:%S}',
+            )
+        else:
+            text = _(
+                'ID: {id}\n'
+                'Text: {text}\n'
+                'Document: {document}\n'
+            ).format(
+                id=_message.id,
+                text=_message.text,
+                document=_message.document.mime_type if _message.document else '',
+            )
+
+        await message.answer(text)
+    except Exception as e:
+        logger.exception(e)
+        return await message.answer(_('Failed to get message'))

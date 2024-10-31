@@ -61,12 +61,17 @@ async def _default_menu(message: Message, user: User, state: FSMContext) -> NoRe
             user=user,
         )
 
+    try:
+        raw_data = json.loads(message.model_dump_json())
+    except:
+        raw_data = None
+
     await create_message(
         message_id=message.message_id,
         chat_id=message.chat.id,
         text=message.text or message.caption or '',
         user=user,
-        raw_data=json.loads(message.model_dump_json()),
+        raw_data=raw_data,
         role=role,
         file=file,
     )
