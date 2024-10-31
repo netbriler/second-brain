@@ -1,10 +1,19 @@
+import ipaddress
+import struct
 import time
+
+from telethon import TelegramClient
+from telethon.sessions import StringSession
+
+_STRUCT_PREFORMAT = '>B{}sH256s'
+
+CURRENT_VERSION = '1'
 
 
 def humanbytes(size: int) -> str:
     if size == 0:
         return '0 B'
-    power = 2**10
+    power = 2 ** 10
     n = 0
     dic_power_n = {0: '', 1: 'Ki', 2: 'Mi', 3: 'Gi', 4: 'Ti'}
     while size >= power and n < 4:
@@ -95,3 +104,14 @@ class ProgressTracker:
         )
 
         return self.stats
+
+
+class CustomTelethonClient(TelegramClient):
+    def get_session_string(self):
+        ip = ipaddress.ip_address(self.session.server_address).packed
+        return CURRENT_VERSION + StringSession.encode(
+            struct.pack(
+                _STRUCT_PREFORMAT.format(len(ip)), self.session.dc_id, ip, self.session.port,
+                self.session.auth_key.key
+            )
+        )

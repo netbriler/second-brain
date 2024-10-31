@@ -10,7 +10,7 @@ def get_restricted_downloader_select_account_inline_markup(accounts: list[Accoun
 
     for account in accounts:
         builder.button(
-            text=account.name,
+            text=f'{account.telegram_id} {account.name}',
             callback_data=f'restricted_downloader:select_account:{account.id}',
         )
 

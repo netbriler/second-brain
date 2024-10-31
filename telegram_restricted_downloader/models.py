@@ -6,7 +6,17 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Account(models.Model):
+    telegram_id = models.BigIntegerField(
+        null=True,
+        verbose_name=_('Telegram ID'),
+    )
+
     name = models.CharField(
+        max_length=255,
+    )
+
+    username = models.CharField(
+        null=True,
         max_length=255,
     )
 
@@ -25,6 +35,26 @@ class Account(models.Model):
         related_name='accounts',
         on_delete=models.CASCADE,
         verbose_name=_('User'),
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name=_('Is Active'),
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('Created At'),
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_('Updated At'),
+    )
+
+    last_used_at = models.DateTimeField(
+        null=True,
+        verbose_name=_('Last Used At'),
     )
 
     @cached_property
