@@ -51,7 +51,10 @@ from users.models import User
 router = Router(name=__name__)
 
 
-@router.inline_query(Regexp(r'^courses:course_(?P<course_id>\d+)?$'))
+@router.inline_query(
+    CourseForm.learning_session,
+    Regexp(r'^courses:course_(?P<course_id>\d+)?$'),
+)
 async def inline_query_course(query: CallbackQuery, regexp: re.Match, user: User) -> NoReturn:
     course_id = regexp.group('course_id')
     results = []
@@ -107,7 +110,10 @@ async def inline_query_course(query: CallbackQuery, regexp: re.Match, user: User
     )
 
 
-@router.inline_query(Regexp(r'^courses:group_(?P<group_id>\d+)?$'))
+@router.inline_query(
+    CourseForm.learning_session,
+    Regexp(r'^courses:group_(?P<group_id>\d+)?$'),
+)
 async def inline_query_group(query: CallbackQuery, regexp: re.Match, user: User) -> NoReturn:
     group_id = regexp.group('group_id')
     results = []
@@ -148,7 +154,10 @@ async def inline_query_group(query: CallbackQuery, regexp: re.Match, user: User)
     )
 
 
-@router.inline_query(Regexp(r'^courses:lesson_(?P<lesson_id>\d+)?$'))
+@router.inline_query(
+    CourseForm.learning_session,
+    Regexp(r'^courses:lesson_(?P<lesson_id>\d+)?$'),
+)
 async def inline_query_lesson(query: CallbackQuery, regexp: re.Match) -> NoReturn:
     lesson_id = regexp.group('lesson_id')
     results = []
@@ -179,6 +188,7 @@ async def inline_query_lesson(query: CallbackQuery, regexp: re.Match) -> NoRetur
 
 
 @router.callback_query(
+    CourseForm.learning_session,
     Regexp(r'^courses:course_(?P<course_id>\d+):stats$'),
 )
 async def callback_course_stats(
@@ -205,6 +215,7 @@ async def callback_course_stats(
 
 
 @router.inline_query(
+    CourseForm.learning_session,
     Regexp(r'^courses:(?P<query>.+)?$'),
 )
 async def inline_query(query: CallbackQuery, regexp: re.Match, user: User) -> NoReturn:
@@ -247,6 +258,7 @@ async def inline_query(query: CallbackQuery, regexp: re.Match, user: User) -> No
 
 
 @router.callback_query(
+    CourseForm.learning_session,
     Regexp(r'^courses:group_(?P<group_id>\d+):stats$'),
 )
 async def callback_group_stats(
@@ -425,6 +437,7 @@ async def set_lesson(message: Message, lesson: Lesson, user: User, state: FSMCon
 
 
 @router.callback_query(
+    CourseForm.learning_session,
     Regexp(r'^courses:lesson_(?P<lesson_id>\d+)$'),
 )
 async def callback_lesson(callback_query: CallbackQuery, regexp: re.Match, user: User, state: FSMContext) -> NoReturn:
