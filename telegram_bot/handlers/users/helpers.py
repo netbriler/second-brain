@@ -4,7 +4,7 @@ from typing import NoReturn
 
 from aiogram import Router
 from aiogram.enums import ContentType
-from aiogram.filters import Command
+from aiogram.filters import Command, or_f
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from django.utils.translation import gettext as _
@@ -21,7 +21,12 @@ from users.models import User
 router = Router(name=__name__)
 
 
-@router.message(I18nText('Cancel ❌'))
+@router.message(
+    or_f(
+        Command(commands=['cancel']),
+        I18nText('Cancel ❌')
+    ),
+)
 async def _cancel(message: Message, user: User, state: FSMContext) -> NoReturn:
     await state.clear()
     await message.answer(_('Choose an action from the menu 👇'), reply_markup=get_default_markup(user))

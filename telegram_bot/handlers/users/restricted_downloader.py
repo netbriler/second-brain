@@ -4,7 +4,7 @@ from typing import NoReturn
 from aiogram import Router
 from aiogram.filters import Command, or_f
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 from django.conf import settings
 from django.utils.translation import gettext as _
 from django_celery_beat.utils import now
@@ -16,6 +16,7 @@ from telethon.utils import parse_phone
 
 from telegram_bot.filters.i18n_text import I18nText
 from telegram_bot.filters.regexp import Regexp
+from telegram_bot.keyboards.default.cancel import get_cancel_markup
 from telegram_bot.keyboards.default.default import get_default_markup
 from telegram_bot.keyboards.inline.restricted_downloader import (
     get_restricted_downloader_select_account_inline_markup,
@@ -96,6 +97,7 @@ async def callback_add_account(
 
     await callback_query.message.answer(
         _('Please enter account phone number or session string'),
+        reply_markup=get_cancel_markup()
     )
 
     await state.set_state(RestrictedDownloaderForm.get_phone_number)
@@ -117,7 +119,9 @@ async def message_get_phone_number(message: Message, state: FSMContext, user: Us
             pass
 
         if session is not None:
-            await message.answer(_('Checking your session string'))
+            await message.answer(
+                _('Checking your session string'),
+            )
 
             client = CustomTelethonClient(session, settings.TELEGRAM_API_ID, settings.TELEGRAM_API_HASH)
             await client.connect()
@@ -126,15 +130,24 @@ async def message_get_phone_number(message: Message, state: FSMContext, user: Us
             if account:
                 await message.delete()
                 return
-            return await message.answer(_('Invalid session string. Please enter valid session string'))
+            return await message.answer(
+                _('Invalid session string. Please enter valid session string'),
+                reply_markup=get_cancel_markup()
+            )
 
         if message.text.isnumeric():
             error_text = _('Invalid phone number format. Please enter phone number in international format')
         else:
             error_text = _('Invalid session string format. Please enter valid session string')
-        return await message.answer(error_text)
+        return await message.answer(
+            error_text,
+            reply_markup=get_cancel_markup()
+        )
 
-    await message.answer(_('Please wait for a moment'))
+    await message.answer(
+        _('Please wait for a moment'),
+        reply_markup=get_cancel_markup()
+    )
 
     data = await state.get_data()
     if not data.get('session_file'):
@@ -173,9 +186,15 @@ async def message_get_phone_number(message: Message, state: FSMContext, user: Us
 async def process_verification_code(message: Message, state: FSMContext, user: User) -> NoReturn:
     code = message.text
     if not code.isnumeric():
-        return await message.answer(_('Invalid code format. Please enter code you received in message'))
+        return await message.answer(
+            _('Invalid code format. Please enter code you received in message'),
+            reply_markup=get_cancel_markup()
+        )
 
-    await message.answer(_('Please wait for a moment'))
+    await message.answer(
+        _('Please wait for a moment'),
+        reply_markup=get_cancel_markup()
+    )
 
     data = await state.get_data()
     phone, phone_code_hash, session_file = data.get('phone'), data.get('phone_code_hash'), data.get('session_file')
@@ -189,12 +208,16 @@ async def process_verification_code(message: Message, state: FSMContext, user: U
     try:
         await client.sign_in(code=code, phone=phone, phone_code_hash=phone_code_hash)
     except SessionPasswordNeededError:
-        await message.answer(_('Two-step verification is enabled. Please enter your password'))
+        await message.answer(
+            _('Two-step verification is enabled. Please enter your password'),
+        )
         await state.set_state(RestrictedDownloaderForm.get_password)
         return
     except Exception as e:
         logger.exception(e)
-        await message.answer(_('Failed to sign in. Please try again later or check your code'))
+        await message.answer(
+            _('Failed to sign in. Please try again later or check your code'),
+        )
         return await client.sign_in(phone)
 
     await save_account_data(message, state, user, client)
@@ -206,7 +229,12 @@ async def process_password(message: Message, state: FSMContext, user: User) -> N
     password = message.text
     await message.delete()
 
-    await message.answer(_('Please wait for a moment'))
+    await message.answer(
+        _(
+            'Please wait for a moment',
+        ),
+        reply_markup=get_cancel_markup()
+    )
 
     data = await state.get_data()
     phone, session_file = data.get('phone'), data.get('session_file')
@@ -222,7 +250,9 @@ async def process_password(message: Message, state: FSMContext, user: User) -> N
         await save_account_data(message, state, user, client)
     except Exception as e:
         logger.exception(e)
-        await message.answer(_('Failed to sign in. Please try again later or check your password'))
+        await message.answer(
+            _('Failed to sign in. Please try again later or check your password'),
+        )
 
 
 def get_account_text(account: Account) -> str:
@@ -267,7 +297,10 @@ async def save_account_data(
 
     await state.clear()
     await state.set_state(RestrictedDownloaderForm.restricted_downloader_session)
-    await message.answer(text)
+    await message.answer(
+        text,
+        reply_markup=ReplyKeyboardRemove()
+    )
     await start_restricted_downloader(message, state, user)
 
     return account
@@ -298,6 +331,7 @@ async def callback_select_account(
 
     await callback_query.message.answer(
         _('Selected account:\n') + get_account_text(account),
+        reply_markup=get_cancel_markup(),
     )
 
     await callback_query.message.answer(
@@ -328,8 +362,6 @@ async def callback_select_account(
     await state.set_state(RestrictedDownloaderForm.select_dialog)
     await state.set_data({'account_id': account_id})
 
-
-# https://t.me/c/2025969435/165/183
 
 @router.message(
     RestrictedDownloaderForm.select_dialog,
@@ -366,7 +398,10 @@ async def download_telegram_message(
         await message.answer(_('Account not found'), show_alert=True)
         return await start_restricted_downloader(message, state, user)
 
-    await message.answer(_('Please wait for a moment'))
+    await message.answer(
+        _('Please wait for a moment'),
+        reply_markup=get_cancel_markup(),
+    )
 
     me = None
     client = None
