@@ -4,14 +4,12 @@ from typing import NoReturn
 from aiogram import Router
 from aiogram.filters import Command, or_f
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
+from aiogram.types import CallbackQuery, Message
 from django.conf import settings
 from django.utils.translation import gettext as _
-from django_celery_beat.utils import now
 from loguru import logger
 from telethon.errors import SessionPasswordNeededError
 from telethon.sessions import StringSession
-from telethon.tl.types import MessageActionTopicCreate
 from telethon.utils import parse_phone
 
 from telegram_bot.filters.i18n_text import I18nText
@@ -21,32 +19,14 @@ from telegram_bot.keyboards.default.default import get_default_markup
 from telegram_bot.keyboards.inline.restricted_downloader import (
     get_restricted_downloader_select_account_inline_markup,
 )
+from telegram_bot.services.restricted_downloader import get_account_text, save_account_data, \
+    check_restricted_downloader_session, check_client, fetch_channel_info, fetch_message_details
 from telegram_bot.states.restricted_downloader import RestrictedDownloaderForm
 from telegram_restricted_downloader.helpers import CustomTelethonClient
 from telegram_restricted_downloader.models import Account
 from users.models import User
 
 router = Router(name=__name__)
-
-
-async def check_restricted_downloader_session(
-        message: Message,
-        state: FSMContext,
-) -> FSMContext:
-    if await state.get_state() != RestrictedDownloaderForm.restricted_downloader_session:
-        await state.set_state(RestrictedDownloaderForm.restricted_downloader_session)
-
-    return state
-
-
-async def check_client(client: CustomTelethonClient, message: Message, state: FSMContext, user: User) -> Account:
-    if await client.is_user_authorized():
-        return await save_account_data(
-            message,
-            state,
-            user=user,
-            client=client,
-        )
 
 
 @router.message(
@@ -74,7 +54,7 @@ async def _cancel(message: Message, user: User, state: FSMContext) -> NoReturn:
     ),
 )
 async def start_restricted_downloader(message: Message, state: FSMContext, user: User) -> NoReturn:
-    await check_restricted_downloader_session(message, state)
+    await check_restricted_downloader_session(state)
 
     accounts = [a async for a in Account.objects.filter(user=user, is_active=True).select_related('user')]
     await message.answer(
@@ -93,11 +73,11 @@ async def callback_add_account(
 ) -> NoReturn:
     await callback_query.answer()
 
-    await check_restricted_downloader_session(callback_query.message, state)
+    await check_restricted_downloader_session(state)
 
     await callback_query.message.answer(
         _('Please enter account phone number or session string'),
-        reply_markup=get_cancel_markup()
+        reply_markup=get_cancel_markup(_('Phone number or session string:'))
     )
 
     await state.set_state(RestrictedDownloaderForm.get_phone_number)
@@ -129,10 +109,9 @@ async def message_get_phone_number(message: Message, state: FSMContext, user: Us
             account = await check_client(client, message, state, user)
             if account:
                 await message.delete()
-                return
+                return await start_restricted_downloader(message, state, user)
             return await message.answer(
                 _('Invalid session string. Please enter valid session string'),
-                reply_markup=get_cancel_markup()
             )
 
         if message.text.isnumeric():
@@ -141,12 +120,10 @@ async def message_get_phone_number(message: Message, state: FSMContext, user: Us
             error_text = _('Invalid session string format. Please enter valid session string')
         return await message.answer(
             error_text,
-            reply_markup=get_cancel_markup()
         )
 
     await message.answer(
         _('Please wait for a moment'),
-        reply_markup=get_cancel_markup()
     )
 
     data = await state.get_data()
@@ -160,7 +137,7 @@ async def message_get_phone_number(message: Message, state: FSMContext, user: Us
     await client.connect()
     account = await check_client(client, message, state, user)
     if account:
-        return
+        return await start_restricted_downloader(message, state, user)
 
     try:
         await client.sign_in(phone)
@@ -175,6 +152,7 @@ async def message_get_phone_number(message: Message, state: FSMContext, user: Us
 
     await message.answer(
         _('Please enter code messaged to your phone number'),
+        reply_markup=get_cancel_markup(_('Code:'))
     )
 
     await state.set_state(RestrictedDownloaderForm.get_code)
@@ -188,12 +166,10 @@ async def process_verification_code(message: Message, state: FSMContext, user: U
     if not code.isnumeric():
         return await message.answer(
             _('Invalid code format. Please enter code you received in message'),
-            reply_markup=get_cancel_markup()
         )
 
     await message.answer(
         _('Please wait for a moment'),
-        reply_markup=get_cancel_markup()
     )
 
     data = await state.get_data()
@@ -203,13 +179,14 @@ async def process_verification_code(message: Message, state: FSMContext, user: U
     await client.connect()
     account = await check_client(client, message, state, user)
     if account:
-        return
+        return await start_restricted_downloader(message, state, user)
 
     try:
         await client.sign_in(code=code, phone=phone, phone_code_hash=phone_code_hash)
     except SessionPasswordNeededError:
         await message.answer(
-            _('Two-step verification is enabled. Please enter your password'),
+            _('Two-step verification is enabled. Please enter your password, it will be deleted instantly'),
+            reply_markup=get_cancel_markup(_('Password:'))
         )
         await state.set_state(RestrictedDownloaderForm.get_password)
         return
@@ -221,6 +198,7 @@ async def process_verification_code(message: Message, state: FSMContext, user: U
         return await client.sign_in(phone)
 
     await save_account_data(message, state, user, client)
+    await start_restricted_downloader(message, state, user)
 
 
 @router.message(RestrictedDownloaderForm.get_password)
@@ -233,7 +211,6 @@ async def process_password(message: Message, state: FSMContext, user: User) -> N
         _(
             'Please wait for a moment',
         ),
-        reply_markup=get_cancel_markup()
     )
 
     data = await state.get_data()
@@ -243,11 +220,12 @@ async def process_password(message: Message, state: FSMContext, user: User) -> N
     await client.connect()
     account = await check_client(client, message, state, user)
     if account:
-        return
+        return await start_restricted_downloader(message, state, user)
 
     try:
         await client.sign_in(password=password)
         await save_account_data(message, state, user, client)
+        await start_restricted_downloader(message, state, user)
     except Exception as e:
         logger.exception(e)
         await message.answer(
@@ -255,59 +233,11 @@ async def process_password(message: Message, state: FSMContext, user: User) -> N
         )
 
 
-def get_account_text(account: Account) -> str:
-    text = _(
-        'Account Information\n\n'
-        'ID: {id}\n'
-        'Name: {name}\n'
-        'Username: {username}\n'
-        'Last used at: {last_used_at}\n'
-    ).format(
-        id=account.telegram_id,
-        name=account.name,
-        username='@' + account.username if account.username else '',
-        last_used_at=f'{account.last_used_at:%Y-%m-%d %H:%M:%S}' if account.last_used_at else '',
-    )
-
-    return text
-
-
-async def save_account_data(
-        message: Message,
-        state: FSMContext,
-        user: User,
-        client: CustomTelethonClient,
-) -> Account:
-    telethon_user = await client.get_me()
-
-    session_string = client.get_session_string()
-    account, created = await Account.objects.aupdate_or_create(
-        telegram_id=telethon_user.id,
-        user=user,
-        defaults={
-            'phone': telethon_user.phone,
-            'name': f'{telethon_user.first_name + (telethon_user.last_name or "")}',
-            'username': telethon_user.username,
-            'encrypted_session_string': Account.encrypt(session_string),
-            'last_used_at': now(),
-        }
-    )
-
-    text = _('Account successfully added 🎉\n') + get_account_text(account)
-
-    await state.clear()
-    await state.set_state(RestrictedDownloaderForm.restricted_downloader_session)
-    await message.answer(
-        text,
-        reply_markup=ReplyKeyboardRemove()
-    )
-    await start_restricted_downloader(message, state, user)
-
-    return account
-
-
 @router.callback_query(
-    RestrictedDownloaderForm.restricted_downloader_session,
+    or_f(
+        RestrictedDownloaderForm.restricted_downloader_session,
+        RestrictedDownloaderForm.select_dialog,
+    ),
     Regexp(r'^restricted_downloader:select_account:(?P<account_id>\d+)$'),
 )
 async def callback_select_account(
@@ -378,37 +308,35 @@ async def download_telegram_message(
         state: FSMContext,
         user: User,
 ) -> NoReturn:
-    chat_id = int(regexp.group('chat_id')) if regexp.group('chat_id') else None
-    chapter_id = int(regexp.group('chapter_id')) if regexp.group('chapter_id') else None
-    message_id = int(regexp.group('message_id')) if regexp.group('message_id') else None
-    if not message_id and chapter_id:
-        message_id = chapter_id
+    # Extract IDs
+    chat_id = int(regexp.group('chat_id') or 0)
+    chapter_id = int(regexp.group('chapter_id') or 0)
+    message_id = int(regexp.group('message_id') or chapter_id)
 
     await message.answer(
-        f'Chat ID: {chat_id}\n'
-        f'Chapter ID: {chapter_id}\n'
-        f'Message ID: {message_id}\n'
+        f'Chat ID: {chat_id}\nChapter ID: {chapter_id}\nMessage ID: {message_id}\n'
     )
 
     data = await state.get_data()
     account_id = data.get('account_id')
+
+    # Fetch account
     try:
         account = await Account.objects.aget(id=account_id, user=user, is_active=True)
     except Account.DoesNotExist:
         await message.answer(_('Account not found'), show_alert=True)
         return await start_restricted_downloader(message, state, user)
 
-    await message.answer(
-        _('Please wait for a moment'),
-        reply_markup=get_cancel_markup(),
-    )
+    await message.answer(_('Please wait for a moment'), reply_markup=get_cancel_markup())
 
-    me = None
-    client = None
+    # Initialize client and validate session
+    client, me = None, None
     try:
         if account.session_string:
             client = CustomTelethonClient(
-                StringSession(account.session_string), settings.TELEGRAM_API_ID, settings.TELEGRAM_API_HASH
+                StringSession(account.session_string),
+                settings.TELEGRAM_API_ID,
+                settings.TELEGRAM_API_HASH,
             )
             await client.connect()
             me = await client.get_me()
@@ -417,76 +345,21 @@ async def download_telegram_message(
 
     if not me:
         await message.answer(
-            _('Failed to check account session. Session is invalid. Please try again letter or re-add account'),
+            _('Failed to check account session. Session is invalid. Please try again later or re-add account'),
         )
         return await start_restricted_downloader(message, state, user)
 
-    try:
-        channel = await client.get_entity(int(f'-100{chat_id}'))
-        text = _(
-            'Detected Type: {type}\n'
-            'ID: {id}\n'
-            'Title: {title}\n'
-        ).format(
-            type=channel.__class__.__name__,
-            id=channel.id,
-            title=channel.title,
-        )
+    # Fetch and display channel information
+    channel = await fetch_channel_info(client, chat_id)
+    if not channel:
+        return
+    await message.answer(channel)
 
-        await message.answer(text)
-    except Exception as e:
-        logger.exception(e)
-        return await message.answer(_('Failed to get channel information'))
-
+    # Fetch and display chapter message details if different from main message ID
     if message_id != chapter_id:
-        try:
-            _message = (await client.get_messages(channel, ids=[chapter_id]))[0]
-            if isinstance(_message.action, MessageActionTopicCreate):
-                text = _(
-                    'Topic: {topic}\n'
-                    'Created At: {created_at}\n'
-                ).format(
-                    topic=_message.action.title,
-                    created_at=f'{_message.date:%Y-%m-%d %H:%M:%S}',
-                )
-            else:
-                text = _(
-                    'ID: {id}\n'
-                    'Text: {text}\n'
-                    'Document: {document}\n'
-                ).format(
-                    id=_message.id,
-                    text=_message.text,
-                    document=_message.document.mime_type if _message.document else '',
-                )
+        chapter = await fetch_message_details(client, channel, chapter_id)
+        await message.answer(chapter)
 
-            await message.answer(text)
-        except Exception as e:
-            logger.exception(e)
-            return await message.answer(_('Failed to get message'))
-
-    try:
-        _message = (await client.get_messages(channel, ids=[message_id]))[0]
-        if isinstance(_message.action, MessageActionTopicCreate):
-            text = _(
-                'Topic: {topic}\n'
-                'Created At: {created_at}\n'
-            ).format(
-                topic=_message.action.title,
-                created_at=f'{_message.date:%Y-%m-%d %H:%M:%S}',
-            )
-        else:
-            text = _(
-                'ID: {id}\n'
-                'Text: {text}\n'
-                'Document: {document}\n'
-            ).format(
-                id=_message.id,
-                text=_message.text,
-                document=_message.document.mime_type if _message.document else '',
-            )
-
-        await message.answer(text)
-    except Exception as e:
-        logger.exception(e)
-        return await message.answer(_('Failed to get message'))
+    # Fetch and display main message details
+    _message = await fetch_message_details(client, channel, message_id)
+    await message.answer(_message)
