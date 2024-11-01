@@ -22,3 +22,16 @@ def get_restricted_downloader_select_account_inline_markup(accounts: list[Accoun
     builder.adjust(1)
 
     return builder.as_markup()
+
+
+def get_restricted_downloader_select_dialog_inline_markup() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+
+    builder.button(
+        text=_('📁 Select dialog'),
+        switch_inline_query_current_chat=f'restricted_downloader:select_dialog:',
+    )
+
+    builder.adjust(1)
+
+    return builder.as_markup()

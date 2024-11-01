@@ -69,7 +69,7 @@ async def _default_menu(message: Message, user: User, state: FSMContext) -> NoRe
     try:
         raw_data = json.loads(message.model_dump_json())
     except:
-        raw_data = None
+        raw_data = {}
 
     await create_message(
         message_id=message.message_id,

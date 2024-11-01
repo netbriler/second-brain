@@ -4,7 +4,7 @@ from typing import NoReturn
 from aiogram import Router
 from aiogram.filters import Command, or_f
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, InlineQueryResultArticle, InputTextMessageContent
 from django.conf import settings
 from django.utils.translation import gettext as _
 from loguru import logger
@@ -17,7 +17,7 @@ from telegram_bot.filters.regexp import Regexp
 from telegram_bot.keyboards.default.cancel import get_cancel_markup
 from telegram_bot.keyboards.default.default import get_default_markup
 from telegram_bot.keyboards.inline.restricted_downloader import (
-    get_restricted_downloader_select_account_inline_markup,
+    get_restricted_downloader_select_account_inline_markup, get_restricted_downloader_select_dialog_inline_markup,
 )
 from telegram_bot.services.restricted_downloader import get_account_text, save_account_data, \
     check_restricted_downloader_session, check_client, fetch_channel_info, fetch_message_details
@@ -286,6 +286,7 @@ async def callback_select_account(
 
     await callback_query.message.answer(
         _('Account session is valid. Select dialog or share link to download'),
+        reply_markup=get_restricted_downloader_select_dialog_inline_markup(),
     )
 
     await state.clear()
@@ -297,7 +298,7 @@ async def callback_select_account(
     RestrictedDownloaderForm.select_dialog,
     Regexp(
         r'^https:\/\/t\.me\/c\/'
-        r'(?P<chat_id>\d+)'
+        r'(?P<chat_id>-?\d+)'
         r'(\/(?P<chapter_id>\d+))?'
         r'(\/(?P<message_id>\d+))?$'
     ),
@@ -308,8 +309,7 @@ async def download_telegram_message(
         state: FSMContext,
         user: User,
 ) -> NoReturn:
-    # Extract IDs
-    chat_id = int(regexp.group('chat_id') or 0)
+    chat_id = int(str(regexp.group('chat_id') or 0).replace('-100', ''))
     chapter_id = int(regexp.group('chapter_id') or 0)
     message_id = int(regexp.group('message_id') or chapter_id)
 
@@ -320,7 +320,6 @@ async def download_telegram_message(
     data = await state.get_data()
     account_id = data.get('account_id')
 
-    # Fetch account
     try:
         account = await Account.objects.aget(id=account_id, user=user, is_active=True)
     except Account.DoesNotExist:
@@ -329,7 +328,6 @@ async def download_telegram_message(
 
     await message.answer(_('Please wait for a moment'), reply_markup=get_cancel_markup())
 
-    # Initialize client and validate session
     client, me = None, None
     try:
         if account.session_string:
@@ -349,17 +347,103 @@ async def download_telegram_message(
         )
         return await start_restricted_downloader(message, state, user)
 
-    # Fetch and display channel information
-    channel = await fetch_channel_info(client, chat_id)
+    channel, text = await fetch_channel_info(client, chat_id)
+    await message.answer(text)
     if not channel:
         return
-    await message.answer(channel)
 
-    # Fetch and display chapter message details if different from main message ID
-    if message_id != chapter_id:
-        chapter = await fetch_message_details(client, channel, chapter_id)
-        await message.answer(chapter)
+    if chapter_id and message_id != chapter_id:
+        chapter, text = await fetch_message_details(client, channel, chapter_id)
+        await message.answer(text)
 
-    # Fetch and display main message details
-    _message = await fetch_message_details(client, channel, message_id)
-    await message.answer(_message)
+    if message_id:
+        _message, text = await fetch_message_details(client, channel, message_id)
+        await message.answer(text)
+
+
+@router.inline_query(
+    RestrictedDownloaderForm.select_dialog,
+    Regexp(r'^restricted_downloader:select_dialog:(?P<search>.*)$'),
+)
+async def inline_select_dialog(
+        query: CallbackQuery,
+        state: FSMContext,
+        user: User,
+        regexp: re.Match
+) -> NoReturn:
+    search_query = (regexp.group('search') or '').strip().lower()
+
+    data = await state.get_data()
+    account_id = data.get('account_id')
+
+    results = []
+    try:
+        account = await Account.objects.aget(id=account_id, user=user, is_active=True)
+    except Account.DoesNotExist:
+        results.append(
+            InlineQueryResultArticle(
+                id='account_not_found',
+                title=_('Account not found'),
+                description=_('Please select account again'),
+                input_message_content=InputTextMessageContent(
+                    message_text=f'/restricted_downloader',
+                ),
+            ),
+        )
+
+        return await query.answer(
+            results=results,
+            cache_time=0,
+        )
+
+    client, me = None, None
+    try:
+        if account.session_string:
+            client = CustomTelethonClient(
+                StringSession(account.session_string),
+                settings.TELEGRAM_API_ID,
+                settings.TELEGRAM_API_HASH,
+            )
+            await client.connect()
+            me = await client.get_me()
+    except Exception as e:
+        logger.exception(e)
+
+    if not me:
+        results.append(
+            InlineQueryResultArticle(
+                id='invalid_session',
+                title=_('Invalid session'),
+                description=_('Please re-add account'),
+                input_message_content=InputTextMessageContent(
+                    message_text=f'/restricted_downloader',
+                ),
+            ),
+        )
+
+        return await query.answer(
+            results=results,
+            cache_time=0,
+        )
+
+    async for dialog in client.iter_dialogs(limit=50):
+        if not hasattr(dialog.entity, 'noforwards') or not dialog.entity.noforwards:
+            continue
+
+        if search_query and search_query not in dialog.title.lower():
+            continue
+
+        results.append(
+            InlineQueryResultArticle(
+                id=str(dialog.id),
+                title=f'{dialog.entity.__class__.__name__}: {dialog.title}',
+                input_message_content=InputTextMessageContent(
+                    message_text=f'https://t.me/c/{str(dialog.id).replace("-100", "")}',
+                ),
+            ),
+        )
+
+    return await query.answer(
+        results=results,
+        cache_time=0,
+    )

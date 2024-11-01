@@ -3,6 +3,7 @@ from aiogram.types import Message, ReplyKeyboardRemove
 from django.utils.translation import gettext as _
 from django_celery_beat.utils import now
 from loguru import logger
+from telethon._updates import Entity
 from telethon.tl.types import MessageActionTopicCreate
 
 from telegram_bot.states.restricted_downloader import RestrictedDownloaderForm
@@ -93,8 +94,9 @@ def get_channel_text(channel):
 def get_topic_text(_message):
     """Format topic creation message information."""
     return _(
-        'Topic: {topic}\nCreated At: {created_at}\n'
+        'ID: {id}\nTopic: {topic}\nCreated At: {created_at}\n'
     ).format(
+        id=_message.id,
         topic=_message.action.title,
         created_at=f'{_message.date:%Y-%m-%d %H:%M:%S}',
     )
@@ -103,7 +105,7 @@ def get_topic_text(_message):
 def get_message_text(_message):
     """Format general message information."""
     return _(
-        'ID: {id}\nText: {text}\nDocument: {document}\n'
+        'ID: {id}\nDocument: {document}\nText: {text}\n'
     ).format(
         id=_message.id,
         text=_message.text,
@@ -112,24 +114,24 @@ def get_message_text(_message):
 
 
 # Main Functions
-async def fetch_channel_info(client, chat_id):
+async def fetch_channel_info(client, chat_id) -> tuple[Entity | None, str]:
     try:
         channel = await client.get_entity(
             int(f'-100{chat_id}' if not str(chat_id).startswith('-100') else chat_id)
         )
-        return get_channel_text(channel)
+        return channel, get_channel_text(channel)
     except Exception as e:
         logger.exception(e)
-        return _('Failed to get channel information')
+        return None, _('Failed to get channel information')
 
 
-async def fetch_message_details(client, channel, message_id):
+async def fetch_message_details(client, channel, message_id) -> tuple[Entity | None, str]:
     try:
         _message = (await client.get_messages(channel, ids=[message_id]))[0]
         if isinstance(_message.action, MessageActionTopicCreate):
-            return get_topic_text(_message)
+            return _message, get_topic_text(_message)
         else:
-            return get_message_text(_message)
+            return _message, get_message_text(_message)
     except Exception as e:
         logger.exception(e)
-        return _('Failed to get message')
+        return None, _('Failed to get message')
