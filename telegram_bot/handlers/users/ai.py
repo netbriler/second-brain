@@ -32,9 +32,9 @@ async def _category(callback_query: CallbackQuery, regexp: re.Match) -> NoReturn
     except Exception as e:  # noqa
         return await callback_query.answer(str(e)[:1200])
 
-    await callback_query.message.answer(_('Category: {category}\n\n{text}').format(category=category, text=text))
-
     if not process_category_massage(ai_message_id, category):
+        await callback_query.message.answer(_('Category: {category}\n\n{text}').format(category=category, text=text))
+
         return await callback_query.answer(_('Unknown category'))
 
     await callback_query.bot.send_chat_action(callback_query.message.chat.id, 'typing')
@@ -71,3 +71,10 @@ async def _reminder_save(callback_query: CallbackQuery, regexp: re.Match, user: 
 
     await callback_query.message.answer(_('Reminder saved successfully'))
     await callback_query.message.edit_reply_markup()
+
+
+@router.callback_query(
+    Regexp(r'^ai_task:(.*)$'),
+)
+async def _ai_task(callback_query: CallbackQuery, regexp: re.Match) -> NoReturn:
+    await callback_query.answer(_('Unknown task'))

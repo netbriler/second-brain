@@ -9,7 +9,7 @@ from .models import Note
 @admin.register(Note)
 class NoteAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'title', 'text', 'summary', 'user_link', 'status', 'is_deleted', 'created_at', 'updated_at'
+        'id', 'title', 'text', 'summary', 'user_link', 'source_link', 'status', 'is_deleted', 'created_at', 'updated_at'
     )
 
     list_display_links = ('id', 'title')
@@ -25,11 +25,11 @@ class NoteAdmin(admin.ModelAdmin):
     date_hierarchy = 'created_at'
     ordering = ('-created_at',)
 
-    readonly_fields = ('created_at', 'updated_at')
+    readonly_fields = ('created_at', 'updated_at', 'source_link', 'source')
 
     fieldsets = (
         (None, {
-            'fields': ('title', 'text', 'summary', 'related_notes', 'user', 'tags')
+            'fields': ('title', 'text', 'summary', 'related_notes', 'user', 'source_link', 'tags')
         }),
         ('Status', {
             'fields': ('status', 'is_deleted')
@@ -43,6 +43,11 @@ class NoteAdmin(admin.ModelAdmin):
     autocomplete_fields = ('user',)
 
     actions = ['mark_as_deleted', 'mark_as_active', 'mark_as_archived']
+
+    def source_link(self, obj):
+        return model_link(obj.source)
+
+    source_link.short_description = _('Source')
 
     def user_link(self, obj):
         if obj.user:

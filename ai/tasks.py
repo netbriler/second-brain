@@ -10,7 +10,7 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, ReactionTy
 
 from ai.constants import AITasksCategories
 from ai.models import Message
-from ai.services.base import save_ai_response
+from ai.services.base import save_ai_response, TextRecognition
 from ai.services.text_recognation import (
     determine_category_and_format_text,
     google_translate_speech_to_text,
@@ -20,6 +20,7 @@ from ai.services.text_recognation import (
 )
 from app import settings
 from app.celery import LoggingTask, app
+from notes.models import Note
 from telegram_bot.loader import get_sync_bot
 from telegram_bot.models import File
 from telegram_bot.services.files import sync_send_file_to_user
@@ -34,13 +35,13 @@ from utils.logging import logger
     retry_backoff=True,
 )
 def transcribe_genai_task(
-    chat_id: int,
-    file_id: int,
-    destination: str,
-    message_id: int = None,
-    debug: bool = False,
-    source_id: int = None,
-    source_type_id: int = None,
+        chat_id: int,
+        file_id: int,
+        destination: str,
+        message_id: int = None,
+        debug: bool = False,
+        source_id: int = None,
+        source_type_id: int = None,
 ):
     bot = get_sync_bot()
 
@@ -92,13 +93,13 @@ def transcribe_genai_task(
     retry_backoff=True,
 )
 def transcribe_openai_task(
-    chat_id: int,
-    file_id: int,
-    destination: str,
-    message_id: int = None,
-    debug: bool = False,
-    source_id: int = None,
-    source_type_id: int = None,
+        chat_id: int,
+        file_id: int,
+        destination: str,
+        message_id: int = None,
+        debug: bool = False,
+        source_id: int = None,
+        source_type_id: int = None,
 ):
     bot = get_sync_bot()
 
@@ -150,13 +151,13 @@ def transcribe_openai_task(
     retry_backoff=True,
 )
 def transcribe_google_translate_task(
-    chat_id: int,
-    file_id: int,
-    destination: str,
-    message_id: int = None,
-    debug: bool = False,
-    source_id: int = None,
-    source_type_id: int = None,
+        chat_id: int,
+        file_id: int,
+        destination: str,
+        message_id: int = None,
+        debug: bool = False,
+        source_id: int = None,
+        source_type_id: int = None,
 ):
     bot = get_sync_bot()
 
@@ -210,12 +211,12 @@ def transcribe_google_translate_task(
     retry_backoff=True,
 )
 def transcribe_file_task(
-    chat_id: int,
-    file_id: int,
-    user_id: int,
-    message_id: int = None,
-    source_id: int = None,
-    source_type_id: int = None,
+        chat_id: int,
+        file_id: int,
+        user_id: int,
+        message_id: int = None,
+        source_id: int = None,
+        source_type_id: int = None,
 ):
     bot = get_sync_bot()
     logger.debug(f'Transcribing file {file_id} for user {user_id}')
@@ -307,12 +308,12 @@ def send_file_to_user_task(file_id: int, user_id: int):
     retry_backoff=True,
 )
 def determine_category_task(
-    chat_id: int,
-    user_id: int,
-    message: str,
-    message_id: int = None,
-    source_id: int = None,
-    source_type_id: int = None,
+        chat_id: int,
+        user_id: int,
+        message: str,
+        message_id: int = None,
+        source_id: int = None,
+        source_type_id: int = None,
 ):
     bot = get_sync_bot()
 
@@ -372,7 +373,7 @@ def determine_category_task(
     retry_backoff=True,
 )
 def category_reminder_task(
-    ai_message_id: int,
+        ai_message_id: int,
 ):
     bot = get_sync_bot()
 
@@ -412,11 +413,38 @@ def category_reminder_task(
     )
 
 
+@app.task(
+    base=LoggingTask,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 3},
+    retry_backoff=True,
+)
+def save_ai_message_note(
+        ai_message_id: int,
+):
+    ai_message = Message.objects.get(id=ai_message_id)
+    logger.debug(f'Saving note for message {ai_message}')
+    activate(ai_message.requested_by.language_code)
+
+    note = Note.objects.create(
+        user=ai_message.requested_by,
+        text=TextRecognition.model_validate_json(ai_message.response).text,
+        source_type=ContentType.objects.get_for_model(Message),
+        source_id=ai_message.id,
+    )
+
+    bot = get_sync_bot()
+    text = _('Note saved:\n\n{text}').format(text=note.text)
+    bot.send_message(ai_message.requested_by.telegram_id, text)
+
+    return note
+
+
 def process_category_massage(ai_message_id: int, category: str) -> bool:
     if AITasksCategories[category] == AITasksCategories.REMINDERS:
         category_reminder_task.delay(ai_message_id)
     elif AITasksCategories[category] == AITasksCategories.NOTES:
-        pass
+        save_ai_message_note.delay(ai_message_id)
     else:
         return False
 
