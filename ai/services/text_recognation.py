@@ -84,6 +84,9 @@ def determine_category_and_format_text(message: str, category_enum: list[str] = 
     if result:
         response.text_recognition = TextRecognition.model_validate_json(result)
 
+        if response.text_recognition.category_predictions:
+            response.text_recognition.category_predictions = list(set(response.text_recognition.category_predictions))
+
     return response
 
 

@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'ai',
     'reminders',
     'workflows',
+    'notes',
 ]
 
 if not DEBUG:

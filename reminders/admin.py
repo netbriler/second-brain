@@ -3,13 +3,14 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
 from reminders import models
+from utils.helpers import model_link
 
 
 @admin.register(models.Reminder)
 class ReminderAdmin(admin.ModelAdmin):
     list_display = (
         'id',
-        'user',
+        'user_link',
         'title',
         'description',
         'task_class',
@@ -40,7 +41,7 @@ class ReminderAdmin(admin.ModelAdmin):
 
     autocomplete_fields = ('user', 'periodic_task')
 
-    list_display_links = ('id', 'user', 'title')
+    list_display_links = ('id', 'title')
 
     readonly_fields = (
         'id',
@@ -48,6 +49,13 @@ class ReminderAdmin(admin.ModelAdmin):
         'created_at',
         'updated_at',
     )
+
+    def user_link(self, obj):
+        if obj.user:
+            return model_link(obj.user)
+        return '-'
+
+    user_link.short_description = _('User')
 
     @admin.action(description=_('Enable selected reminders'))
     def enable_selected_reminders(self, request, queryset):
