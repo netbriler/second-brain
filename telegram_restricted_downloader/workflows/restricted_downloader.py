@@ -267,8 +267,9 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
 
     async def send_message(self, process: Process, job: Job):
         client = await self.get_client(await Account.objects.aget(id=process.data['from_account_id']))
-        bot = await self.get_client(bot_token=settings.TELEGRAM_BOT_TOKEN, key='bot')
-        destination_user = await bot.get_entity(process.data.get('destination_user_id'))
+        # bot = await self.get_client(bot_token=settings.TELEGRAM_BOT_TOKEN, key='bot')
+        # destination_user = await bot.get_entity(process.data.get('destination_user_id'))
+        destination_user = await client.get_me()
 
         message = await self.get_message(
             client, job.data['channel_id'], job.data['message_id']
@@ -283,7 +284,7 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
             if message.document.mime_type and len(message.document.mime_type.split('/')) > 1:
                 extension = '.' + message.document.mime_type.split('/')[1]
             file_path = f'./downloads/{message.document.id}' + extension
-            await bot.send_file(
+            await client.send_file(
                 destination_user, file_path,
                 progress_callback=lambda current, total: self.progress_callback(job, current, total),
                 caption=text[:1024],
