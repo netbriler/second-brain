@@ -22,7 +22,8 @@ class Command(BaseCommand):
         await async_manager.create_process(
             None, RestrictedDownloaderWorkflow, stage_data={
                 'from_account_id': 10,
-                'channel_id': -1002025969435
+                'channel_id': -1002025969435,
+                'destination_user_id': 6144113693,
             }
         )
 

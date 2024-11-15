@@ -1,6 +1,8 @@
+import os
+
 from django.conf import settings
 from telethon import TelegramClient
-from telethon.sessions import StringSession
+from telethon.sessions import StringSession, MemorySession
 from telethon.tl.types import MessageActionTopicCreate
 
 from telegram_bot.services.restricted_downloader import fetch_channel_info, get_topic_text, get_message_text
@@ -19,15 +21,23 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         self.messages = dict()
         self.chapters = dict()
 
-    async def get_client(self, account: Account, key: str = 'client'):
+    async def get_client(self, account: Account = None, bot_token: str = None, key: str = 'client'):
         if not self.clients.get(key):
-            self.clients[key] = TelegramClient(
-                StringSession(
-                    account.session_string
-                ), settings.TELEGRAM_API_ID, settings.TELEGRAM_API_HASH
-            )
+            if account:
+                self.clients[key] = TelegramClient(
+                    StringSession(
+                        account.session_string
+                    ), settings.TELEGRAM_API_ID, settings.TELEGRAM_API_HASH
+                )
+            if bot_token:
+                self.clients[key] = TelegramClient(
+                    MemorySession(), settings.TELEGRAM_API_ID, settings.TELEGRAM_API_HASH
+                )
 
-        await self.clients[key].connect()
+        if account:
+            await self.clients[key].connect()
+        elif bot_token:
+            await self.clients[key].start(bot_token=bot_token)
 
         return self.clients[key]
 
@@ -76,6 +86,28 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         if not me:
             return await self.fail_process(process, job, f'Failed to get client.')
 
+        destination_user_id = job.data.get('destination_user_id')
+        if not destination_user_id:
+            return await self.fail_process(process, job, f'Destination user id is required.')
+
+        try:
+            bot = await self.get_client(bot_token=settings.TELEGRAM_BOT_TOKEN, key='bot')
+
+            me = await bot.get_me()
+        except Exception as e:
+            await self.process_log(process, str(e))
+            return await self.fail_process(process, job, f'Failed to initialize bot.')
+
+        if not me:
+            return await self.fail_process(process, job, f'Failed to get bot.')
+
+        try:
+            entity = await bot.get_entity(destination_user_id)
+            await self.job_log(job, f'Checked destination user: {entity}')
+        except Exception as e:
+            await self.process_log(process, str(e))
+            return await self.fail_process(process, job, f'Failed to get entity.')
+
         channel_id = data.get('channel_id')
         if not channel_id:
             return await self.fail_process(process, job, f'Channel id is required.')
@@ -91,7 +123,8 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         messages = []
         chapters = []
         async for message in client.iter_messages(
-                channel, ids=data.get('chapter_ids', []) + data.get('message_ids', [])
+                channel, ids=data.get('chapter_ids', []) + data.get('message_ids', []),
+                reverse=True,
         ):
             if isinstance(message.action, MessageActionTopicCreate):
                 await self.job_log(job, f'Message {message.id} is a topic: {get_topic_text(message)}')
@@ -103,7 +136,7 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         last_job = job
         for chapter in chapters:
             self.chapters[chapter.id] = chapter
-            async for message in client.iter_messages(channel, reply_to=chapter.id):
+            async for message in client.iter_messages(channel, reply_to=chapter.id, reverse=True):
                 parents = [job]
                 if last_job != job:
                     parents.append(last_job)
@@ -160,7 +193,7 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
             )
 
         if not data.get('chapter_ids', []) + data.get('message_ids', []):
-            async for message in client.iter_messages(channel):
+            async for message in client.iter_messages(channel, reverse=True):
                 parents = [job]
                 if last_job != job:
                     parents.append(last_job)
@@ -191,6 +224,12 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         # finish prepare job, this will activate next jobs
         await self.done_job(job)
 
+    async def progress_callback(self, job, current=0, total=0):
+        if not total:
+            total = 0
+        stats = ProgressTracker().callback(current, total)
+        await self.job_log(job, f'{stats}')
+
     async def download_media(self, process: Process, job: Job):
         client = await self.get_client(await Account.objects.aget(id=process.data['from_account_id']))
 
@@ -198,22 +237,51 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         if not message.document:
             return await self.fail_job(job, 'Message has no document.')
 
-        async def progress_callback(current=0, total=0):
-            if not total:
-                total = 0
-            stats = ProgressTracker().callback(current, total)
-            await self.job_log(job, f'{stats}')
-
         file = await client.download_file(
             message.document, f'./downloads/{message.document.id}.mp4',
-            progress_callback=progress_callback,
+            progress_callback=lambda current, total: self.progress_callback(job, current, total),
         )
         await self.job_log(job, f'File downloaded: {file}')
         await self.done_job(job)
 
     async def send_message(self, process: Process, job: Job):
         client = await self.get_client(await Account.objects.aget(id=process.data['from_account_id']))
+        bot = await self.get_client(bot_token=settings.TELEGRAM_BOT_TOKEN, key='bot')
+        entity = await bot.get_entity(process.data.get('destination_user_id'))
 
-        message = await self.get_message(client, job.data['channel_id'], job.data['message_id'])
-        await self.job_log(job, f'Message: {get_message_text(message)}')
+        message = await self.get_message(
+            client, job.data['channel_id'], job.data['message_id']
+        )
+        text = message.text or ''
+        if message.action and isinstance(message.action, MessageActionTopicCreate):
+            text = message.action.title
+
+        file_path = None
+        if message.document:
+            extension = ''
+            if message.document.mime_type and len(message.document.mime_type.split('/')) > 1:
+                extension = '.' + message.document.mime_type.split('/')[1]
+            file_path = f'./downloads/{message.document.id}' + extension
+            await bot.send_file(
+                entity, file_path,
+                progress_callback=lambda current, total: self.progress_callback(job, current, total),
+                caption=text[:1024],
+            )
+
+            text = text[1024:]
+
+        text_size = 4096
+        if text:
+            for i in range(0, len(text), text_size):
+                await bot.send_message(entity, text[i:i + text_size])
+
         await self.done_job(job)
+
+        if file_path:
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                else:
+                    raise FileNotFoundError(f'File not found: {file_path}')
+            except Exception as e:
+                await self.process_log(process, str(e))
