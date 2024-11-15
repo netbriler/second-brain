@@ -19,14 +19,6 @@ class Command(BaseCommand):
     async def handle_async(self, *args, **options):
         logging.info('Starting async worker')
 
-        await async_manager.create_process(
-            None, RestrictedDownloaderWorkflow, stage_data={
-                'from_account_id': 10,
-                'channel_id': -1002025969435,
-                'destination_user_id': 6144113693,
-            }
-        )
-
         await async_manager.run(None)
 
     def handle(self, *args, **options):

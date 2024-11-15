@@ -232,7 +232,7 @@ class AsyncWorkflow(Workflow):
             await self.check_process_done(job)
 
     async def run_children(self, job: Job):
-        async for child in job.children.filter(status=JOB_PLANNED).prefetch_related('parents'):
+        async for child in job.children.filter(status=JOB_PLANNED).select_related('process').prefetch_related('parents'):
             if all(
                     parent.status == JOB_SUCCESS for parent in [p async for p in child.parents.all()]
             ):
