@@ -233,7 +233,6 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         await self.job_log(job, f'{stats}')
 
     async def download_media(self, process: Process, job: Job):
-        return await self.done_job(job)
         client = await self.get_client(await Account.objects.aget(id=process.data['from_account_id']))
 
         message = await self.get_message(client, job.data['channel_id'], job.data['message_id'])
