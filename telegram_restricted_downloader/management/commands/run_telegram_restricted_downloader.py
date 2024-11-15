@@ -7,9 +7,9 @@ from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError
 from telethon.network import ConnectionTcpAbridged
 from telethon.sessions import StringSession
-from telethon.tl.types import MessageActionTopicCreate, Dialog
+from telethon.tl.types import InputFileBig
 
-from telegram_restricted_downloader.models import Account
+from telegram_restricted_downloader.helpers import ProgressTracker
 
 _STRUCT_PREFORMAT = '>B{}sH256s'
 
@@ -72,8 +72,6 @@ def datetime_handler(obj):
     return str(obj)
 
 
-print(Dialog)
-
 async def main():
     await client.connect()
     # print(await client.get_me())
@@ -82,13 +80,46 @@ async def main():
 
     channel = await client.get_entity(-1002025969435)
 
-    messages = await client.get_messages(channel, ids=[165, 183])
-    for message in messages:
-        print(isinstance(message.action, MessageActionTopicCreate), message.action)
+    #
+    # messages = await client.get_messages(channel, ids=[165, 183])
+    # for message in messages:
+    #     print(message)
+    # file_path = f'./downloads/6034964624711882446.mp4'
+    #
+    #
+    # await client.send_file('me', InputFileBig(id=2211444348961399597, parts=458, name='6034964624711882446.mp4'))
+    # return
 
-    async for message in client.iter_messages(channel, reply_to=165, limit=1):
-        print(message)
+    async for message in client.iter_messages(channel, reply_to=165, limit=10):
+        document = message.document
 
+        if not document:
+            continue
+
+        async def progress_callback(current=0, total=0):
+            if not total:
+                total = 0
+            if not current:
+                current = 0
+            stats = ProgressTracker().callback(current, total)
+            print(stats)
+
+        file = await client.download_file(
+            document, f'./downloads/{document.id}.mp4',
+            progress_callback=progress_callback,
+
+        )
+        #
+        # print(file)
+        #
+        # uploaded_file = await client.upload_file(
+        #     file,
+        #     progress_callback=lambda current, total: print(f'{current}/{total}'),
+        # )
+        # print(uploaded_file)
+        await client.send_file(
+            'me', InputFileBig(id=6034964624711882446, parts=120054623, name='6034964624711882446.mp4')
+        )
 
     # async for message in client.iter_messages(channel, search='шаг'):
     #     print(message)

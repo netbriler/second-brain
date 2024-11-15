@@ -21,7 +21,7 @@ class ContextualLogger(logging.LoggerAdapter):
         if 'job' not in self.extra:
             return f'[Process: {self.extra["process"]}] {msg}', kwargs
 
-        return f'[Process: {self.extra["process"]}] [Job: {self.extra["job"]}] msg', kwargs
+        return f'[Process: {self.extra["process"]}] [Job: {self.extra["job"]}] {msg}', kwargs
 
 
 class Workflow:
@@ -232,9 +232,10 @@ class AsyncWorkflow(Workflow):
             await self.check_process_done(job)
 
     async def run_children(self, job: Job):
-        planned_children = await job.children.filter(status=JOB_PLANNED).aprefetch_related('parents')
-        for child in planned_children:
-            if all(parent.status == JOB_SUCCESS for parent in await child.parents.all()):
+        async for child in job.children.filter(status=JOB_PLANNED).prefetch_related('parents'):
+            if all(
+                    parent.status == JOB_SUCCESS for parent in [p async for p in child.parents.all()]
+            ):
                 await self.activate_job(child)
 
     async def fail_job(self, job: Job, disable_triggers=False):

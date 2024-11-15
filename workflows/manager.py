@@ -15,6 +15,12 @@ from workflows.workflow import Workflow
 
 DEFAULT_EXECUTION_TIMEOUT = 60
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]
+)
+
 
 class Manager:
     def run(self, timeout=DEFAULT_EXECUTION_TIMEOUT, stop_on_jobs_end: bool = False):
@@ -160,6 +166,7 @@ class AsyncManager(Manager):
         process = await Process.objects.acreate(
             workflow_class=self.get_workflow_class_str(workflow_class),
             config=config,
+            data=stage_data or {},
         )
 
         job = await Job.objects.acreate(

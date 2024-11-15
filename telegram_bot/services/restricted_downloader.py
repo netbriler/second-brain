@@ -97,7 +97,9 @@ def get_topic_text(_message):
         'ID: {id}\nTopic: {topic}\nCreated At: {created_at}\n'
     ).format(
         id=_message.id,
-        topic=_message.action.title,
+        topic=(_message.action.title[:100] + '...' if len(
+            _message.action.title
+        ) > 100 else '') if _message.action.title else '',
         created_at=f'{_message.date:%Y-%m-%d %H:%M:%S}',
     )
 
@@ -108,7 +110,7 @@ def get_message_text(_message):
         'ID: {id}\nDocument: {document}\nText: {text}\n'
     ).format(
         id=_message.id,
-        text=_message.text,
+        text=(_message.text[:100] + '...' if len(_message.text) > 100 else '') if _message.text else '',
         document=_message.document.mime_type if _message.document else '',
     )
 
