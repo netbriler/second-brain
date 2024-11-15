@@ -93,23 +93,23 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         if not destination_user_id:
             return await self.fail_process(process, job, f'Destination user id is required.')
 
-        try:
-            bot = await self.get_client(bot_token=settings.TELEGRAM_BOT_TOKEN, key='bot')
-
-            me = await bot.get_me()
-        except Exception as e:
-            await self.process_log(process, str(e))
-            return await self.fail_process(process, job, f'Failed to initialize bot.')
-
-        if not me:
-            return await self.fail_process(process, job, f'Failed to get bot.')
-
-        try:
-            entity = await bot.get_entity(destination_user_id)
-            await self.job_log(job, f'Checked destination user: {entity}')
-        except Exception as e:
-            await self.process_log(process, str(e))
-            return await self.fail_process(process, job, f'Failed to get entity.')
+        # try:
+        #     bot = await self.get_client(bot_token=settings.TELEGRAM_BOT_TOKEN, key='bot')
+        #
+        #     me = await bot.get_me()
+        # except Exception as e:
+        #     await self.process_log(process, str(e))
+        #     return await self.fail_process(process, job, f'Failed to initialize bot.')
+        #
+        # if not me:
+        #     return await self.fail_process(process, job, f'Failed to get bot.')
+        #
+        # try:
+        #     entity = await bot.get_entity(destination_user_id)
+        #     await self.job_log(job, f'Checked destination user: {entity}')
+        # except Exception as e:
+        #     await self.process_log(process, str(e))
+        #     return await self.fail_process(process, job, f'Failed to get entity.')
 
         channel_id = job.data.get('channel_id')
         if not channel_id:
