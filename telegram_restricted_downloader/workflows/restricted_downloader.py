@@ -21,7 +21,12 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         self.messages = dict()
         self.chapters = dict()
 
-    async def get_client(self, account: Account = None, bot_token: str = None, key: str = 'client'):
+    async def get_client(
+            self,
+            account: Account = None,
+            bot_token: str = settings.TELEGRAM_BOT_TOKEN,
+            key: str = 'client'
+    ):
         if not self.clients.get(key):
             if account:
                 self.clients[key] = TelegramClient(
@@ -29,7 +34,7 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
                         account.session_string
                     ), settings.TELEGRAM_API_ID, settings.TELEGRAM_API_HASH
                 )
-            if bot_token:
+            elif bot_token:
                 self.clients[key] = TelegramClient(
                     MemorySession(), settings.TELEGRAM_API_ID, settings.TELEGRAM_API_HASH
                 )
@@ -76,7 +81,7 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         try:
             from_account = await Account.objects.aget(id=from_account_id)
         except Account.DoesNotExist:
-            return self.fail_process(process, job, f'From account not found.')
+            return await self.fail_process(process, job, f'From account not found.')
 
         try:
             client = await self.get_client(from_account)
@@ -93,23 +98,30 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         if not destination_user_id:
             return await self.fail_process(process, job, f'Destination user id is required.')
 
-        # try:
-        #     bot = await self.get_client(bot_token=settings.TELEGRAM_BOT_TOKEN, key='bot')
-        #
-        #     me = await bot.get_me()
-        # except Exception as e:
-        #     await self.process_log(process, str(e))
-        #     return await self.fail_process(process, job, f'Failed to initialize bot.')
-        #
-        # if not me:
-        #     return await self.fail_process(process, job, f'Failed to get bot.')
-        #
-        # try:
-        #     entity = await bot.get_entity(destination_user_id)
-        #     await self.job_log(job, f'Checked destination user: {entity}')
-        # except Exception as e:
-        #     await self.process_log(process, str(e))
-        #     return await self.fail_process(process, job, f'Failed to get entity.')
+        sender_account = None
+        if process.data.get('sender_account_id'):
+            try:
+                sender_account = await Account.objects.aget(id=process.data.get('sender_account_id'))
+            except Account.DoesNotExist:
+                sender_account = None
+
+        try:
+            sender = await self.get_client(sender_account, key='sender')
+
+            me = await sender.get_me()
+        except Exception as e:
+            await self.process_log(process, str(e))
+            return await self.fail_process(process, job, f'Failed to initialize sender.')
+
+        if not me:
+            return await self.fail_process(process, job, f'Failed to get sender.')
+
+        try:
+            entity = await sender.get_entity(destination_user_id)
+            await self.job_log(job, f'Checked destination user: {entity}')
+        except Exception as e:
+            await self.process_log(process, str(e))
+            return await self.fail_process(process, job, f'Failed to get entity.')
 
         channel_id = job.data.get('channel_id')
         if not channel_id:
@@ -239,8 +251,13 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         if not message.document:
             return await self.fail_job(job, 'Message has no document.')
 
+        extension = ''
+        if message.document.mime_type and len(message.document.mime_type.split('/')) > 1:
+            extension = '.' + message.document.mime_type.split('/')[1]
+        file_path = f'./downloads/{message.document.id}' + extension
+
         file = await client.download_file(
-            message.document, f'./downloads/{message.document.id}.mp4',
+            message.document, file_path,
             progress_callback=lambda current, total: self.progress_callback(job, current, total),
         )
         await self.job_log(job, f'File downloaded: {file}')
@@ -267,8 +284,14 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
 
     async def send_message(self, process: Process, job: Job):
         client = await self.get_client(await Account.objects.aget(id=process.data['from_account_id']))
-        # bot = await self.get_client(bot_token=settings.TELEGRAM_BOT_TOKEN, key='bot')
-        # destination_user = await bot.get_entity(process.data.get('destination_user_id'))
+        sender_account = None
+        if process.data.get('sender_account_id'):
+            try:
+                sender_account = await Account.objects.aget(id=process.data.get('sender_account_id'))
+            except Account.DoesNotExist:
+                sender_account = None
+
+        sender = await self.get_client(sender_account, key='sender')
         destination_user = await client.get_me()
 
         message = await self.get_message(
@@ -284,7 +307,7 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
             if message.document.mime_type and len(message.document.mime_type.split('/')) > 1:
                 extension = '.' + message.document.mime_type.split('/')[1]
             file_path = f'./downloads/{message.document.id}' + extension
-            await client.send_file(
+            await sender.send_file(
                 destination_user, file_path,
                 progress_callback=lambda current, total: self.progress_callback(job, current, total),
                 caption=text[:1024],
