@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 from django.conf import settings
 from telethon import TelegramClient
@@ -311,6 +311,7 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
                 destination_user, file_path,
                 progress_callback=lambda current, total: self.progress_callback(job, current, total),
                 caption=text[:1024],
+                formatting_entities=message.entities,
                 **self.detect_document_kwargs(message.document)
             )
 
@@ -319,14 +320,17 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         text_size = 4096
         if text:
             for i in range(0, len(text), text_size):
-                await client.send_message(destination_user, text[i:i + text_size])
-
+                await sender.send_message(
+                    destination_user, text[i:i + text_size],
+                    formatting_entities=message.entities if i == 0 else None,
+                )
         await self.done_job(job)
 
         if file_path:
             try:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
+                path = Path(file_path)
+                if path.exists():
+                    path.unlink()
                 else:
                     raise FileNotFoundError(f'File not found: {file_path}')
             except Exception as e:
