@@ -1,6 +1,8 @@
+import asyncio
 import logging
 from datetime import timedelta
-from time import sleep, time
+from time import sleep
+from time import time
 
 from django.db import transaction
 from django.db.models import Q
@@ -92,7 +94,6 @@ class Manager:
     def get_workflow_class_str(self, workflow_class: Workflow) -> str:
         return f'{workflow_class.__module__}.{workflow_class.__name__}'
 
-    @transaction.atomic()
     def create_process(self, config, workflow_class: Workflow, stage: str = None, stage_data: dict = None):
         process = Process.objects.create(
             workflow_class=self.get_workflow_class_str(workflow_class),
@@ -109,4 +110,67 @@ class Manager:
         return process, job
 
 
+class AsyncManager(Manager):
+    async def run(self, timeout=DEFAULT_EXECUTION_TIMEOUT, stop_on_jobs_end: bool = False):
+        run_until = time() + timeout if timeout else None
+
+        while True:
+            if run_until and time() > run_until:
+                break
+
+            job = await Job.objects.filter(
+                status=JOB_ACTIVE,
+            ).filter(
+                Q(debounced_till__isnull=True) | Q(debounced_till__lte=now()),
+            ).select_related(
+                'process',
+            ).prefetch_related(
+                'parents',
+                'children',
+            ).order_by(
+                'touched_at',
+            ).afirst()
+
+            if not job:
+                logging.info('No jobs')
+                if stop_on_jobs_end:
+                    return
+                await asyncio.sleep(1)
+                continue
+
+            await self.run_job(job)
+
+            job.touched_at = now()
+            await job.asave(update_fields=['touched_at'])
+
+    async def run_job(self, job: Job):
+        workflow = self.get_workflow(job.process.workflow_class)
+
+        try:
+            job = await Job.objects.select_related('process').aget(id=job.id)
+            logging.info(f'Running job {job.id} {job.stage}')
+            await getattr(workflow, job.stage)(process=job.process, job=job)
+        except Exception as err:
+            logging.exception(err)
+
+            job.debounced_till = now() + timedelta(minutes=1)
+            await job.asave(update_fields=['debounced_till'])
+
+    async def create_process(self, config, workflow_class: Workflow, stage: str = None, stage_data: dict = None):
+        process = await Process.objects.acreate(
+            workflow_class=self.get_workflow_class_str(workflow_class),
+            config=config,
+        )
+
+        job = await Job.objects.acreate(
+            process=process,
+            stage=stage or workflow_class.default_stage,
+            data=stage_data or {},
+            status=JOB_ACTIVE,
+        )
+
+        return process, job
+
+
 manager = Manager()
+async_manager = AsyncManager()
