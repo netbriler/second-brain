@@ -292,7 +292,7 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
                 sender_account = None
 
         sender = await self.get_client(sender_account, key='sender')
-        destination_user = await client.get_me()
+        destination_user = await sender.get_entity(process.data.get('destination_user_id'))
 
         message = await self.get_message(
             client, job.data['channel_id'], job.data['message_id']
