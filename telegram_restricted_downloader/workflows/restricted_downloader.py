@@ -2,6 +2,7 @@ from pathlib import Path
 
 from django.conf import settings
 from telethon import TelegramClient
+from telethon.errors import AuthKeyUnregisteredError
 from telethon.sessions import StringSession, MemorySession
 from telethon.tl.types import MessageActionTopicCreate, DocumentAttributeAudio, DocumentAttributeVideo
 
@@ -249,9 +250,15 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
 
         try:
             message = await self.get_message(client, job.data['channel_id'], job.data['message_id'])
+        except AuthKeyUnregisteredError:
+            return await self.fail_job(job, 'Source client session is invalid.')
         except Exception as e:
             if 'Could not find the input entity' in str(e):
-                return await self.fail_job(job, 'Channel not found.' if 'PeerChannel' in str(e) else 'Message not found.')
+                return await self.fail_job(
+                    job, 'Channel not found.' if 'PeerChannel' in str(e) else 'Message not found.'
+                )
+            elif 'The key is not registered in the system' in str(e):
+                return await self.fail_job(job, 'Source client session is invalid.')
             raise
         if not message.document:
             return await self.fail_job(job, 'Message has no document.')
@@ -303,41 +310,54 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
             message = await self.get_message(
                 client, job.data['channel_id'], job.data['message_id']
             )
+        except AuthKeyUnregisteredError:
+            return await self.fail_job(job, 'Source client session is invalid.')
         except Exception as e:
             if 'Could not find the input entity' in str(e):
                 return await self.fail_job(job, 'Channel not found.' if 'PeerChannel' in str(e) else 'Message not found.')
+            elif 'The key is not registered in the system' in str(e):
+                return await self.fail_job(job, 'Source client session is invalid.')
             raise
         text = message.message or ''
         if message.action and isinstance(message.action, MessageActionTopicCreate):
             text = message.action.title
 
-        sent_message = None
-        file_path = None
-        if message.document:
-            extension = ''
-            if message.document.mime_type and len(message.document.mime_type.split('/')) > 1:
-                extension = '.' + message.document.mime_type.split('/')[1]
-            file_path = f'./downloads/{message.document.id}' + extension
-            sent_message = await sender.send_file(
-                destination_user, file_path,
-                progress_callback=lambda current, total: self.progress_callback(job, current, total),
-                caption=text[:1024],
-                formatting_entities=message.entities,
-                **self.detect_document_kwargs(message.document)
-            )
-
-            text = text[1024:]
-
-        text_size = 4096
-        if text:
-            for i in range(0, len(text), text_size):
-                m1 = await sender.send_message(
-                    destination_user, text[i:i + text_size],
-                    formatting_entities=message.entities if i == 0 else None,
-                    reply_to=sent_message,
+        try:
+            sent_message = None
+            file_path = None
+            if message.document:
+                extension = ''
+                if message.document.mime_type and len(message.document.mime_type.split('/')) > 1:
+                    extension = '.' + message.document.mime_type.split('/')[1]
+                file_path = f'./downloads/{message.document.id}' + extension
+                sent_message = await sender.send_file(
+                    destination_user, file_path,
+                    progress_callback=lambda current, total: self.progress_callback(job, current, total),
+                    caption=text[:1024],
+                    formatting_entities=message.entities,
+                    **self.detect_document_kwargs(message.document)
                 )
-                if not sent_message:
-                    sent_message = m1
+
+                text = text[1024:]
+
+            text_size = 4096
+            if text:
+                for i in range(0, len(text), text_size):
+                    m1 = await sender.send_message(
+                        destination_user, text[i:i + text_size],
+                        formatting_entities=message.entities if i == 0 else None,
+                        reply_to=sent_message,
+                    )
+                    if not sent_message:
+                        sent_message = m1
+
+        except AuthKeyUnregisteredError:
+            return await self.fail_job(job, 'Sender client session is invalid.')
+        except Exception as e:
+            if 'The key is not registered in the system' in str(e):
+                return await self.fail_job(job, 'Sender client session is invalid.')
+            raise
+
         await self.done_job(job)
 
         if file_path:
