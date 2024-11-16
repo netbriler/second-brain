@@ -25,6 +25,8 @@ class JobLogInline(admin.TabularInline):
     show_change_link = False
     can_delete = False
 
+    max_num = 10
+
     def has_add_permission(self, request, obj=None):
         return False
 
@@ -47,6 +49,8 @@ class ProcessLogInline(admin.TabularInline):
     extra = 0
     show_change_link = False
     can_delete = False
+
+    max_num = 10
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -80,6 +84,8 @@ class JobInline(admin.TabularInline):
     show_change_link = True
     can_delete = False
 
+    max_num = 10
+
     def has_add_permission(self, request, obj=None):
         return False
 
@@ -103,6 +109,8 @@ class JobsInline(admin.TabularInline):
     extra = 0
     show_change_link = True
     can_delete = False
+
+    max_num = 10
 
     def has_add_permission(self, request, obj=None):
         return False

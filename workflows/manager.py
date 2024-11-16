@@ -77,6 +77,12 @@ class Manager:
         except Exception as err:
             logging.exception(err)
 
+            logging.exception(err)
+            try:
+                getattr(workflow, 'job_log')(job=job, message=f'Error: {err}')
+            except Exception as e:
+                logging.exception(e)
+
             # debounce job in case of unexpected error
             job.debounced_till = now() + timedelta(minutes=1)
             job.save(update_fields=['debounced_till'])
@@ -104,6 +110,7 @@ class Manager:
         process = Process.objects.create(
             workflow_class=self.get_workflow_class_str(workflow_class),
             config=config,
+            data=stage_data or {},
         )
 
         job = Job.objects.create(
@@ -158,6 +165,10 @@ class AsyncManager(Manager):
             await getattr(workflow, job.stage)(process=job.process, job=job)
         except Exception as err:
             logging.exception(err)
+            try:
+                await getattr(workflow, 'job_log')(job=job, message=f'Error: {err}')
+            except Exception as e:
+                logging.exception(e)
 
             job.debounced_till = now() + timedelta(minutes=1)
             await job.asave(update_fields=['debounced_till'])
