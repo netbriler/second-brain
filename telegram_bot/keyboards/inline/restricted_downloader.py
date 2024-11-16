@@ -24,13 +24,23 @@ def get_restricted_downloader_select_account_inline_markup(accounts: list[Accoun
     return builder.as_markup()
 
 
-def get_restricted_downloader_select_dialog_inline_markup() -> InlineKeyboardMarkup:
+def get_restricted_downloader_select_dialog_inline_markup(channel_selected: bool = False) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
-    builder.button(
-        text=_('📁 Select dialog'),
-        switch_inline_query_current_chat=f'restricted_downloader:select_dialog:',
-    )
+    if channel_selected:
+        builder.button(
+            text=_('📁 Select chapter'),
+            switch_inline_query_current_chat=f'restricted_downloader:select_dialog:',
+        )
+        builder.button(
+            text=_('🚀 Start downloading'),
+            switch_inline_query_current_chat=f'restricted_downloader:start_downloading',
+        )
+    else:
+        builder.button(
+            text=_('📁 Select dialog'),
+            switch_inline_query_current_chat=f'restricted_downloader:select_dialog:',
+        )
 
     builder.adjust(1)
 

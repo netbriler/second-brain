@@ -8,6 +8,7 @@ from aiogram.types import CallbackQuery, Message, InlineQueryResultArticle, Inpu
 from django.conf import settings
 from django.utils.translation import gettext as _
 from loguru import logger
+from telethon import functions
 from telethon.errors import SessionPasswordNeededError
 from telethon.sessions import StringSession
 from telethon.utils import parse_phone
@@ -319,6 +320,11 @@ async def download_telegram_message(
 
     data = await state.get_data()
     account_id = data.get('account_id')
+    channel_id = data.get('channel_id')
+    if channel_id and chat_id != channel_id:
+        return await message.answer(
+            _(f'You can download messages only from one channel. t.me/c/{channel_id}'), show_alert=True
+        )
 
     try:
         account = await Account.objects.aget(id=account_id, user=user, is_active=True)
@@ -360,6 +366,40 @@ async def download_telegram_message(
         _message, text = await fetch_message_details(client, channel, message_id)
         await message.answer(text)
 
+    if 'chapter_ids' not in data:
+        data['chapter_ids'] = []
+    if 'message_ids' not in data:
+        data['message_ids'] = []
+    if chapter_id:
+        data['chapter_ids'].append(chapter_id)
+    if message_id and message_id != chapter_id:
+        data['message_ids'].append(message_id)
+
+    await state.update_data(
+        chapter_ids=list(set(data['chapter_ids'])),
+        message_ids=list(set(data['message_ids'])),
+        channel_id=chat_id,
+    )
+
+    data = await state.get_data()
+
+    await message.answer(
+        _(
+            'Message to fetch:\n'
+            'Channel ID: {channel_id}\n'
+            'Chapter IDs: {chapter_ids}\n'
+            'Message IDs: {message_ids}\n\n'
+            'From account:\n{account_text}\n\n'
+            'Add more messages or start downloading?',
+        ).format(
+            channel_id=data.get('channel_id'),
+            chapter_ids=data.get('chapter_ids'),
+            message_ids=data.get('message_ids'),
+            account_text=f'{account.telegram_id} {account.name}',
+        ),
+        reply_markup=get_restricted_downloader_select_dialog_inline_markup(True),
+    )
+
 
 @router.inline_query(
     RestrictedDownloaderForm.select_dialog,
@@ -375,6 +415,7 @@ async def inline_select_dialog(
 
     data = await state.get_data()
     account_id = data.get('account_id')
+    channel_id = data.get('channel_id')
 
     results = []
     try:
@@ -425,23 +466,46 @@ async def inline_select_dialog(
             results=results,
             cache_time=0,
         )
+    if channel_id:
+        channel, __ = await fetch_channel_info(client, channel_id)
 
-    async for dialog in client.iter_dialogs(limit=50):
-        if not hasattr(dialog.entity, 'noforwards') or not dialog.entity.noforwards:
-            continue
-
-        if search_query and search_query not in dialog.title.lower():
-            continue
-
-        results.append(
-            InlineQueryResultArticle(
-                id=str(dialog.id),
-                title=f'{dialog.entity.__class__.__name__}: {dialog.title}',
-                input_message_content=InputTextMessageContent(
-                    message_text=f'https://t.me/c/{str(dialog.id).replace("-100", "")}',
-                ),
-            ),
+        result = await client(
+            functions.channels.GetForumTopicsRequest(
+                channel=channel,
+                offset_date=None,
+                offset_id=0,
+                offset_topic=0,
+                limit=100,
+                q=search_query,
+            )
         )
+        for topic in result.topics:
+            results.append(
+                InlineQueryResultArticle(
+                    id=str(topic.id),
+                    title=f'{topic.id}: {topic.title}',
+                    input_message_content=InputTextMessageContent(
+                        message_text=f'https://t.me/c/{channel_id}/{topic.id}',
+                    ),
+                ),
+            )
+    else:
+        async for dialog in client.iter_dialogs(limit=50):
+            if not hasattr(dialog.entity, 'noforwards') or not dialog.entity.noforwards:
+                continue
+
+            if search_query and search_query not in dialog.title.lower():
+                continue
+
+            results.append(
+                InlineQueryResultArticle(
+                    id=str(dialog.id),
+                    title=f'{dialog.entity.__class__.__name__}: {dialog.title}',
+                    input_message_content=InputTextMessageContent(
+                        message_text=f'https://t.me/c/{str(dialog.id).replace("-100", "")}',
+                    ),
+                ),
+            )
 
     return await query.answer(
         results=results,

@@ -21,6 +21,9 @@ def get_default_commands(lang: str = 'en', with_categories: bool = False) -> lis
             BotCommand(command='/start_learning', description=_('start learning')),
             BotCommand(command='/stop_learning_session', description=_('stop learning session')),
             BotCommand(command='/finish_current_lesson', description=_('finish current lesson')),
+            # restricted downloader
+            _('\nRestricted Downloader 📥'),
+            BotCommand(command='/restricted_downloader', description=_('start restricted downloader')),
         ]
 
         if not with_categories:
