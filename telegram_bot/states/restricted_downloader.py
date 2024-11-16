@@ -9,3 +9,5 @@ class RestrictedDownloaderForm(StatesGroup):
     get_password = State()
 
     select_dialog = State()
+    select_sender_account = State()
+    select_receiver_account = State()

@@ -321,6 +321,8 @@ async def download_telegram_message(
     data = await state.get_data()
     account_id = data.get('account_id')
     channel_id = data.get('channel_id')
+    sender_account_id = data.get('sender_account_id')
+    receiver_chat_id = data.get('receiver_chat_id', user.telegram_id)
     if channel_id and chat_id != channel_id:
         return await message.answer(
             _(f'You can download messages only from one channel. t.me/c/{channel_id}'), show_alert=True
@@ -331,6 +333,14 @@ async def download_telegram_message(
     except Account.DoesNotExist:
         await message.answer(_('Account not found'), show_alert=True)
         return await start_restricted_downloader(message, state, user)
+
+    sender_account = None
+    if sender_account_id:
+        try:
+            sender_account = await Account.objects.aget(id=sender_account_id, user=user, is_active=True)
+        except Account.DoesNotExist:
+            await message.answer(_('Sender account not found'), show_alert=True)
+            return await start_restricted_downloader(message, state, user)
 
     await message.answer(_('Please wait for a moment'), reply_markup=get_cancel_markup())
 
@@ -379,9 +389,16 @@ async def download_telegram_message(
         chapter_ids=list(set(data['chapter_ids'])),
         message_ids=list(set(data['message_ids'])),
         channel_id=chat_id,
+        receiver_chat_id=receiver_chat_id,
     )
 
     data = await state.get_data()
+
+    if sender_account:
+        sender_account_text = f'{sender_account.telegram_id} {sender_account.name}'
+    else:
+        bot = await message.bot.get_me()
+        sender_account_text = f'{bot.id} {bot.full_name}'
 
     await message.answer(
         _(
@@ -389,16 +406,63 @@ async def download_telegram_message(
             'Channel ID: {channel_id}\n'
             'Chapter IDs: {chapter_ids}\n'
             'Message IDs: {message_ids}\n\n'
-            'From account:\n{account_text}\n\n'
+            'From account:\n{account_text}\n'
+            'Sender:\n{sender_text}\n'
+            'Receiver chat id: {receiver_chat_id}'
+            '\n\n'
             'Add more messages or start downloading?',
         ).format(
             channel_id=data.get('channel_id'),
             chapter_ids=data.get('chapter_ids'),
             message_ids=data.get('message_ids'),
             account_text=f'{account.telegram_id} {account.name}',
+            sender_text=sender_account_text,
+            receiver_chat_id=receiver_chat_id,
         ),
         reply_markup=get_restricted_downloader_select_dialog_inline_markup(True),
     )
+
+
+# restricted_downloader:start_downloading
+@router.callback_query(
+    RestrictedDownloaderForm.select_dialog,
+    Regexp(r'^restricted_downloader:start_downloading$'),
+)
+async def start_downloading(callback_query: CallbackQuery, state: FSMContext) -> NoReturn:
+    await callback_query.answer()
+
+    data = await state.get_data()
+    account_id = data.get('account_id')
+    channel_id = data.get('channel_id')
+    chapter_ids = data.get('chapter_ids')
+    message_ids = data.get('message_ids')
+
+    try:
+        account = await Account.objects.aget(id=account_id)
+    except Account.DoesNotExist:
+        return await callback_query.message.answer(_('Account not found'), show_alert=True)
+
+    await callback_query.message.answer(
+        _('Please wait for a moment'),
+    )
+
+    client, me = None, None
+    try:
+        if account.session_string:
+            client = CustomTelethonClient(
+                StringSession(account.session_string),
+                settings.TELEGRAM_API_ID,
+                settings.TELEGRAM_API_HASH,
+            )
+            await client.connect()
+            me = await client.get_me()
+    except Exception as e:
+        logger.exception(e)
+
+    if not me:
+        return await callback_query.message.answer(
+            _('Failed to check account session. Session is invalid'),
+        )
 
 
 @router.inline_query(

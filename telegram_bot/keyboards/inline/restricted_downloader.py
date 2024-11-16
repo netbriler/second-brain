@@ -33,6 +33,14 @@ def get_restricted_downloader_select_dialog_inline_markup(channel_selected: bool
             switch_inline_query_current_chat=f'restricted_downloader:select_dialog:',
         )
         builder.button(
+            text=_('✏️ Change sender account'),
+            switch_inline_query_current_chat=f'restricted_downloader:select_sender_account',
+        )
+        builder.button(
+            text=_('✏️ Change receiver account'),
+            switch_inline_query_current_chat=f'restricted_downloader:select_receiver_account',
+        )
+        builder.button(
             text=_('🚀 Start downloading'),
             switch_inline_query_current_chat=f'restricted_downloader:start_downloading',
         )
