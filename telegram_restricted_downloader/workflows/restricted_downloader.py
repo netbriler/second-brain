@@ -242,12 +242,17 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         if not total:
             total = 0
         stats = ProgressTracker().callback(current, total)
-        await self.job_log(job, f'{stats}')
+        await self.update_job_data(job, {'progress': stats})
 
     async def download_media(self, process: Process, job: Job):
         client = await self.get_client(await Account.objects.aget(id=process.data['from_account_id']))
 
-        message = await self.get_message(client, job.data['channel_id'], job.data['message_id'])
+        try:
+            message = await self.get_message(client, job.data['channel_id'], job.data['message_id'])
+        except Exception as e:
+            if 'Could not find the input entity' in str(e):
+                return await self.fail_job(job, 'Channel not found.' if 'PeerChannel' in str(e) else 'Message not found.')
+            raise
         if not message.document:
             return await self.fail_job(job, 'Message has no document.')
 
@@ -294,20 +299,26 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         sender = await self.get_client(sender_account, key='sender')
         destination_user = await sender.get_entity(process.data.get('destination_user_id'))
 
-        message = await self.get_message(
-            client, job.data['channel_id'], job.data['message_id']
-        )
+        try:
+            message = await self.get_message(
+                client, job.data['channel_id'], job.data['message_id']
+            )
+        except Exception as e:
+            if 'Could not find the input entity' in str(e):
+                return await self.fail_job(job, 'Channel not found.' if 'PeerChannel' in str(e) else 'Message not found.')
+            raise
         text = message.message or ''
         if message.action and isinstance(message.action, MessageActionTopicCreate):
             text = message.action.title
 
+        sent_message = None
         file_path = None
         if message.document:
             extension = ''
             if message.document.mime_type and len(message.document.mime_type.split('/')) > 1:
                 extension = '.' + message.document.mime_type.split('/')[1]
             file_path = f'./downloads/{message.document.id}' + extension
-            await sender.send_file(
+            sent_message = await sender.send_file(
                 destination_user, file_path,
                 progress_callback=lambda current, total: self.progress_callback(job, current, total),
                 caption=text[:1024],
@@ -320,10 +331,13 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         text_size = 4096
         if text:
             for i in range(0, len(text), text_size):
-                await sender.send_message(
+                m1 = await sender.send_message(
                     destination_user, text[i:i + text_size],
                     formatting_entities=message.entities if i == 0 else None,
+                    reply_to=sent_message,
                 )
+                if not sent_message:
+                    sent_message = m1
         await self.done_job(job)
 
         if file_path:
