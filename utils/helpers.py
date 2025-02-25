@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import connection
 from django.db.models import BigIntegerField, Model
 from django.urls import reverse
@@ -51,7 +53,8 @@ class AutoIncrementalField(BigIntegerField):
             # Check if sequence exists, if not, create it
             with connection.cursor() as cursor:
                 cursor.execute(
-                    f"SELECT EXISTS (SELECT 1 FROM pg_class WHERE relkind='S' AND relname='{sequence_name}')",  # noqa: S608
+                    f"SELECT EXISTS (SELECT 1 FROM pg_class WHERE relkind='S' AND relname='{sequence_name}')",
+                    # noqa: S608
                 )
                 sequence_exists = cursor.fetchone()[0]
 
@@ -73,3 +76,16 @@ class AutoIncrementalField(BigIntegerField):
         if 'default' in kwargs:
             del kwargs['default']
         return name, path, args, kwargs
+
+
+def trim_trailing_zeros(value, precision=8):
+    """
+    Formats the number with the given precision, then strips trailing zeros
+    and removes a dangling decimal point if all decimals were zeros.
+    """
+    if value is None:
+        return ''
+
+    d = Decimal(value).quantize(Decimal(f"1.{'0' * precision}"))
+    s = format(d, 'f').rstrip('0').rstrip('.')
+    return s

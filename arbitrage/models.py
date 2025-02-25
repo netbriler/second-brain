@@ -4,6 +4,8 @@ from django.db import models
 from django.utils.timesince import timesince
 from django.utils.translation import gettext_lazy as _
 
+from utils.helpers import trim_trailing_zeros
+
 
 class Exchange(models.Model):
     class Meta:
@@ -13,6 +15,16 @@ class Exchange(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
     is_enabled = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('Created At'),
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_('Updated At'),
+    )
 
     def __str__(self):
         return self.name
@@ -39,11 +51,29 @@ class ExchangeCredentials(models.Model):
         verbose_name=_('User'),
     )
 
-    api_key = models.CharField(max_length=255, blank=True, null=True)
+    api_key = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name=_('API Key'),
+    )
 
     _api_secret = models.TextField(blank=True, null=True)
 
-    is_enabled = models.BooleanField(default=True)
+    is_enabled = models.BooleanField(
+        default=True,
+        verbose_name=_('Is Enabled'),
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('Created At'),
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_('Updated At'),
+    )
 
     @property
     def api_secret(self):
@@ -63,22 +93,56 @@ class TradingPair(models.Model):
         verbose_name = _('Trading Pair')
         verbose_name_plural = _('Trading Pairs')
 
-    base_currency = models.CharField(max_length=10)
-    quote_currency = models.CharField(max_length=10)
+    base_currency = models.CharField(
+        max_length=10,
+        verbose_name=_('Base Currency'),
+    )
+    quote_currency = models.CharField(
+        max_length=10,
+        verbose_name=_('Quote Currency'),
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('Created At'),
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_('Updated At'),
+    )
 
     @property
     def symbol(self):
-        return f"{self.base_currency}/{self.quote_currency}"
+        return f'{self.base_currency}/{self.quote_currency}'
 
     def __str__(self):
-        return f"{self.base_currency}/{self.quote_currency}"
+        return f'{self.symbol}'
 
 
 class ArbitrageDealItem(models.Model):
-    trading_pair = models.ForeignKey(TradingPair, on_delete=models.CASCADE)
+    class Meta:
+        verbose_name = _('Arbitrage Deal Item')
+        verbose_name_plural = _('Arbitrage Deal Items')
+
+    user = models.ForeignKey(
+        'users.User',
+        related_name='arbitrage_deals_items',
+        on_delete=models.CASCADE,
+        verbose_name=_('User'),
+    )
+
+    trading_pair = models.ForeignKey(
+        TradingPair,
+        on_delete=models.CASCADE,
+        verbose_name=_('Trading Pair'),
+    )
 
     exchange = models.ForeignKey(
-        Exchange, related_name='arbitrage_deal', on_delete=models.CASCADE
+        Exchange,
+        related_name='arbitrage_deal',
+        on_delete=models.CASCADE,
+        verbose_name=_('Exchange'),
     )
 
     side = models.CharField(
@@ -88,36 +152,69 @@ class ArbitrageDealItem(models.Model):
             ('spot', _('Spot')),
             ('margin-short', _('Margin Short')),
             ('margin-long', _('Margin Long')),
-        ]
+        ],
+        verbose_name=_('Side'),
     )
 
-    open_price = models.DecimalField(max_digits=20, decimal_places=8)
+    open_price = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        verbose_name=_('Open Price'),
+    )
 
-    close_price = models.DecimalField(max_digits=20, decimal_places=8)
+    close_price = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        verbose_name=_('Close Price'),
+    )
 
-    volume = models.DecimalField(max_digits=20, decimal_places=8)
+    volume = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        verbose_name=_('Volume'),
+    )
 
-    leverage = models.IntegerField(default=1)
+    leverage = models.IntegerField(
+        default=1,
+        verbose_name=_('Leverage'),
+    )
 
-    fees = models.DecimalField(max_digits=20, decimal_places=8)
+    fees = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        verbose_name=_('Fees'),
+    )
 
-    funding = models.DecimalField(max_digits=20, decimal_places=8)
+    funding = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        verbose_name=_('Funding'),
+    )
 
-    is_liquidated = models.BooleanField(default=False)
+    is_liquidated = models.BooleanField(
+        default=False,
+        verbose_name=_('Is Liquidated'),
+    )
 
     open_at = models.DateTimeField(
-        blank=True, null=True
+        blank=True, null=True,
+        verbose_name=_('Open At'),
     )
 
     close_at = models.DateTimeField(
-        blank=True, null=True
+        blank=True, null=True,
+        verbose_name=_('Close At'),
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('Created At'),
+    )
 
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_('Updated At'),
+    )
 
-    trades = models.JSONField(blank=True, null=True)
+    trades = models.JSONField(
+        blank=True, null=True,
+        verbose_name=_('Trades')
+    )
 
     @property
     def pnl(self):
@@ -160,7 +257,7 @@ class ArbitrageDealItem(models.Model):
 
     @property
     def roi_percent(self):
-        return self.roi * 100
+        return round(self.roi * 100, 2)
 
     @property
     def duration(self):
@@ -181,7 +278,7 @@ class ArbitrageDealItem(models.Model):
         return timesince(self.open_at, self.close_at)
 
     def __str__(self):
-        return f'{self.trading_pair.symbol} - {self.exchange.name} - {self.side} - pnl: {self.pnl}'
+        return f'{self.trading_pair.symbol} - {self.exchange.name} - {self.side} | {self.open_price} - {self.close_price}'
 
 
 class ArbitrageDeal(models.Model):
@@ -210,11 +307,24 @@ class ArbitrageDeal(models.Model):
         verbose_name=_('Long Deal'),
     )
 
-    note = models.TextField(blank=True, null=True)
+    note = models.TextField(
+        blank=True, null=True,
+        verbose_name=_('Note'),
+    )
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('Created At'),
+    )
 
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_('Updated At'),
+    )
+
+    @property
+    def exchanges(self):
+        return f'{self.short.exchange} - {self.long.exchange}'
 
     @property
     def pnl(self):
@@ -238,19 +348,19 @@ class ArbitrageDeal(models.Model):
 
     @property
     def roi_percent(self):
-        return self.roi * 100
+        return round(self.roi * 100, 2)
 
     @property
     def spread_open(self):
-        return (self.short.open_price / self.long.open_price - 1) * 100
+        return round((self.short.open_price / self.long.open_price - 1) * 100, 2)
 
     @property
     def spread_close(self):
-        return (self.short.close_price / self.long.close_price - 1) * 100
+        return round((self.short.close_price / self.long.close_price - 1) * 100, 2)
 
     @property
     def spread(self):
-        return self.spread_close - self.spread_open
+        return self.spread_open - self.spread_close
 
     @property
     def margin_open(self):
@@ -262,7 +372,17 @@ class ArbitrageDeal(models.Model):
 
     @property
     def trading_volume(self):
-        return self.short.margin_open + self.long.margin_open + self.short.margin_close + self.long.margin_close
+        return (self.short.margin_open + self.long.margin_open) * self.short.leverage + (
+                self.short.margin_close + self.long.margin_close) * self.long.leverage
+
+    @property
+    def pair(self):
+        if not self.short.trading_pair or not self.long.trading_pair:
+            return '-'
+        if self.short.trading_pair == self.long.trading_pair:
+            return self.short.trading_pair
+
+        return f'{self.short.trading_pair} > {self.long.trading_pair}'
 
     def __str__(self):
-        return f'{self.user} - {self.created_at} - {self.updated_at}'
+        return f'{self.short.trading_pair} {self.short.exchange} > {self.long.exchange} | income: {trim_trailing_zeros(self.income, 8)}'
