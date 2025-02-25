@@ -937,6 +937,19 @@ files = [
 Django = ">=3.2,<6.0"
 
 [[package]]
+name = "django-totalsum-admin"
+version = "2.0.1"
+description = "A django app that initializes admin changelist view with last row in results as sum of some numerical fields or properties"
+optional = false
+python-versions = "*"
+files = [
+    {file = "django-totalsum-admin-2.0.1.tar.gz", hash = "sha256:c28b0b310b1b5f25cd98cb5ce7cb2e864656177dc0f26bf740679b00d87696fd"},
+]
+
+[package.dependencies]
+Django = ">=3.0"
+
+[[package]]
 name = "djangoql"
 version = "0.18.1"
 description = "DjangoQL: Advanced search language for Django"
@@ -3016,4 +3029,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "77a6d42f39d6f3b2458a71d3affaf7d386009a4804dcc72de70f99a6b9839e8a"
+content-hash = "a9ac7ac68ec464229f4906b5d3b2c62397deca6844aba1b67a845e6b7eb1a17a"

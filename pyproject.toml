@@ -179,6 +179,7 @@ tgcrypto = "^1.2.5"
 django-admin-sortable2 = "^2.2.3"
 telethon = "^1.37.0"
 cryptography = "^43.0.3"
+django-totalsum-admin = "2.0.1"
 
 
 [tool.poetry.group.dev.dependencies]
