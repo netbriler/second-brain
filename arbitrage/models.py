@@ -1,10 +1,10 @@
+from decimal import Decimal
+
 from cryptography.fernet import Fernet
 from django.conf import settings
 from django.db import models
 from django.utils.timesince import timesince
 from django.utils.translation import gettext_lazy as _
-
-from utils.helpers import trim_trailing_zeros
 
 
 class Exchange(models.Model):
@@ -131,13 +131,11 @@ class ArbitrageDealItem(models.Model):
         on_delete=models.CASCADE,
         verbose_name=_('User'),
     )
-
     trading_pair = models.ForeignKey(
         TradingPair,
         on_delete=models.CASCADE,
         verbose_name=_('Trading Pair'),
     )
-
     exchange = models.ForeignKey(
         Exchange,
         related_name='arbitrage_deal',
@@ -160,122 +158,140 @@ class ArbitrageDealItem(models.Model):
         max_digits=20, decimal_places=8,
         verbose_name=_('Open Price'),
     )
-
     close_price = models.DecimalField(
         max_digits=20, decimal_places=8,
         verbose_name=_('Close Price'),
     )
-
     volume = models.DecimalField(
         max_digits=20, decimal_places=8,
         verbose_name=_('Volume'),
     )
-
     leverage = models.IntegerField(
         default=1,
         verbose_name=_('Leverage'),
     )
-
     fees = models.DecimalField(
         max_digits=20, decimal_places=8,
         verbose_name=_('Fees'),
     )
-
     funding = models.DecimalField(
         max_digits=20, decimal_places=8,
         verbose_name=_('Funding'),
     )
-
     is_liquidated = models.BooleanField(
         default=False,
         verbose_name=_('Is Liquidated'),
     )
-
     open_at = models.DateTimeField(
         blank=True, null=True,
         verbose_name=_('Open At'),
     )
-
     close_at = models.DateTimeField(
         blank=True, null=True,
         verbose_name=_('Close At'),
     )
-
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name=_('Created At'),
     )
-
     updated_at = models.DateTimeField(
         auto_now=True,
         verbose_name=_('Updated At'),
     )
-
     trades = models.JSONField(
         blank=True, null=True,
         verbose_name=_('Trades')
     )
 
-    @property
-    def pnl(self):
-        if not self.open_price or not self.close_price:
-            return 0
-        if self.side in ('short', 'margin-short'):
-            return (self.open_price - self.close_price) * self.volume
-        elif self.side in ('spot', 'long', 'margin-long'):
-            return (self.close_price - self.open_price) * self.volume
-        return 0
+    # New fields that used to be properties
+    pnl = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('PnL')
+    )
+    margin_open = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('Margin Open')
+    )
+    margin_close = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('Margin Close')
+    )
+    income = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('Income')
+    )
+    roi = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('ROI')
+    )
+    roi_percent = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('ROI %')
+    )
+    duration = models.DurationField(
+        blank=True, null=True,
+        verbose_name=_('Duration'),
+    )
+    human_duration = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name=_('Human Duration'),
+    )
 
-    @property
-    def margin_open(self):
-        if not self.open_price or not self.volume:
-            return 0
-        return self.open_price * self.volume / self.leverage
+    def save(self, *args, **kwargs):
+        # Calculate PnL
+        if self.open_price and self.close_price:
+            if self.side in ('short', 'margin-short'):
+                self.pnl = (self.open_price - self.close_price) * self.volume
+            else:
+                self.pnl = (self.close_price - self.open_price) * self.volume
 
-    @property
-    def margin_close(self):
-        if not self.close_price or not self.volume:
-            return 0
-        return self.close_price * self.volume / self.leverage
+        # Margin calculations
+        if self.open_price and self.volume:
+            self.margin_open = (self.open_price * self.volume / self.leverage)
+        if self.close_price and self.volume:
+            self.margin_close = (self.close_price * self.volume / self.leverage)
 
-    @property
-    def income(self):
-        income = self.pnl
+        # Income includes PnL + fees + funding
+        self.income = self.pnl
         if self.fees:
-            income += self.fees
+            self.income += self.fees
         if self.funding:
-            income += self.funding
+            self.income += self.funding
 
-        return income
+        # ROI based on margin_open
+        if self.margin_open != 0:
+            self.roi = self.pnl / self.margin_open
+        else:
+            self.roi = Decimal('0.0')
 
-    @property
-    def roi(self):
-        if not self.margin_open:
-            return 0
+        # ROI in percent
+        self.roi_percent = round(self.roi * Decimal('100.0'), 2)
 
-        return self.pnl / self.margin_open
+        # Duration
+        if self.open_at and self.close_at:
+            self.duration = self.close_at - self.open_at
 
-    @property
-    def roi_percent(self):
-        return round(self.roi * 100, 2)
+            # Human duration
+            self.human_duration = timesince(self.open_at, self.close_at)
+        elif self.open_at and not self.close_at:
+            self.duration = None
+            self.human_duration = timesince(self.open_at)
+        elif self.close_at and not self.open_at:
+            self.duration = None
+            self.human_duration = timesince(self.close_at)
+        else:
+            self.duration = None
+            self.human_duration = None
 
-    @property
-    def duration(self):
-        if not self.close_at or not self.open_at:
-            return None
-        return self.close_at - self.open_at
-
-    @property
-    def human_duration(self):
-        """ Human-readable string (e.g., '2 days, 3 hours'). """
-        if not self.close_at and not self.open_at:
-            return None
-        if not self.close_at:
-            return timesince(self.open_at)
-        if not self.open_at:
-            return timesince(self.close_at)
-
-        return timesince(self.open_at, self.close_at)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.trading_pair.symbol} - {self.exchange.name} - {self.side} | {self.open_price} - {self.close_price}'
@@ -322,58 +338,12 @@ class ArbitrageDeal(models.Model):
         verbose_name=_('Updated At'),
     )
 
-    @property
-    def exchanges(self):
-        return f'{self.short.exchange} - {self.long.exchange}'
-
-    @property
-    def pnl(self):
-        return self.short.pnl + self.long.pnl
-
-    @property
-    def income(self):
-        return self.short.income + self.long.income
-
-    @property
-    def fees(self):
-        return self.short.fees + self.long.fees
-
-    @property
-    def funding(self):
-        return self.short.funding + self.long.funding
-
-    @property
-    def roi(self):
-        return self.pnl / (self.short.margin_open + self.long.margin_open)
-
-    @property
-    def roi_percent(self):
-        return round(self.roi * 100, 2)
-
-    @property
-    def spread_open(self):
-        return round((self.short.open_price / self.long.open_price - 1) * 100, 2)
-
-    @property
-    def spread_close(self):
-        return round((self.short.close_price / self.long.close_price - 1) * 100, 2)
-
-    @property
-    def spread(self):
-        return self.spread_open - self.spread_close
-
-    @property
-    def margin_open(self):
-        return self.short.margin_open + self.long.margin_open
-
-    @property
-    def margin_close(self):
-        return self.short.margin_close + self.long.margin_close
-
-    @property
-    def trading_volume(self):
-        return (self.short.margin_open + self.long.margin_open) * self.short.leverage + (
-                self.short.margin_close + self.long.margin_close) * self.long.leverage
+    exchanges = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        verbose_name=_('Exchanges'),
+    )
 
     @property
     def pair(self):
@@ -384,5 +354,131 @@ class ArbitrageDeal(models.Model):
 
         return f'{self.short.trading_pair} > {self.long.trading_pair}'
 
+    # Storing numeric values
+    pnl = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('PnL'),
+    )
+    income = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('Income'),
+    )
+    fees = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('Fees'),
+    )
+    funding = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('Funding'),
+    )
+    roi = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('ROI'),
+    )
+    roi_percent = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('ROI Percent'),
+    )
+    spread_open = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('Spread Open (%)'),
+    )
+    spread_close = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('Spread Close (%)'),
+    )
+    spread = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('Spread (%)'),
+    )
+    margin_open = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('Margin Open'),
+    )
+    margin_close = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('Margin Close'),
+    )
+    trading_volume = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('Trading Volume'),
+    )
+
+    def save(self, *args, **kwargs):
+        """
+        Compute and store cumulative fields whenever the ArbitrageDeal is saved.
+        """
+        # Safety check: if related items are missing for some reason, bail early.
+        if not self.short_id or not self.long_id:
+            super().save(*args, **kwargs)
+            return
+
+        # Exchanges
+        self.exchanges = f'{self.short.exchange} - {self.long.exchange}'
+
+        # PnL, Income, Fees, Funding
+        self.pnl = self.short.pnl + self.long.pnl
+        self.income = self.short.income + self.long.income
+        self.fees = self.short.fees + self.long.fees
+        self.funding = self.short.funding + self.long.funding
+
+        # Margin
+        total_margin_open = self.short.margin_open + self.long.margin_open
+        self.margin_open = total_margin_open
+        self.margin_close = self.short.margin_close + self.long.margin_close
+
+        # ROI
+        if total_margin_open:
+            self.roi = self.pnl / total_margin_open
+        else:
+            self.roi = Decimal('0.0')
+
+        self.roi_percent = self.roi * Decimal('100.0')
+
+        # Spread
+        # Be mindful of divide-by-zero scenarios
+        if self.long.open_price:
+            self.spread_open = ((self.short.open_price / self.long.open_price) - 1) * Decimal('100.0')
+        else:
+            self.spread_open = Decimal('0.0')
+
+        if self.long.close_price:
+            self.spread_close = ((self.short.close_price / self.long.close_price) - 1) * Decimal('100.0')
+        else:
+            self.spread_close = Decimal('0.0')
+
+        self.spread = self.spread_open - self.spread_close
+
+        # Trading volume
+        # (short.margin_open + long.margin_open) * short.leverage
+        # + (short.margin_close + long.margin_close) * long.leverage
+        self.trading_volume = (
+                (self.short.margin_open + self.long.margin_open) * Decimal(self.short.leverage) +
+                (self.short.margin_close + self.long.margin_close) * Decimal(self.long.leverage)
+        )
+
+        # Round numeric fields
+        self.spread_open = self.spread_open.quantize(Decimal('0.01'))
+        self.spread_close = self.spread_close.quantize(Decimal('0.01'))
+        self.spread = self.spread.quantize(Decimal('0.01'))
+        self.roi_percent = self.roi_percent.quantize(Decimal('0.01'))
+
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f'{self.short.trading_pair} {self.short.exchange} > {self.long.exchange} | income: {trim_trailing_zeros(self.income, 8)}'
+        return (
+            f'{self.pair} {self.short.exchange} '
+            f'> {self.long.exchange} | income: {self.income}'
+        )

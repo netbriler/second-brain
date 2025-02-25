@@ -2,7 +2,7 @@ from admin_auto_filters.filters import AutocompleteFilterFactory
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
-from utils.helpers import trim_trailing_zeros
+from utils.helpers import trim_trailing_zeros, model_link
 from .models import Exchange, TradingPair, ArbitrageDealItem, ArbitrageDeal, ExchangeCredentials
 
 
@@ -270,7 +270,9 @@ class ArbitrageDealAdmin(admin.ModelAdmin):
     human_duration_short.short_description = _('Human Duration Short')
 
     def pair_short(self, obj):
-        return obj.short.trading_pair
+        if obj.short and obj.short.trading_pair:
+            return model_link(obj.short.trading_pair)
+        return '-'
 
     pair_short.short_description = _('Pair Short')
 
@@ -317,7 +319,9 @@ class ArbitrageDealAdmin(admin.ModelAdmin):
     human_duration_long.long_description = _('Human Duration Long')
 
     def pair_long(self, obj):
-        return obj.long.trading_pair
+        if obj.long and obj.long.trading_pair:
+            return model_link(obj.long.trading_pair)
+        return '-'
 
     pair_long.long_description = _('Pair Long')
 
