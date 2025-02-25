@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'djangoql',
     'adminsortable2',
+    'totalsum',
     'users',
     'telegram_bot',
     'telegram_restricted_downloader',

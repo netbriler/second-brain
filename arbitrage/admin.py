@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 from utils.helpers import trim_trailing_zeros, model_link
 from .models import Exchange, TradingPair, ArbitrageDealItem, ArbitrageDeal, ExchangeCredentials
-
+from totalsum.admin import TotalsumAdmin
 
 class ExchangeCredentialsInline(admin.TabularInline):
     model = ExchangeCredentials
@@ -161,7 +161,7 @@ class ArbitrageDealItemAdmin(admin.ModelAdmin):
 
 
 @admin.register(ArbitrageDeal)
-class ArbitrageDealAdmin(admin.ModelAdmin):
+class ArbitrageDealAdmin(TotalsumAdmin, admin.ModelAdmin):
     def exchanges(self, obj):
         return f'{obj.exchanges}'
 
@@ -396,3 +396,5 @@ class ArbitrageDealAdmin(admin.ModelAdmin):
             'fields': ('created_at', 'updated_at')
         }),
     )
+
+    totalsum_list = ('pnl', 'income', 'fees', 'funding', 'roi', 'margin_open', 'margin_close', 'trading_volume')

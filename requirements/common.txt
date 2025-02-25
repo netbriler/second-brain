@@ -7,3 +7,4 @@ django-livereload-server==0.5.1
 aiogram==3.3.0
 loguru==0.7.2
 djangoql==0.18.1
+django-totalsum-admin==2.0.1
