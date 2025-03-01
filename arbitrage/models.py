@@ -1,3 +1,5 @@
+import base64
+import hashlib
 from decimal import Decimal
 
 from cryptography.fernet import Fernet
@@ -79,12 +81,18 @@ class ExchangeCredentials(models.Model):
     def api_secret(self):
         if not self._api_secret:
             return None
-        f = Fernet(settings.SECRET_KEY)
+        key = base64.urlsafe_b64encode(
+            hashlib.sha256(settings.SECRET_KEY.encode('utf-8')).digest()
+        )
+        f = Fernet(key)
         return f.decrypt(self._api_secret.encode()).decode()
 
     @api_secret.setter
     def api_secret(self, value):
-        f = Fernet(settings.SECRET_KEY)
+        key = base64.urlsafe_b64encode(
+            hashlib.sha256(settings.SECRET_KEY.encode('utf-8')).digest()
+        )
+        f = Fernet(key)
         self._api_secret = f.encrypt(value.encode()).decode()
 
 

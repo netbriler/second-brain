@@ -5,7 +5,7 @@ from import_export.admin import ImportExportModelAdmin
 from totalsum.admin import TotalsumAdmin
 
 from utils.helpers import trim_trailing_zeros, model_link
-from .forms import UserForm
+from .forms import UserForm, ExchangeCredentialsAdminForm
 from .models import Exchange, TradingPair, ArbitrageDealItem, ArbitrageDeal, ExchangeCredentials
 from .resources import ArbitrageDealResource, ArbitrageDealItemResource, ArbitrageDealFullResource
 
@@ -41,17 +41,27 @@ class ExchangeAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     )
     inlines = [ExchangeCredentialsInline]
     readonly_fields = ('created_at', 'updated_at',)
+    search_fields = ('name',)
 
 
 @admin.register(ExchangeCredentials)
 class ExchangeCredentialsAdmin(ImportExportModelAdmin, admin.ModelAdmin):
-    list_display = ('exchange', 'user', 'api_key', 'is_enabled')
+    form = ExchangeCredentialsAdminForm
+
+    list_display = (
+        'exchange',
+        'user',
+        'api_key',
+        'is_enabled'
+    )
+
     fieldsets = (
         ('Credentials', {
             'fields': (
                 'exchange',
                 'user',
                 'api_key',
+                'api_secret',
                 'is_enabled',
             )
         }),
@@ -60,6 +70,7 @@ class ExchangeCredentialsAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         }),
     )
     readonly_fields = ('created_at', 'updated_at',)
+    search_fields = ('exchange__name', 'user__username')
 
 
 @admin.register(TradingPair)
@@ -74,6 +85,7 @@ class TradingPairAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         }),
     )
     readonly_fields = ('created_at', 'updated_at', 'symbol')
+    search_fields = ('symbol',)
 
 
 @admin.register(ArbitrageDealItem)
@@ -138,7 +150,8 @@ class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         'updated_at',
     )
 
-    autocomplete_fields = ('user',)
+    autocomplete_fields = ('user', 'trading_pair', 'exchange')
+    search_fields = ('user__username', 'trading_pair__symbol', 'exchange__name')
 
     fieldsets = (
         (_('Basic Info'), {
@@ -347,7 +360,8 @@ class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin
         'updated_at',
     )
 
-    autocomplete_fields = ('user',)
+    autocomplete_fields = ('user', 'short', 'long')
+    search_fields = ('user__username', 'short__exchange__name', 'long__exchange__name')
 
     list_display = (
         'exchanges', 'pair', 'user', 'pnl_short', 'income_short', 'fees_short', 'funding_short',
