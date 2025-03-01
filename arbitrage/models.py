@@ -435,6 +435,18 @@ class ArbitrageDeal(models.Model):
         verbose_name=_('Trading Volume'),
     )
 
+    duration = models.DurationField(
+        blank=True, null=True,
+        verbose_name=_('Duration'),
+    )
+
+    human_duration = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name=_('Human Duration'),
+    )
+
     def save(self, *args, **kwargs):
         """
         Compute and store cumulative fields whenever the ArbitrageDeal is saved.
@@ -493,6 +505,28 @@ class ArbitrageDeal(models.Model):
         self.spread_close = self.spread_close.quantize(Decimal('0.01'))
         self.spread = self.spread.quantize(Decimal('0.01'))
         self.roi_percent = self.roi_percent.quantize(Decimal('0.01'))
+
+        if self.short.open_at and self.long.open_at and self.short.close_at and self.long.close_at:
+            self.duration = max(
+                self.short.close_at, self.long.close_at
+            ) - min(
+                self.short.open_at, self.long.open_at
+            )
+
+            self.human_duration = timesince(
+                min(self.short.open_at, self.long.open_at),
+                max(self.short.close_at, self.long.close_at),
+            )
+        elif self.short.open_at and self.long.open_at:
+            self.duration = None
+            self.human_duration = timesince(
+                min(self.short.open_at, self.long.open_at),
+            )
+        elif self.short.open_at or self.long.open_at:
+            self.duration = None
+            self.human_duration = timesince(
+                self.short.open_at or self.long.open_at,
+            )
 
         super().save(*args, **kwargs)
 

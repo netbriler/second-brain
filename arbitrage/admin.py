@@ -384,6 +384,7 @@ class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin
         'volume_long', 'leverage_long',
         'duration_long', 'human_duration_long',
         'pair_short', 'pair_long',
+        'duration', 'human_duration',
     )
 
     fieldsets = (
@@ -414,6 +415,7 @@ class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin
                 'roi_short', 'roi_percent_short',
                 'spread_open_short', 'spread_close_short', 'spread_short',
                 'margin_open_short', 'margin_close_short', 'trading_volume_short',
+                'duration', 'human_duration',
             )
         }),
         (_('Timestamps'), {
