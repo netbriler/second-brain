@@ -23,5 +23,4 @@ RUN /usr/local/bin/python -m pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN django-admin compilemessages
-RUN django-admin collectstatic --noinput
 CMD ["gunicorn", "-c", "/app/app/gunicorn.py", "app.wsgi"]
