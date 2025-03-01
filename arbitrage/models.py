@@ -488,10 +488,21 @@ class ArbitrageDeal(models.Model):
 
         super().save(*args, **kwargs)
 
-        self.short.user = self.user
-        self.long.user = self.user
-        self.short.save()
-        self.long.save()
+        if self.user != self.short.user:
+            self.short.user = self.user
+            self.short.save(
+                update_fields=[
+                    'user',
+                ],
+            )
+
+        if self.user != self.long.user:
+            self.long.user = self.user
+            self.long.save(
+                update_fields=[
+                    'user',
+                ],
+            )
 
     def __str__(self):
         return (

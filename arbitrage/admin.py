@@ -18,7 +18,6 @@ class ExchangeCredentialsInline(admin.TabularInline):
             'fields': (
                 'user',
                 'api_key',
-                'api_secret',
                 'is_enabled',
             )
         }),
@@ -26,6 +25,7 @@ class ExchangeCredentialsInline(admin.TabularInline):
             'fields': ('created_at', 'updated_at')
         }),
     )
+    readonly_fields = ('created_at', 'updated_at')
 
 
 @admin.register(Exchange)
@@ -40,18 +40,18 @@ class ExchangeAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         }),
     )
     inlines = [ExchangeCredentialsInline]
+    readonly_fields = ('created_at', 'updated_at',)
 
 
 @admin.register(ExchangeCredentials)
 class ExchangeCredentialsAdmin(ImportExportModelAdmin, admin.ModelAdmin):
-    list_display = ('exchange', 'user', 'api_key', 'api_secret', 'is_enabled')
+    list_display = ('exchange', 'user', 'api_key', 'is_enabled')
     fieldsets = (
         ('Credentials', {
             'fields': (
                 'exchange',
                 'user',
                 'api_key',
-                'api_secret',
                 'is_enabled',
             )
         }),
@@ -59,6 +59,7 @@ class ExchangeCredentialsAdmin(ImportExportModelAdmin, admin.ModelAdmin):
             'fields': ('created_at', 'updated_at')
         }),
     )
+    readonly_fields = ('created_at', 'updated_at',)
 
 
 @admin.register(TradingPair)

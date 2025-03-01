@@ -54,7 +54,6 @@ class ArbitrageDealFullResource(resources.ModelResource):
         fields = (
             # Main ArbitrageDeal fields first:
             'id',
-            'user',
             'note',
             'pnl',
             'income',
@@ -155,12 +154,105 @@ class ArbitrageDealFullResource(resources.ModelResource):
             return obj.short.trading_pair.symbol
         return ''
 
+    def dehydrate_short_side(self, obj):
+        """For exporting short side."""
+        return obj.short.side
+
+    def dehydrate_short_open_price(self, obj):
+        """For exporting short open price."""
+        return obj.short.open_price
+
+    def dehydrate_short_close_price(self, obj):
+        """For exporting short close price."""
+        return obj.short.close_price
+
+    def dehydrate_short_volume(self, obj):
+        """For exporting short volume."""
+        return obj.short.volume
+
+    def dehydrate_short_leverage(self, obj):
+        """For exporting short leverage."""
+        return obj.short.leverage
+
+    def dehydrate_short_fees(self, obj):
+        """For exporting short fees."""
+        return obj.short.fees
+
+    def dehydrate_short_funding(self, obj):
+        """For exporting short funding."""
+        return obj.short.funding
+
+    def dehydrate_short_is_liquidated(self, obj):
+        """For exporting short is liquidated."""
+        return obj.short.is_liquidated
+
+    def dehydrate_short_open_at(self, obj):
+        """For exporting short open at."""
+        return obj.short.open_at
+
+    def dehydrate_short_close_at(self, obj):
+        """For exporting short close at."""
+        return obj.short.close_at
+
+    def dehydrate_long_exchange(self, obj):
+        """For exporting long exchange name."""
+        if obj.long and obj.long.exchange:
+            return obj.long.exchange.name
+        return ''
+
+    def dehydrate_long_symbol(self, obj):
+        """For exporting long trading pair symbol."""
+        if obj.long and obj.long.trading_pair:
+            return obj.long.trading_pair.symbol
+        return ''
+
+    def dehydrate_long_side(self, obj):
+        """For exporting long side."""
+        return obj.long.side
+
+    def dehydrate_long_open_price(self, obj):
+        """For exporting long open price."""
+        return obj.long.open_price
+
+    def dehydrate_long_close_price(self, obj):
+        """For exporting long close price."""
+        return obj.long.close_price
+
+    def dehydrate_long_volume(self, obj):
+        """For exporting long volume."""
+        return obj.long.volume
+
+    def dehydrate_long_leverage(self, obj):
+        """For exporting long leverage."""
+        return obj.long.leverage
+
+    def dehydrate_long_fees(self, obj):
+        """For exporting long fees."""
+        return obj.long.fees
+
+    def dehydrate_long_funding(self, obj):
+        """For exporting long funding."""
+        return obj.long.funding
+
+    def dehydrate_long_is_liquidated(self, obj):
+        """For exporting long is liquidated."""
+        return obj.long.is_liquidated
+
+    def dehydrate_long_open_at(self, obj):
+        """For exporting long open at."""
+        return obj.long.open_at
+
+    def dehydrate_long_close_at(self, obj):
+        """For exporting long close at."""
+        return obj.long.close_at
+
     # You can define similar `dehydrate_` methods for each short_ and long_ field
     # if you need fine-grained export formatting. Otherwise, the direct
     # `attribute='short.xxx'` or `attribute='long.xxx'` will suffice.
 
     @transaction.atomic
     def import_row(self, row, instance_loader, **kwargs):
+        row_number = kwargs.get('row_number')
         # If needed, you can fetch the row number from kwargs:
         """
         Override import_row to handle the creation/updating
@@ -236,16 +328,6 @@ class ArbitrageDealFullResource(resources.ModelResource):
                 quote_currency=quote_currency,
             )
 
-        print('short_symbol:', short_symbol)
-        print('short_exchange_name:', short_exchange_name)
-        print('short_exchange_obj:', short_exchange_obj)
-        print('short_trading_pair_obj:', short_trading_pair_obj)
-
-        print('long_symbol:', long_symbol)
-        print('long_exchange_name:', long_exchange_name)
-        print('long_exchange_obj:', long_exchange_obj)
-        print('long_trading_pair_obj:', long_trading_pair_obj)
-
         # We will build or update short and long ArbitrageDealItem instances ourselves,
         # attach them to the row in memory, then proceed with the normal import flow.
 
@@ -295,8 +377,7 @@ class ArbitrageDealFullResource(resources.ModelResource):
             result = super().import_row(row, instance_loader, **kwargs)
             # Record the error. The transaction will roll back anyway.
             row_errors = result.errors or []
-            raise exc
-            row_errors.append(Error(row_number, str(exc)))
+            row_errors.append(Error(str(exc), row_number))
             result.errors = row_errors
             return result
 
