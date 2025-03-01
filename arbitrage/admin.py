@@ -130,7 +130,7 @@ class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         'volume', 'leverage', 'fees', 'funding',
         'is_liquidated',
         'pnl_short', 'income_short', 'roi_percent_short',
-        'duration', 'human_duration', 'user'
+        'duration', 'human_duration'
     )
 
     readonly_fields = (
@@ -281,7 +281,7 @@ class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin
     def duration_short(self, obj):
         if not obj.short:
             return '-'
-        return trim_trailing_zeros(obj.short.duration, 8)
+        return obj.short.duration
 
     duration_short.short_description = _('Duration Short')
 
@@ -330,7 +330,7 @@ class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin
     def duration_long(self, obj):
         if not obj.long:
             return '-'
-        return trim_trailing_zeros(obj.long.duration, 8)
+        return obj.long.duration
 
     duration_long.long_description = _('Duration Long')
 
@@ -367,6 +367,7 @@ class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin
         'exchanges', 'pair', 'user', 'pnl_short', 'income_short', 'fees_short', 'funding_short',
         'roi_percent_short', 'spread_open_short', 'spread_close_short', 'spread_short',
         'margin_open_short', 'margin_close_short', 'trading_volume_short',
+        'duration', 'human_duration',
         'created_at', 'updated_at'
     )
 

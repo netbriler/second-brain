@@ -1,8 +1,10 @@
 from decimal import Decimal
 
 from django.db import transaction
+from django.utils.dateparse import parse_datetime
 from import_export import resources, fields
 from import_export.results import Error
+from import_export.widgets import ForeignKeyWidget
 
 from .models import (
     ArbitrageDeal,
@@ -47,6 +49,17 @@ class ArbitrageDealFullResource(resources.ModelResource):
     long_open_at = fields.Field(attribute='long.open_at', column_name='long_open_at')
     long_close_at = fields.Field(attribute='long.close_at', column_name='long_close_at')
 
+    short = fields.Field(
+        attribute='short',
+        column_name='short',
+        widget=ForeignKeyWidget(ArbitrageDealItem, 'id')
+    )
+    long = fields.Field(
+        attribute='long',
+        column_name='long',
+        widget=ForeignKeyWidget(ArbitrageDealItem, 'id')
+    )
+
     class Meta:
         model = ArbitrageDeal
         # These are the fields that come directly from ArbitrageDeal
@@ -54,6 +67,8 @@ class ArbitrageDealFullResource(resources.ModelResource):
         fields = (
             # Main ArbitrageDeal fields first:
             'id',
+            'long',
+            'short',
             'note',
             'pnl',
             'income',
@@ -270,8 +285,8 @@ class ArbitrageDealFullResource(resources.ModelResource):
         short_fees = row.get('short_fees')
         short_funding = row.get('short_funding')
         short_is_liquidated = row.get('short_is_liquidated')
-        short_open_at = row.get('short_open_at')
-        short_close_at = row.get('short_close_at')
+        short_open_at = parse_datetime(row.get('short_open_at')) if row.get('short_open_at') else None
+        short_close_at = parse_datetime(row.get('short_close_at')) if row.get('short_close_at') else None
 
         # Extract long side info from row
         long_exchange_name = row.get('long_exchange')
@@ -284,8 +299,8 @@ class ArbitrageDealFullResource(resources.ModelResource):
         long_fees = row.get('long_fees')
         long_funding = row.get('long_funding')
         long_is_liquidated = row.get('long_is_liquidated')
-        long_open_at = row.get('long_open_at')
-        long_close_at = row.get('long_close_at')
+        long_open_at = parse_datetime(row.get('long_open_at')) if row.get('long_open_at') else None
+        long_close_at = parse_datetime(row.get('long_close_at')) if row.get('long_close_at') else None
 
         # Create or get the short exchange
         short_exchange_obj = None
@@ -354,6 +369,8 @@ class ArbitrageDealFullResource(resources.ModelResource):
             short_item.close_at = short_close_at or None
 
             short_item.save()
+            row['short'] = short_item.id
+            row['short_id'] = short_item.id
 
             long_item = ArbitrageDealItem()
             if long_exchange_obj:
@@ -372,8 +389,11 @@ class ArbitrageDealFullResource(resources.ModelResource):
             long_item.close_at = long_close_at or None
 
             long_item.save()
+            row['long'] = long_item.id
+            row['long_id'] = long_item.id
 
         except Exception as exc:
+            raise exc
             result = super().import_row(row, instance_loader, **kwargs)
             # Record the error. The transaction will roll back anyway.
             row_errors = result.errors or []
@@ -386,12 +406,6 @@ class ArbitrageDealFullResource(resources.ModelResource):
         # them into the incoming dataset so that the normal import logic
         # (which tries to create ArbitrageDeal) uses them.
 
-        # The ArbitrageDeal model fields are short_id and long_id (ForeignKeys):
-        row['short_id'] = short_item.id
-        row['long_id'] = long_item.id
-
-        # Let the normal flow proceed. This will create/update ArbitrageDeal
-        # and set .short = short_item, .long = long_item, etc.
         return super().import_row(row, instance_loader, **kwargs)
 
 

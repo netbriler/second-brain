@@ -517,16 +517,6 @@ class ArbitrageDeal(models.Model):
                 min(self.short.open_at, self.long.open_at),
                 max(self.short.close_at, self.long.close_at),
             )
-        elif self.short.open_at and self.long.open_at:
-            self.duration = None
-            self.human_duration = timesince(
-                min(self.short.open_at, self.long.open_at),
-            )
-        elif self.short.open_at or self.long.open_at:
-            self.duration = None
-            self.human_duration = timesince(
-                self.short.open_at or self.long.open_at,
-            )
 
         super().save(*args, **kwargs)
 
