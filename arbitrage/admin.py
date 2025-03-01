@@ -1,10 +1,12 @@
 from admin_auto_filters.filters import AutocompleteFilterFactory
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
+from import_export.admin import ImportExportModelAdmin
+from totalsum.admin import TotalsumAdmin
 
 from utils.helpers import trim_trailing_zeros, model_link
 from .models import Exchange, TradingPair, ArbitrageDealItem, ArbitrageDeal, ExchangeCredentials
-from totalsum.admin import TotalsumAdmin
+
 
 class ExchangeCredentialsInline(admin.TabularInline):
     model = ExchangeCredentials
@@ -25,7 +27,7 @@ class ExchangeCredentialsInline(admin.TabularInline):
 
 
 @admin.register(Exchange)
-class ExchangeAdmin(admin.ModelAdmin):
+class ExchangeAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     list_display = ('name', 'is_enabled')
     fieldsets = (
         (None, {
@@ -39,7 +41,7 @@ class ExchangeAdmin(admin.ModelAdmin):
 
 
 @admin.register(ExchangeCredentials)
-class ExchangeCredentialsAdmin(admin.ModelAdmin):
+class ExchangeCredentialsAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     list_display = ('exchange', 'user', 'api_key', 'api_secret', 'is_enabled')
     fieldsets = (
         ('Credentials', {
@@ -58,7 +60,7 @@ class ExchangeCredentialsAdmin(admin.ModelAdmin):
 
 
 @admin.register(TradingPair)
-class TradingPairAdmin(admin.ModelAdmin):
+class TradingPairAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     list_display = ('base_currency', 'quote_currency', 'symbol')
     fieldsets = (
         (None, {
@@ -71,7 +73,7 @@ class TradingPairAdmin(admin.ModelAdmin):
 
 
 @admin.register(ArbitrageDealItem)
-class ArbitrageDealItemAdmin(admin.ModelAdmin):
+class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     def pnl_short(self, obj):
         return trim_trailing_zeros(obj.pnl, 8)
 
@@ -161,7 +163,7 @@ class ArbitrageDealItemAdmin(admin.ModelAdmin):
 
 
 @admin.register(ArbitrageDeal)
-class ArbitrageDealAdmin(TotalsumAdmin, admin.ModelAdmin):
+class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
     def exchanges(self, obj):
         return f'{obj.exchanges}'
 

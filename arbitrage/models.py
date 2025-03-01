@@ -449,12 +449,12 @@ class ArbitrageDeal(models.Model):
 
         # Spread
         # Be mindful of divide-by-zero scenarios
-        if self.long.open_price:
+        if self.long.open_price and self.short.open_price:
             self.spread_open = ((self.short.open_price / self.long.open_price) - 1) * Decimal('100.0')
         else:
             self.spread_open = Decimal('0.0')
 
-        if self.long.close_price:
+        if self.long.close_price and self.short.close_price:
             self.spread_close = ((self.short.close_price / self.long.close_price) - 1) * Decimal('100.0')
         else:
             self.spread_close = Decimal('0.0')

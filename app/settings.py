@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'djangoql',
     'adminsortable2',
     'totalsum',
+    'import_export',
     'users',
     'telegram_bot',
     'telegram_restricted_downloader',
