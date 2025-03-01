@@ -5,7 +5,7 @@ FROM python:$PYTHON_VERSION AS requirements-stage
 
 WORKDIR /tmp
 
-RUN pip install poetry
+RUN pip install --upgrade pip && pip install "poetry==1.3.2"
 
 COPY ./pyproject.toml ./poetry.lock* /tmp/
 
