@@ -7,7 +7,7 @@ from totalsum.admin import TotalsumAdmin
 from utils.helpers import trim_trailing_zeros, model_link
 from .forms import UserForm
 from .models import Exchange, TradingPair, ArbitrageDealItem, ArbitrageDeal, ExchangeCredentials
-from .resources import ArbitrageDealResource, ArbitrageDealItemResource
+from .resources import ArbitrageDealResource, ArbitrageDealItemResource, ArbitrageDealFullResource
 
 
 class ExchangeCredentialsInline(admin.TabularInline):
@@ -66,12 +66,13 @@ class TradingPairAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     list_display = ('base_currency', 'quote_currency', 'symbol')
     fieldsets = (
         (None, {
-            'fields': ('base_currency', 'quote_currency')
+            'fields': ('base_currency', 'quote_currency', 'symbol')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at')
         }),
     )
+    readonly_fields = ('created_at', 'updated_at', 'symbol')
 
 
 @admin.register(ArbitrageDealItem)
@@ -168,7 +169,7 @@ class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 
 @admin.register(ArbitrageDeal)
 class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
-    resource_class = ArbitrageDealResource
+    resource_classes = [ArbitrageDealResource, ArbitrageDealFullResource]
 
     def exchanges(self, obj):
         return f'{obj.exchanges}'

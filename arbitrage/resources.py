@@ -1,6 +1,317 @@
-from import_export import resources
+from decimal import Decimal
 
-from .models import ArbitrageDeal, ArbitrageDealItem
+from django.db import transaction
+from import_export import resources, fields
+from import_export.results import Error
+
+from .models import (
+    ArbitrageDeal,
+    ArbitrageDealItem,
+    TradingPair,
+    Exchange,
+)
+
+
+class ArbitrageDealFullResource(resources.ModelResource):
+    """
+    A resource for importing/exporting ArbitrageDeal and its related
+    short/long ArbitrageDealItem. We also handle creation of TradingPair
+    and Exchange if they do not exist on import.
+    """
+
+    # Short fields
+    short_exchange = fields.Field(attribute='short.exchange.name', column_name='short_exchange')
+    short_symbol = fields.Field(attribute='short.trading_pair.symbol', column_name='short_symbol')
+    short_side = fields.Field(attribute='short.side', column_name='short_side')
+    short_open_price = fields.Field(attribute='short.open_price', column_name='short_open_price')
+    short_close_price = fields.Field(attribute='short.close_price', column_name='short_close_price')
+    short_volume = fields.Field(attribute='short.volume', column_name='short_volume')
+    short_leverage = fields.Field(attribute='short.leverage', column_name='short_leverage')
+    short_fees = fields.Field(attribute='short.fees', column_name='short_fees')
+    short_funding = fields.Field(attribute='short.funding', column_name='short_funding')
+    short_is_liquidated = fields.Field(attribute='short.is_liquidated', column_name='short_is_liquidated')
+    short_open_at = fields.Field(attribute='short.open_at', column_name='short_open_at')
+    short_close_at = fields.Field(attribute='short.close_at', column_name='short_close_at')
+
+    # Long fields
+    long_exchange = fields.Field(attribute='long.exchange.name', column_name='long_exchange')
+    long_symbol = fields.Field(attribute='long.trading_pair.symbol', column_name='long_symbol')
+    long_side = fields.Field(attribute='long.side', column_name='long_side')
+    long_open_price = fields.Field(attribute='long.open_price', column_name='long_open_price')
+    long_close_price = fields.Field(attribute='long.close_price', column_name='long_close_price')
+    long_volume = fields.Field(attribute='long.volume', column_name='long_volume')
+    long_leverage = fields.Field(attribute='long.leverage', column_name='long_leverage')
+    long_fees = fields.Field(attribute='long.fees', column_name='long_fees')
+    long_funding = fields.Field(attribute='long.funding', column_name='long_funding')
+    long_is_liquidated = fields.Field(attribute='long.is_liquidated', column_name='long_is_liquidated')
+    long_open_at = fields.Field(attribute='long.open_at', column_name='long_open_at')
+    long_close_at = fields.Field(attribute='long.close_at', column_name='long_close_at')
+
+    class Meta:
+        model = ArbitrageDeal
+        # These are the fields that come directly from ArbitrageDeal
+        # (IDs, creation timestamps, numeric fields, etc.). Adjust as needed.
+        fields = (
+            # Main ArbitrageDeal fields first:
+            'id',
+            'user',
+            'note',
+            'pnl',
+            'income',
+            'fees',
+            'funding',
+            'roi',
+            'roi_percent',
+            'spread_open',
+            'spread_close',
+            'spread',
+            'margin_open',
+            'margin_close',
+            'trading_volume',
+            'created_at',
+            'updated_at',
+            # Then short item:
+            'short_exchange',
+            'short_symbol',
+            'short_side',
+            'short_open_price',
+            'short_close_price',
+            'short_volume',
+            'short_leverage',
+            'short_fees',
+            'short_funding',
+            'short_is_liquidated',
+            'short_open_at',
+            'short_close_at',
+            # Then long item:
+            'long_exchange',
+            'long_symbol',
+            'long_side',
+            'long_open_price',
+            'long_close_price',
+            'long_volume',
+            'long_leverage',
+            'long_fees',
+            'long_funding',
+            'long_is_liquidated',
+            'long_open_at',
+            'long_close_at',
+        )
+        export_order = (
+            # Main ArbitrageDeal fields first:
+            'id',
+            'note',
+            'pnl',
+            'income',
+            'fees',
+            'funding',
+            'roi',
+            'roi_percent',
+            'spread_open',
+            'spread_close',
+            'spread',
+            'margin_open',
+            'margin_close',
+            'trading_volume',
+            'created_at',
+            'updated_at',
+            # Then short item:
+            'short_exchange',
+            'short_symbol',
+            'short_side',
+            'short_open_price',
+            'short_close_price',
+            'short_volume',
+            'short_leverage',
+            'short_fees',
+            'short_funding',
+            'short_is_liquidated',
+            'short_open_at',
+            'short_close_at',
+            # Then long item:
+            'long_exchange',
+            'long_symbol',
+            'long_side',
+            'long_open_price',
+            'long_close_price',
+            'long_volume',
+            'long_leverage',
+            'long_fees',
+            'long_funding',
+            'long_is_liquidated',
+            'long_open_at',
+            'long_close_at',
+        )
+
+    def dehydrate_short_exchange(self, obj):
+        """For exporting short exchange name."""
+        if obj.short and obj.short.exchange:
+            return obj.short.exchange.name
+        return ''
+
+    def dehydrate_short_symbol(self, obj):
+        """For exporting short trading pair symbol."""
+        if obj.short and obj.short.trading_pair:
+            return obj.short.trading_pair.symbol
+        return ''
+
+    # You can define similar `dehydrate_` methods for each short_ and long_ field
+    # if you need fine-grained export formatting. Otherwise, the direct
+    # `attribute='short.xxx'` or `attribute='long.xxx'` will suffice.
+
+    @transaction.atomic
+    def import_row(self, row, instance_loader, **kwargs):
+        # If needed, you can fetch the row number from kwargs:
+        """
+        Override import_row to handle the creation/updating
+        of Exchange, TradingPair, and ArbitrageDealItem for both
+        short and long sides before saving the main ArbitrageDeal.
+        """
+        # Extract short side info from row
+        short_exchange_name = row.get('short_exchange')
+        short_symbol = row.get('short_symbol')
+        short_side = row.get('short_side')
+        short_open_price = row.get('short_open_price')
+        short_close_price = row.get('short_close_price')
+        short_volume = row.get('short_volume')
+        short_leverage = row.get('short_leverage')
+        short_fees = row.get('short_fees')
+        short_funding = row.get('short_funding')
+        short_is_liquidated = row.get('short_is_liquidated')
+        short_open_at = row.get('short_open_at')
+        short_close_at = row.get('short_close_at')
+
+        # Extract long side info from row
+        long_exchange_name = row.get('long_exchange')
+        long_symbol = row.get('long_symbol')
+        long_side = row.get('long_side')
+        long_open_price = row.get('long_open_price')
+        long_close_price = row.get('long_close_price')
+        long_volume = row.get('long_volume')
+        long_leverage = row.get('long_leverage')
+        long_fees = row.get('long_fees')
+        long_funding = row.get('long_funding')
+        long_is_liquidated = row.get('long_is_liquidated')
+        long_open_at = row.get('long_open_at')
+        long_close_at = row.get('long_close_at')
+
+        # Create or get the short exchange
+        short_exchange_obj = None
+        if short_exchange_name:
+            short_exchange_obj, _ = Exchange.objects.get_or_create(name=short_exchange_name)
+
+        # Create or get the long exchange
+        long_exchange_obj = None
+        if long_exchange_name:
+            long_exchange_obj, _ = Exchange.objects.get_or_create(name=long_exchange_name)
+
+        # Create or get the short trading pair
+        short_trading_pair_obj = None
+        if short_symbol:
+            # For example, if the symbol is 'BTC/USDT', split by '/'
+            parts = short_symbol.split('/')
+            if len(parts) == 2:
+                base_currency, quote_currency = parts
+            else:
+                # Fallback if symbol doesn't contain '/'
+                base_currency = short_symbol
+                quote_currency = ''
+            short_trading_pair_obj, _ = TradingPair.objects.get_or_create(
+                base_currency=base_currency,
+                quote_currency=quote_currency,
+            )
+            # The save method will set symbol automatically.
+
+        # Create or get the long trading pair
+        long_trading_pair_obj = None
+        if long_symbol:
+            parts = long_symbol.split('/')
+            if len(parts) == 2:
+                base_currency, quote_currency = parts
+            else:
+                base_currency = long_symbol
+                quote_currency = ''
+            long_trading_pair_obj, _ = TradingPair.objects.get_or_create(
+                base_currency=base_currency,
+                quote_currency=quote_currency,
+            )
+
+        print('short_symbol:', short_symbol)
+        print('short_exchange_name:', short_exchange_name)
+        print('short_exchange_obj:', short_exchange_obj)
+        print('short_trading_pair_obj:', short_trading_pair_obj)
+
+        print('long_symbol:', long_symbol)
+        print('long_exchange_name:', long_exchange_name)
+        print('long_exchange_obj:', long_exchange_obj)
+        print('long_trading_pair_obj:', long_trading_pair_obj)
+
+        # We will build or update short and long ArbitrageDealItem instances ourselves,
+        # attach them to the row in memory, then proceed with the normal import flow.
+
+        try:
+            # We do not know if there's an existing PK in the row for the short or long,
+            # so we always create new or update existing. Typically for a single CSV row
+            # we are creating new items. If you want to handle updates, you'll need
+            # logic to match on an identifier.
+
+            short_item = ArbitrageDealItem()
+            if short_exchange_obj:
+                short_item.exchange = short_exchange_obj
+            if short_trading_pair_obj:
+                short_item.trading_pair = short_trading_pair_obj
+            short_item.side = short_side or ''
+            short_item.open_price = Decimal(short_open_price) if short_open_price else Decimal('0')
+            short_item.close_price = Decimal(short_close_price) if short_close_price else Decimal('0')
+            short_item.volume = Decimal(short_volume) if short_volume else Decimal('0')
+            short_item.leverage = int(short_leverage) if short_leverage else 1
+            short_item.fees = Decimal(short_fees) if short_fees else Decimal('0')
+            short_item.funding = Decimal(short_funding) if short_funding else Decimal('0')
+            short_item.is_liquidated = (str(short_is_liquidated).lower() == 'true')
+            short_item.open_at = short_open_at or None
+            short_item.close_at = short_close_at or None
+
+            short_item.save()
+
+            long_item = ArbitrageDealItem()
+            if long_exchange_obj:
+                long_item.exchange = long_exchange_obj
+            if long_trading_pair_obj:
+                long_item.trading_pair = long_trading_pair_obj
+            long_item.side = long_side or ''
+            long_item.open_price = Decimal(long_open_price) if long_open_price else Decimal('0')
+            long_item.close_price = Decimal(long_close_price) if long_close_price else Decimal('0')
+            long_item.volume = Decimal(long_volume) if long_volume else Decimal('0')
+            long_item.leverage = int(long_leverage) if long_leverage else 1
+            long_item.fees = Decimal(long_fees) if long_fees else Decimal('0')
+            long_item.funding = Decimal(long_funding) if long_funding else Decimal('0')
+            long_item.is_liquidated = (str(long_is_liquidated).lower() == 'true')
+            long_item.open_at = long_open_at or None
+            long_item.close_at = long_close_at or None
+
+            long_item.save()
+
+        except Exception as exc:
+            result = super().import_row(row, instance_loader, **kwargs)
+            # Record the error. The transaction will roll back anyway.
+            row_errors = result.errors or []
+            raise exc
+            row_errors.append(Error(row_number, str(exc)))
+            result.errors = row_errors
+            return result
+
+        # Now that we have the short_item and long_item saved, we want to ensure
+        # that the main ArbitrageDeal row references these two items. We'll inject
+        # them into the incoming dataset so that the normal import logic
+        # (which tries to create ArbitrageDeal) uses them.
+
+        # The ArbitrageDeal model fields are short_id and long_id (ForeignKeys):
+        row['short_id'] = short_item.id
+        row['long_id'] = long_item.id
+
+        # Let the normal flow proceed. This will create/update ArbitrageDeal
+        # and set .short = short_item, .long = long_item, etc.
+        return super().import_row(row, instance_loader, **kwargs)
 
 
 class ArbitrageDealResource(resources.ModelResource):
@@ -14,6 +325,18 @@ class ArbitrageDealResource(resources.ModelResource):
             'created_at',
             'updated_at',
             'exchanges',
+            'pnl',
+            'income',
+            'fees',
+            'funding',
+            'roi',
+            'roi_percent',
+            'spread_open',
+            'spread_close',
+            'spread',
+            'margin_open',
+            'margin_close',
+            'trading_volume',
         )
         export_order = fields
 
@@ -38,4 +361,12 @@ class ArbitrageDealItemResource(resources.ModelResource):
             'created_at',
             'updated_at',
             'trades',
+            'pnl',
+            'margin_open',
+            'margin_close',
+            'income',
+            'roi',
+            'roi_percent',
+            'duration',
+            'human_duration',
         )
