@@ -5,7 +5,9 @@ from import_export.admin import ImportExportModelAdmin
 from totalsum.admin import TotalsumAdmin
 
 from utils.helpers import trim_trailing_zeros, model_link
+from .forms import UserForm
 from .models import Exchange, TradingPair, ArbitrageDealItem, ArbitrageDeal, ExchangeCredentials
+from .resources import ArbitrageDealResource, ArbitrageDealItemResource
 
 
 class ExchangeCredentialsInline(admin.TabularInline):
@@ -74,6 +76,8 @@ class TradingPairAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 
 @admin.register(ArbitrageDealItem)
 class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
+    resource_class = ArbitrageDealItemResource
+
     def pnl_short(self, obj):
         return trim_trailing_zeros(obj.pnl, 8)
 
@@ -164,6 +168,8 @@ class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 
 @admin.register(ArbitrageDeal)
 class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
+    resource_class = ArbitrageDealResource
+
     def exchanges(self, obj):
         return f'{obj.exchanges}'
 
@@ -400,3 +406,25 @@ class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin
     )
 
     totalsum_list = ('pnl', 'income', 'fees', 'funding', 'roi', 'margin_open', 'margin_close', 'trading_volume')
+
+    action_form = UserForm
+    actions = ['assign_user']
+
+    @admin.action(description=_('Assign selected user to a deal'))
+    def assign_user(self, request, queryset):
+        selected_user = request.POST.get('user_field')
+        if selected_user:
+            for obj in queryset:
+                if selected_user:
+                    obj.user_id = selected_user
+                    obj.short.user_id = selected_user
+                    obj.long.user_id = selected_user
+                    obj.save(
+                        update_fields=['user_id']
+                    )
+                    obj.short.save(
+                        update_fields=['user_id']
+                    )
+                    obj.long.save(
+                        update_fields=['user_id']
+                    )

@@ -102,6 +102,13 @@ class TradingPair(models.Model):
         verbose_name=_('Quote Currency'),
     )
 
+    symbol = models.CharField(
+        max_length=20,
+        verbose_name=_('Symbol'),
+        blank=True,
+        null=True,
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name=_('Created At'),
@@ -112,9 +119,9 @@ class TradingPair(models.Model):
         verbose_name=_('Updated At'),
     )
 
-    @property
-    def symbol(self):
-        return f'{self.base_currency}/{self.quote_currency}'
+    def save(self, *args, **kwargs):
+        self.symbol = f'{self.base_currency}/{self.quote_currency}' if self.base_currency and self.quote_currency else ''
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.symbol}'
@@ -130,6 +137,8 @@ class ArbitrageDealItem(models.Model):
         related_name='arbitrage_deals_items',
         on_delete=models.CASCADE,
         verbose_name=_('User'),
+        null=True,
+        blank=True,
     )
     trading_pair = models.ForeignKey(
         TradingPair,
@@ -307,6 +316,8 @@ class ArbitrageDeal(models.Model):
         related_name='arbitrage_deals',
         on_delete=models.CASCADE,
         verbose_name=_('User'),
+        null=True,
+        blank=True,
     )
 
     short = models.ForeignKey(
@@ -476,6 +487,11 @@ class ArbitrageDeal(models.Model):
         self.roi_percent = self.roi_percent.quantize(Decimal('0.01'))
 
         super().save(*args, **kwargs)
+
+        self.short.user = self.user
+        self.long.user = self.user
+        self.short.save()
+        self.long.save()
 
     def __str__(self):
         return (

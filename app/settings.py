@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 
 import environ
+from import_export.formats.base_formats import CSV, JSON
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -209,6 +210,9 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
+
+IMPORT_EXPORT_FORMATS = [CSV, JSON]
+IMPORT_EXPORT_DEFAULT_FORMAT = 'csv'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
