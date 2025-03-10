@@ -6,6 +6,7 @@ from cryptography.fernet import Fernet
 from django.conf import settings
 from django.db import models
 from django.utils.timesince import timesince
+from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 
 
@@ -541,3 +542,26 @@ class ArbitrageDeal(models.Model):
             f'{self.pair} {self.short.exchange} '
             f'> {self.long.exchange} | income: {self.income}'
         )
+
+
+class Balance(models.Model):
+    exchange = models.ForeignKey(Exchange, on_delete=models.CASCADE)
+    account = models.CharField(max_length=50)
+    asset = models.CharField(max_length=50)
+    free = models.DecimalField(max_digits=20, decimal_places=8)
+    locked = models.DecimalField(max_digits=20, decimal_places=8)
+
+    def __str__(self):
+        return f"{self.exchange.name} - {self.asset}"
+
+
+class BalanceSnapshot(models.Model):
+    exchange = models.ForeignKey(Exchange, on_delete=models.CASCADE)
+    account = models.CharField(max_length=50)
+    asset = models.CharField(max_length=50)
+    free_snapshot = models.DecimalField(max_digits=20, decimal_places=8)
+    locked_snapshot = models.DecimalField(max_digits=20, decimal_places=8)
+    snapshot_time = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return f"{self.exchange.name} - {self.asset} - {self.snapshot_time}"
