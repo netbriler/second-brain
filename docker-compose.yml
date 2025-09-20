@@ -13,16 +13,20 @@ x-backend-service: &x-backend-service
     - postgres
     - redis
   healthcheck:
-    test: [ "CMD", "curl", "-f", "http://localhost:8000/healthz" ]
-    interval: 30s
-    timeout: 10s
-    retries: 3
+    test: ["CMD", "curl", "-fsS", "http://localhost:8000/healthz"]
+    interval: 10s
+    timeout: 3s
+    retries: 5
+    start_period: 20s
 
 services:
 
   migrate:
     <<: *x-backend-service
-    command: python manage.py migrate --noinput && python manage.py seeds && python manage.py collectstatic --clear --noinput
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py seeds &&
+             python manage.py collectstatic --clear --noinput"
     restart: "no"
 
   backend:
@@ -31,10 +35,11 @@ services:
       - migrate
     expose:
       - 8000
-    command: [ "gunicorn", "-c", "/app/app/gunicorn.py", "app.wsgi" ]
+    command: ["gunicorn", "-c", "/app/app/gunicorn.py", "app.wsgi"]
 
   nginx:
     image: nginx:1.25-alpine
+    restart: unless-stopped
     ports:
       - "80:80"
     volumes:
@@ -43,19 +48,11 @@ services:
     depends_on:
       - backend
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost/healthz" ]
+      test: ["CMD", "curl", "-fsS", "http://localhost/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3
-    restart: unless-stopped
 
-  #  telegram-bot-webhook:
-  #    <<: *x-backend-service
-  #    expose:
-  #      - 8000
-  #    command: python manage.py run_telegram_webhook
-
-  # uncomment if you want to use pooling instead of webhook
   telegram-bot-pooling:
     <<: *x-backend-service
     command: python manage.py run_telegram_polling
@@ -70,16 +67,6 @@ services:
     env_file:
       - .env
 
-  watchtower:
-    image: containrrr/watchtower
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    env_file:
-      - .env
-    labels:
-      - "com.centurylinklabs.watchtower.lifecycle.post-update=./bin/restart_all.sh"
-
   redis:
     image: redis
     restart: unless-stopped
@@ -91,6 +78,15 @@ services:
   celery:
     <<: *x-backend-service
     command: celery -A app worker --loglevel=debug --beat --scheduler=django_celery_beat.schedulers:DatabaseScheduler
+
+  watchtower:
+    image: containrrr/watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    env_file:
+      - .env
+    command: --label-enable --cleanup
 
 volumes:
   postgres_data:
