@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from admin_auto_filters.filters import AutocompleteFilterFactory
 from django.contrib import admin
 from django.db.models import Q
@@ -499,6 +501,51 @@ class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin
             'fields': ('created_at', 'updated_at')
         }),
     )
+
+
+    def get_fieldsets(self, request, obj=None):
+        fs = deepcopy(super().get_fieldsets(request, obj) or self.fieldsets)
+
+        if not obj:
+            return fs  # на форме создания пока не скрываем
+
+        if obj.type == obj.DealType.TRADE:
+            keep_sections = []
+            for title, opts in fs:
+                if title == _('Long Position') and obj.short and not obj.long:
+                    continue
+                if title == _('Short Position') and obj.long and not obj.short:
+                    continue
+                if title == _('Calculated Fields'):
+                    fields = list(opts.get('fields', ()))
+                    fields = [f for f in fields if f not in (
+                        'spread_open_short', 'spread_close_short', 'spread_short'
+                    )]
+                    opts = {**opts, 'fields': tuple(fields)}
+                keep_sections.append((title, opts))
+            fs = keep_sections
+
+        return fs
+
+    def get_readonly_fields(self, request, obj=None):
+        ro = list(super().get_readonly_fields(request, obj) or self.readonly_fields)
+
+        if obj and obj.type == obj.DealType.TRADE:
+            for f in ('spread_open_short', 'spread_close_short', 'spread_short'):
+                if f in ro:
+                    ro.remove(f)
+            if obj.short and not obj.long:
+                for f in ('open_price_long', 'close_price_long', 'volume_long',
+                          'leverage_long', 'duration_long', 'human_duration_long', 'pair_long'):
+                    if f in ro:
+                        ro.remove(f)
+            if obj.long and not obj.short:
+                for f in ('open_price_short', 'close_price_short', 'volume_short',
+                          'leverage_short', 'duration_short', 'human_duration_short', 'pair_short'):
+                    if f in ro:
+                        ro.remove(f)
+
+        return tuple(ro)
 
     totalsum_list = ('pnl', 'income', 'fees', 'funding', 'roi', 'margin_open', 'margin_close', 'trading_volume')
 

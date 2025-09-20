@@ -7,9 +7,10 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.utils.timesince import timesince
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
+
+from arbitrage.services.arbitrage_service import ArbitrageService
 
 
 class Exchange(models.Model):
@@ -258,13 +259,15 @@ class ArbitrageDealItem(models.Model):
     )
 
     margin_open = models.DecimalField(
-        max_digits=20, decimal_places=8,
+        max_digits=20,
+        decimal_places=8,
         default=Decimal('0.0'),
         verbose_name=_('Margin Open')
     )
 
     margin_close = models.DecimalField(
-        max_digits=20, decimal_places=8,
+        max_digits=20,
+        decimal_places=8,
         default=Decimal('0.0'),
         verbose_name=_('Margin Close')
     )
@@ -300,35 +303,7 @@ class ArbitrageDealItem(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        self.pnl = Decimal('0.0')
-        if self.close_price is not None:
-            if self.side in ('short', 'margin-short'):
-                self.pnl = (self.open_price - self.close_price) * self.volume
-            else:
-                self.pnl = (self.close_price - self.open_price) * self.volume
-
-        self.income = self.pnl
-        if self.fees:
-            self.income += self.fees
-        if self.funding:
-            self.income += self.funding
-
-        self.margin_open = (self.open_price * self.volume / self.leverage)
-        if self.close_price is not None:
-            self.margin_close = (self.close_price * self.volume / self.leverage) + self.income
-
-        if self.margin_open != 0:
-            self.roi = self.income / self.margin_open
-        else:
-            self.roi = Decimal('0.0')
-        self.roi_percent = round(self.roi * Decimal('100.0'), 2)
-
-        if self.open_at and self.close_at:
-            self.duration = self.close_at - self.open_at
-            self.human_duration = timesince(self.open_at, self.close_at)
-        else:
-            self.duration = None
-            self.human_duration = None
+        ArbitrageService.apply_item(self)
 
         super().save(*args, **kwargs)
 
@@ -544,137 +519,9 @@ class ArbitrageDeal(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
 
-        # Handle different deal types
-        if self.type == self.DealType.ARBITRAGE:
-            if not self.short_id or not self.long_id:
-                super().save(*args, **kwargs)
-                return
-            self.exchanges = f'{self.short.exchange} - {self.long.exchange}' if self.short.exchange != self.long.exchange else f'{self.short.exchange}'
-
-            self.pnl = self.short.pnl + self.long.pnl
-            self.income = self.short.income + self.long.income
-            self.fees = self.short.fees + self.long.fees
-            self.funding = self.short.funding + self.long.funding
-
-            total_margin_open = self.short.margin_open + self.long.margin_open
-            self.margin_open = total_margin_open
-            self.margin_close = self.short.margin_close + self.long.margin_close
-        elif self.type == self.DealType.TRADE:
-            if not self.short_id and not self.long_id:
-                super().save(*args, **kwargs)
-                return
-
-            # Use the single position for trade deals
-            position = self.short if self.short else self.long
-            self.exchanges = position.exchange.name
-
-            # Single position values
-            self.pnl = position.pnl
-            self.income = position.income
-            self.fees = position.fees
-            self.funding = position.funding
-            self.margin_open = position.margin_open
-            self.margin_close = position.margin_close
-            total_margin_open = position.margin_open
-        else:
-            super().save(*args, **kwargs)
-            return
-
-        if total_margin_open:
-            self.roi = self.income / total_margin_open
-        else:
-            self.roi = Decimal('0.0')
-
-        self.roi_percent = self.roi * Decimal('100.0')
-
-        if self.type == self.DealType.ARBITRAGE and self.short and self.long:
-            if self.long.open_price and self.short.open_price:
-                self.spread_open = ((self.short.open_price / self.long.open_price) - 1) * Decimal('100.0')
-            else:
-                self.spread_open = Decimal('0.0')
-
-            if self.long.close_price and self.short.close_price:
-                self.spread_close = ((self.short.close_price / self.long.close_price) - 1) * Decimal('100.0')
-            else:
-                self.spread_close = Decimal('0.0')
-
-            self.spread = self.spread_open - self.spread_close
-
-            self.trading_volume = (
-                    (self.short.margin_open + self.long.margin_open) * Decimal(self.short.leverage) +
-                    (self.short.margin_close + self.long.margin_close) * Decimal(self.long.leverage)
-            )
-        else:
-            self.spread_open = Decimal('0.0')
-            self.spread_close = Decimal('0.0')
-            self.spread = Decimal('0.0')
-
-            position = self.short if self.short else self.long
-            if position:
-                self.trading_volume = (
-                        position.margin_open * Decimal(position.leverage) +
-                        position.margin_close * Decimal(position.leverage)
-                )
-            else:
-                self.trading_volume = Decimal('0.0')
-
-        self.spread_open = self.spread_open.quantize(Decimal('0.01'))
-        self.spread_close = self.spread_close.quantize(Decimal('0.01'))
-        self.spread = self.spread.quantize(Decimal('0.01'))
-        self.roi_percent = self.roi_percent.quantize(Decimal('0.01'))
-
-        if self.type == self.DealType.ARBITRAGE and self.short and self.long:
-            if self.short.open_at and self.long.open_at and self.short.close_at and self.long.close_at:
-                self.duration = max(
-                    self.short.close_at, self.long.close_at
-                ) - min(
-                    self.short.open_at, self.long.open_at
-                )
-
-                self.human_duration = timesince(
-                    min(self.short.open_at, self.long.open_at),
-                    max(self.short.close_at, self.long.close_at),
-                )
-        else:
-            position = self.short if self.short else self.long
-            if position and position.open_at and position.close_at:
-                self.duration = position.close_at - position.open_at
-                self.human_duration = timesince(position.open_at, position.close_at)
-            else:
-                self.duration = None
-                self.human_duration = None
-
-        if self.duration and total_margin_open and self.duration.total_seconds() > 0:
-            # APR = (income / margin_open) * (365.25 days / duration) * 100
-            duration_days = Decimal(str(self.duration.total_seconds() / 86400))
-            if duration_days > 0:
-                self.apr_percent = (self.income / total_margin_open) * (Decimal('365.25') / duration_days) * Decimal(
-                    '100.0'
-                )
-            else:
-                self.apr_percent = Decimal('0.0')
-        else:
-            self.apr_percent = Decimal('0.0')
-
-        self.apr_percent = self.apr_percent.quantize(Decimal('0.01'))
+        ArbitrageService.apply_deal(self)
 
         super().save(*args, **kwargs)
-
-        if self.short and self.user != self.short.user:
-            self.short.user = self.user
-            self.short.save(
-                update_fields=[
-                    'user',
-                ],
-            )
-
-        if self.long and self.user != self.long.user:
-            self.long.user = self.user
-            self.long.save(
-                update_fields=[
-                    'user',
-                ],
-            )
 
     def __str__(self):
         if self.type == self.DealType.TRADE:
