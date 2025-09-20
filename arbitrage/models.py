@@ -186,6 +186,7 @@ class ArbitrageDealItem(models.Model):
         max_digits=20,
         decimal_places=8,
         null=True,
+        blank=True,
         verbose_name=_('Close Price'),
     )
 
