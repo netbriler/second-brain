@@ -7,12 +7,12 @@ from users.models import User
 
 
 async def create_or_update_learning_progress(
-    user: User,
-    lesson: Lesson,
-    course: Course = None,
-    lesson_entity: LessonEntity = None,
-    timecode: int = 0,
-    is_finished: bool = None,
+        user: User,
+        lesson: Lesson,
+        course: Course = None,
+        lesson_entity: LessonEntity = None,
+        timecode: int = None,
+        is_finished: bool = None,
 ) -> LearningProgress:
     # Define common filters based on whether lesson_entity is provided
     filters = {
@@ -24,11 +24,16 @@ async def create_or_update_learning_progress(
         filters['lesson_entity'] = lesson_entity
 
     # Try to get the most recent learning progress entry
+    if is_finished is not None:
+        await LearningProgress.objects.filter(**filters).aupdate(
+            is_finished=is_finished,
+        )
+
     progress = await LearningProgress.objects.filter(**filters).order_by('-updated_at').afirst()
 
     if progress:
         # Update the existing entry with new values
-        if timecode:
+        if timecode is not None:
             progress.timecode = timecode
         if is_finished is not None:
             progress.is_finished = is_finished
@@ -48,10 +53,10 @@ async def create_or_update_learning_progress(
 
 
 async def get_last_actual_progress(
-    user: User,
-    course: Course = None,
-    lesson: Lesson = None,
-    lesson_entity: LessonEntity = None,
+        user: User,
+        course: Course = None,
+        lesson: Lesson = None,
+        lesson_entity: LessonEntity = None,
 ) -> LearningProgress | None:
     kwargs = {
         key: value
@@ -142,38 +147,32 @@ async def get_course_lessons_progress(user_id: int, course_id: int) -> LessonsSt
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-WITH lesson_progress AS (
-    SELECT DISTINCT ON (l.id)
-           l.group_id,
-           l.id AS lesson_id,
-           l.title AS lesson_title,
-           COALESCE(lp.is_finished, false) AS is_finished,
-           lp.updated_at AS updated_at,
-           l.position
-    FROM courses_lesson l
-    LEFT JOIN (
-        SELECT lesson_id,
-               is_finished,
-               updated_at
-        FROM courses_learningprogress lp
-        WHERE lp.user_id = %s
-          AND lp.course_id = %s
-        ORDER BY lp.updated_at DESC
-    ) lp ON l.id = lp.lesson_id
-    WHERE l.course_id = %s
-    ORDER BY l.id
-)
-SELECT
-    lesson_id,
-    group_id,
-    is_finished,
-    CASE
-        WHEN NOT is_finished AND updated_at IS NOT NULL THEN true
-        ELSE false
-    END AS is_in_progress
-FROM lesson_progress
-ORDER BY position;
-                        """,
+                WITH lesson_progress AS (SELECT DISTINCT ON (l.id) l.group_id,
+                                                                   l.id                            AS lesson_id,
+                                                                   l.title                         AS lesson_title,
+                                                                   COALESCE(lp.is_finished, false) AS is_finished,
+                                                                   lp.updated_at                   AS updated_at,
+                                                                   l.position
+                                         FROM courses_lesson l
+                                                  LEFT JOIN (SELECT lesson_id,
+                                                                    is_finished,
+                                                                    updated_at
+                                                             FROM courses_learningprogress lp
+                                                             WHERE lp.user_id = %s
+                                                               AND lp.course_id = %s
+                                                             ORDER BY lp.updated_at DESC) lp ON l.id = lp.lesson_id
+                                         WHERE l.course_id = %s
+                                         ORDER BY l.id)
+                SELECT lesson_id,
+                       group_id,
+                       is_finished,
+                       CASE
+                           WHEN NOT is_finished AND updated_at IS NOT NULL THEN true
+                           ELSE false
+                           END AS is_in_progress
+                FROM lesson_progress
+                ORDER BY position;
+                """,
                 [user_id, course_id, course_id],
             )
 
@@ -215,36 +214,30 @@ async def get_group_lessons_progress(user_id: int, group_id: int) -> GroupLesson
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                WITH lesson_progress AS (
-                    SELECT DISTINCT ON (l.id)
-                           l.group_id,
-                           l.id AS lesson_id,
-                           l.title AS lesson_title,
-                           lp.updated_at AS updated_at,
-                           COALESCE(lp.is_finished, false) AS is_finished
-                    FROM courses_lesson l
-                    LEFT JOIN (
-                        SELECT lesson_id,
-                               is_finished,
-                               updated_at
-                        FROM courses_learningprogress lp
-                        WHERE lp.user_id = %s
-                        ORDER BY lp.updated_at DESC
-                    ) lp ON l.id = lp.lesson_id
-                    WHERE l.group_id = %s
-                    ORDER BY l.id
-                )
-                SELECT
-                    lesson_id,
-                    group_id,
-                    is_finished,
-                    CASE
-                        WHEN NOT is_finished AND updated_at IS NOT NULL THEN true
-                        ELSE false
-                    END AS is_in_progress
+                WITH lesson_progress AS (SELECT DISTINCT ON (l.id) l.group_id,
+                                                                   l.id                            AS lesson_id,
+                                                                   l.title                         AS lesson_title,
+                                                                   lp.updated_at                   AS updated_at,
+                                                                   COALESCE(lp.is_finished, false) AS is_finished
+                                         FROM courses_lesson l
+                                                  LEFT JOIN (SELECT lesson_id,
+                                                                    is_finished,
+                                                                    updated_at
+                                                             FROM courses_learningprogress lp
+                                                             WHERE lp.user_id = %s
+                                                             ORDER BY lp.updated_at DESC) lp ON l.id = lp.lesson_id
+                                         WHERE l.group_id = %s
+                                         ORDER BY l.id)
+                SELECT lesson_id,
+                       group_id,
+                       is_finished,
+                       CASE
+                           WHEN NOT is_finished AND updated_at IS NOT NULL THEN true
+                           ELSE false
+                           END AS is_in_progress
                 FROM lesson_progress
                 WHERE group_id = %s;
-                                        """,
+                """,
                 [user_id, group_id, group_id],
             )
 
@@ -275,9 +268,9 @@ UNSTARTED_EMOJI = '🔒'
 
 
 def get_stats_emoji(
-    stats: GroupLessonsStats | LessonsStats,
-    group_id: int = None,
-    lesson_id: int = None,
+        stats: GroupLessonsStats | LessonsStats,
+        group_id: int = None,
+        lesson_id: int = None,
 ) -> str:
     if isinstance(stats, LessonsStats) and group_id:
         stats = stats.groups.get(group_id) if stats else None
@@ -302,7 +295,7 @@ def get_stats_emoji(
 
 
 def get_progress_emoji(
-    learning_progress: LearningProgress,
+        learning_progress: LearningProgress,
 ) -> str:
     if not learning_progress:
         return UNSTARTED_EMOJI
