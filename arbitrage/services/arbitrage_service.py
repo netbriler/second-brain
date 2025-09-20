@@ -96,7 +96,7 @@ class ArbitrageService:
             short.close_price, long.close_price
         )
 
-        deal.trading_volume = (
+        deal.trading_volume = abs(
             (short.margin_open + long.margin_open) * Decimal(short.leverage) +
             (short.margin_close + long.margin_close) * Decimal(long.leverage)
         )
@@ -135,7 +135,7 @@ class ArbitrageService:
         deal.margin_open = pos.margin_open
         deal.margin_close = pos.margin_close
 
-        deal.trading_volume = pos.margin_open * Decimal(pos.leverage) + pos.margin_close * Decimal(pos.leverage)
+        deal.trading_volume = abs(pos.margin_open * Decimal(pos.leverage) + pos.margin_close * Decimal(pos.leverage))
 
         if pos.open_at and pos.close_at:
             deal.duration = pos.close_at - pos.open_at

@@ -58,7 +58,7 @@ services:
     command: python manage.py run_telegram_polling
 
   postgres:
-    image: postgres
+    image: postgres:16
     restart: unless-stopped
     ports:
       - "127.0.0.1:5432:5432"
