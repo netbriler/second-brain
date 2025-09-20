@@ -265,17 +265,10 @@ class ArbitrageDealItem(models.Model):
 
     def save(self, *args, **kwargs):
         # Calculate PnL
-        if self.open_price and self.close_price:
-            if self.side in ('short', 'margin-short'):
-                self.pnl = (self.open_price - self.close_price) * self.volume
-            else:
-                self.pnl = (self.close_price - self.open_price) * self.volume
-
-        # Margin calculations
-        if self.open_price and self.volume:
-            self.margin_open = (self.open_price * self.volume / self.leverage)
-        if self.close_price and self.volume:
-            self.margin_close = (self.close_price * self.volume / self.leverage)
+        if self.side in ('short', 'margin-short'):
+            self.pnl = (self.open_price - self.close_price) * self.volume
+        else:
+            self.pnl = (self.close_price - self.open_price) * self.volume
 
         # Income includes PnL + fees + funding
         self.income = self.pnl
@@ -284,9 +277,15 @@ class ArbitrageDealItem(models.Model):
         if self.funding:
             self.income += self.funding
 
+        # Margin calculations
+        if self.open_price and self.volume:
+            self.margin_open = (self.open_price * self.volume / self.leverage)
+        if self.close_price and self.volume:
+            self.margin_close = (self.close_price * self.volume / self.leverage) + self.income
+
         # ROI based on margin_open
         if self.margin_open != 0:
-            self.roi = self.pnl / self.margin_open
+            self.roi = self.income / self.margin_open
         else:
             self.roi = Decimal('0.0')
 
@@ -299,12 +298,6 @@ class ArbitrageDealItem(models.Model):
 
             # Human duration
             self.human_duration = timesince(self.open_at, self.close_at)
-        elif self.open_at and not self.close_at:
-            self.duration = None
-            self.human_duration = timesince(self.open_at)
-        elif self.close_at and not self.open_at:
-            self.duration = None
-            self.human_duration = timesince(self.close_at)
         else:
             self.duration = None
             self.human_duration = None
@@ -448,6 +441,12 @@ class ArbitrageDeal(models.Model):
         verbose_name=_('Human Duration'),
     )
 
+    apr_percent = models.DecimalField(
+        max_digits=20, decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('APR %'),
+    )
+
     def save(self, *args, **kwargs):
         """
         Compute and store cumulative fields whenever the ArbitrageDeal is saved.
@@ -473,7 +472,7 @@ class ArbitrageDeal(models.Model):
 
         # ROI
         if total_margin_open:
-            self.roi = self.pnl / total_margin_open
+            self.roi = self.income / total_margin_open
         else:
             self.roi = Decimal('0.0')
 
@@ -518,6 +517,23 @@ class ArbitrageDeal(models.Model):
                 min(self.short.open_at, self.long.open_at),
                 max(self.short.close_at, self.long.close_at),
             )
+
+        # APR calculation
+        if self.duration and total_margin_open and self.duration.total_seconds() > 0:
+            # Calculate APR based on income per year
+            # APR = (income / margin_open) * (365.25 days / duration) * 100
+            duration_days = Decimal(str(self.duration.total_seconds() / 86400))
+            if duration_days > 0:
+                self.apr_percent = (self.income / total_margin_open) * (Decimal('365.25') / duration_days) * Decimal(
+                    '100.0'
+                )
+            else:
+                self.apr_percent = Decimal('0.0')
+        else:
+            self.apr_percent = Decimal('0.0')
+
+        # Round APR
+        self.apr_percent = self.apr_percent.quantize(Decimal('0.01'))
 
         super().save(*args, **kwargs)
 

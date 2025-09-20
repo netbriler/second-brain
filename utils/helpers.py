@@ -89,3 +89,14 @@ def trim_trailing_zeros(value, precision=8):
     d = Decimal(value).quantize(Decimal(f"1.{'0' * precision}"))
     s = format(d, 'f').rstrip('0').rstrip('.')
     return s
+
+
+def format_number(value: Decimal) -> str:
+    """
+    Format number with thousands separators (spaces) and up to 6 decimal places,
+    removing trailing zeros and decimal point if not needed.
+    """
+    if value is None:
+        return ''
+
+    return f'{value:,.6f}'.replace(',', ' ').rstrip('0').rstrip('.')

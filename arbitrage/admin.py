@@ -1,10 +1,11 @@
 from admin_auto_filters.filters import AutocompleteFilterFactory
 from django.contrib import admin
+from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from import_export.admin import ImportExportModelAdmin
 from totalsum.admin import TotalsumAdmin
 
-from utils.helpers import trim_trailing_zeros, model_link
+from utils.helpers import format_number, model_link, format_number
 from .forms import UserForm, ExchangeCredentialsAdminForm
 from .models import Exchange, TradingPair, ArbitrageDealItem, ArbitrageDeal, ExchangeCredentials
 from .resources import ArbitrageDealResource, ArbitrageDealItemResource, ArbitrageDealFullResource
@@ -93,32 +94,32 @@ class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     resource_class = ArbitrageDealItemResource
 
     def pnl_short(self, obj):
-        return trim_trailing_zeros(obj.pnl, 8)
+        return format_number(obj.pnl)
 
     pnl_short.short_description = _('PnL')
 
     def income_short(self, obj):
-        return trim_trailing_zeros(obj.income, 8)
+        return format_number(obj.income)
 
     income_short.short_description = _('Income')
 
     def roi_short(self, obj):
-        return trim_trailing_zeros(obj.roi, 8)
+        return format_number(obj.roi)
 
     roi_short.short_description = _('ROI')
 
     def roi_percent_short(self, obj):
-        return trim_trailing_zeros(obj.roi_percent, 8)
+        return format_number(obj.roi_percent)
 
     roi_percent_short.short_description = _('ROI %')
 
     def margin_open_short(self, obj):
-        return trim_trailing_zeros(obj.margin_open, 8)
+        return format_number(obj.margin_open)
 
     margin_open_short.short_description = _('Margin Open')
 
     def margin_close_short(self, obj):
-        return trim_trailing_zeros(obj.margin_close, 8)
+        return format_number(obj.margin_close)
 
     margin_close_short.short_description = _('Margin Close')
 
@@ -180,6 +181,15 @@ class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         }),
     )
 
+    actions = ['recalculate_deal']
+
+    @admin.action(description=_('Recalculate selected deals'))
+    def recalculate_deal(self, request, queryset):
+        for obj in queryset:
+            obj.updated_at = now()
+            obj.save()
+
+
 
 @admin.register(ArbitrageDeal)
 class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
@@ -189,92 +199,107 @@ class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin
         return f'{obj.exchanges}'
 
     exchanges.short_description = _('Exchanges')
+    exchanges.admin_order_field = 'exchanges'
 
     def pnl_short(self, obj):
-        return trim_trailing_zeros(obj.pnl, 8)
+        return format_number(obj.pnl)
 
     pnl_short.short_description = _('PnL')
+    pnl_short.admin_order_field = 'pnl'
 
     def income_short(self, obj):
-        return trim_trailing_zeros(obj.income, 8)
+        return format_number(obj.income)
 
     income_short.short_description = _('Income')
+    income_short.admin_order_field = 'income'
 
     def fees_short(self, obj):
-        return trim_trailing_zeros(obj.fees, 8)
+        return format_number(obj.fees)
 
     fees_short.short_description = _('Fees')
+    fees_short.admin_order_field = 'fees'
 
     def funding_short(self, obj):
-        return trim_trailing_zeros(obj.funding, 8)
+        return format_number(obj.funding)
 
     funding_short.short_description = _('Funding')
+    funding_short.admin_order_field = 'funding'
 
     def roi_short(self, obj):
-        return trim_trailing_zeros(obj.roi, 8)
+        return format_number(obj.roi)
 
     roi_short.short_description = _('ROI')
 
     def roi_percent_short(self, obj):
-        return trim_trailing_zeros(obj.roi_percent, 8) + '%'
+        return format_number(obj.roi_percent) + '%'
 
     roi_percent_short.short_description = _('ROI %')
+    roi_percent_short.admin_order_field = 'roi_percent'
 
     def spread_open_short(self, obj):
-        return trim_trailing_zeros(obj.spread_open, 8) + '%'
+        return format_number(obj.spread_open) + '%'
 
     spread_open_short.short_description = _('Spread Open')
 
     def spread_close_short(self, obj):
-        return trim_trailing_zeros(obj.spread_close, 8) + '%'
+        return format_number(obj.spread_close) + '%'
 
     spread_close_short.short_description = _('Spread Close')
 
     def spread_short(self, obj):
-        return trim_trailing_zeros(obj.spread, 8) + '%'
+        return format_number(obj.spread) + '%'
 
     spread_short.short_description = _('Spread')
+    spread_short.admin_order_field = 'spread'
 
     def margin_open_short(self, obj):
-        return trim_trailing_zeros(obj.margin_open, 8)
+        return format_number(obj.margin_open)
 
     margin_open_short.short_description = _('Margin Open')
+    margin_open_short.admin_order_field = 'margin_open'
 
     def margin_close_short(self, obj):
-        return trim_trailing_zeros(obj.margin_close, 8)
+        return format_number(obj.margin_close)
 
     margin_close_short.short_description = _('Margin Close')
 
     def trading_volume_short(self, obj):
-        return trim_trailing_zeros(obj.trading_volume, 8)
+        return format_number(obj.trading_volume)
 
     trading_volume_short.short_description = _('Trading Volume')
+    trading_volume_short.admin_order_field = 'trading_volume'
+
+    def apr_percent_short(self, obj):
+        return format_number(obj.apr_percent) + '%'
+
+    apr_percent_short.short_description = _('APR %')
+    apr_percent_short.admin_order_field = 'apr_percent'
 
     def open_price_short(self, obj):
         if not obj.short:
             return '-'
-        return trim_trailing_zeros(obj.short.open_price, 8)
+        return format_number(obj.short.open_price)
 
     open_price_short.short_description = _('Open Price Short')
 
     def close_price_short(self, obj):
         if not obj.short:
             return '-'
-        return trim_trailing_zeros(obj.short.close_price, 8)
+        return format_number(obj.short.close_price)
 
     close_price_short.short_description = _('Close Price Short')
 
     def volume_short(self, obj):
         if not obj.short:
             return '-'
-        return trim_trailing_zeros(obj.short.volume, 8)
+        return format_number(obj.short.volume)
 
     volume_short.short_description = _('Volume Short')
 
     def leverage_short(self, obj):
         if not obj.short:
             return '-'
-        return trim_trailing_zeros(obj.short.leverage, 8)
+        return format_number(obj.short.leverage)
 
     leverage_short.short_description = _('Leverage Short')
 
@@ -302,28 +327,28 @@ class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin
     def open_price_long(self, obj):
         if not obj.long:
             return '-'
-        return trim_trailing_zeros(obj.long.open_price, 8)
+        return format_number(obj.long.open_price)
 
     open_price_long.long_description = _('Open Price Long')
 
     def close_price_long(self, obj):
         if not obj.long:
             return '-'
-        return trim_trailing_zeros(obj.long.close_price, 8)
+        return format_number(obj.long.close_price)
 
     close_price_long.long_description = _('Close Price Long')
 
     def volume_long(self, obj):
         if not obj.long:
             return '-'
-        return trim_trailing_zeros(obj.long.volume, 8)
+        return format_number(obj.long.volume)
 
     volume_long.long_description = _('Volume Long')
 
     def leverage_long(self, obj):
         if not obj.long:
             return '-'
-        return trim_trailing_zeros(obj.long.leverage, 8)
+        return format_number(obj.long.leverage)
 
     leverage_long.long_description = _('Leverage Long')
 
@@ -364,16 +389,17 @@ class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin
     search_fields = ('user__username', 'short__exchange__name', 'long__exchange__name')
 
     list_display = (
-        'exchanges', 'pair', 'user', 'pnl_short', 'income_short', 'fees_short', 'funding_short',
-        'roi_percent_short', 'spread_open_short', 'spread_close_short', 'spread_short',
-        'margin_open_short', 'margin_close_short', 'trading_volume_short',
+        'user', 'pair', 'exchanges',
+        'pnl_short', 'income_short', 'roi_percent_short', 'apr_percent_short',
+        'spread_short', 'margin_open_short', 'trading_volume_short',
+        'fees_short', 'funding_short',
         'duration', 'human_duration',
-        'created_at', 'updated_at'
+        'created_at'
     )
 
     readonly_fields = (
         'pnl_short', 'income_short', 'fees_short', 'funding_short',
-        'roi_short', 'roi_percent_short', 'spread_open_short',
+        'roi_short', 'roi_percent_short', 'apr_percent_short', 'spread_open_short',
         'spread_close_short', 'spread_short',
         'margin_open_short', 'margin_close_short',
         'trading_volume_short',
@@ -413,7 +439,7 @@ class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin
         (_('Calculated Fields'), {
             'fields': (
                 'pnl_short', 'income_short', 'funding_short', 'fees_short',
-                'roi_short', 'roi_percent_short',
+                'roi_short', 'roi_percent_short', 'apr_percent_short',
                 'spread_open_short', 'spread_close_short', 'spread_short',
                 'margin_open_short', 'margin_close_short', 'trading_volume_short',
                 'duration', 'human_duration',
@@ -427,7 +453,7 @@ class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin
     totalsum_list = ('pnl', 'income', 'fees', 'funding', 'roi', 'margin_open', 'margin_close', 'trading_volume')
 
     action_form = UserForm
-    actions = ['assign_user']
+    actions = ['assign_user', 'recalculate_deal']
 
     @admin.action(description=_('Assign selected user to a deal'))
     def assign_user(self, request, queryset):
@@ -447,3 +473,9 @@ class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin
                     obj.long.save(
                         update_fields=['user_id']
                     )
+
+    @admin.action(description=_('Recalculate selected deals'))
+    def recalculate_deal(self, request, queryset):
+        for obj in queryset:
+            obj.updated_at = now()
+            obj.save()
