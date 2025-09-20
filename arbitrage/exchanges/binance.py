@@ -1,5 +1,7 @@
+import asyncio
 import hashlib
 import hmac
+from datetime import datetime, timedelta
 from decimal import Decimal
 from time import time
 from urllib.parse import urlencode
@@ -228,3 +230,115 @@ class BinanceExchange(AbstractExchange):
         all_balances.extend(earn_balances)
 
         return all_balances
+
+    async def get_all_movements(self, start_time: int = None, end_time: int = None):
+        """
+        Fetches all asset movements: deposits, withdrawals, transfers, earn rewards, and dividends.
+        Returns a list of unified movement records.
+        """
+
+        if not start_time:
+            # Default to last 90 days (max allowed for some endpoints)
+            start_time = int((datetime.utcnow() - timedelta(days=90)).timestamp() * 1000)
+        if not end_time:
+            end_time = int(datetime.utcnow().timestamp() * 1000)
+
+        tasks = [
+            self._send_signed_request(
+                'GET', '/sapi/v1/capital/deposit/hisrec', {
+                    'startTime': start_time,
+                    'endTime': end_time
+                }
+            ),
+            self._send_signed_request(
+                'GET', '/sapi/v1/capital/withdraw/history', {
+                    'startTime': start_time,
+                    'endTime': end_time
+                }
+            ),
+            self._send_signed_request(
+                'GET', '/sapi/v1/asset/transfer', {
+                    'type': 0,  # all types
+                    'startTime': start_time,
+                    'endTime': end_time
+                }
+            ),
+            self._send_signed_request(
+                'GET', '/sapi/v1/asset/assetDividend', {
+                    'startTime': start_time,
+                    'endTime': end_time
+                }
+            ),
+            self._send_signed_request(
+                'GET', '/sapi/v1/simple-earn/flexible/history/rewardsRecord', {
+                    'startTime': start_time,
+                    'endTime': end_time,
+                    'type': 'ALL',
+                }
+            )
+        ]
+
+        try:
+            deposit_data, withdraw_data, transfer_data, dividend_data, earn_data = await asyncio.gather(*tasks)
+
+            movements = []
+
+            for d in deposit_data:
+                movements.append(
+                    {
+                        'type': 'deposit',
+                        'asset': d['coin'],
+                        'amount': d['amount'],
+                        'status': d['status'],
+                        'time': d['insertTime']
+                    }
+                )
+
+            for w in withdraw_data:
+                movements.append(
+                    {
+                        'type': 'withdrawal',
+                        'asset': w['coin'],
+                        'amount': w['amount'],
+                        'status': w['status'],
+                        'time': w['applyTime']
+                    }
+                )
+
+            for t in transfer_data.get('rows', []):
+                movements.append(
+                    {
+                        'type': 'internal_transfer',
+                        'asset': t['asset'],
+                        'amount': t['qty'],
+                        'from': t['fromAccountType'],
+                        'to': t['toAccountType'],
+                        'time': t['timestamp']
+                    }
+                )
+
+            for r in dividend_data.get('rows', []):
+                movements.append(
+                    {
+                        'type': 'dividend',
+                        'asset': r['asset'],
+                        'amount': r['amount'],
+                        'info': r['tranId'],
+                        'time': r['divTime']
+                    }
+                )
+
+            for e in earn_data:
+                movements.append(
+                    {
+                        'type': 'earn_reward',
+                        'asset': e['asset'],
+                        'amount': e['interest'],
+                        'time': e['time']
+                    }
+                )
+
+            return sorted(movements, key=lambda x: x['time'])
+        except Exception as e:
+            logger.exception("Failed to fetch all movements")
+            return []
