@@ -1,14 +1,15 @@
 from admin_auto_filters.filters import AutocompleteFilterFactory
 from django.contrib import admin
+from django.db.models import Q
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from import_export.admin import ImportExportModelAdmin
 from totalsum.admin import TotalsumAdmin
 
-from utils.helpers import format_number, model_link, format_number
+from utils.helpers import model_link, format_number
 from .forms import UserForm, ExchangeCredentialsAdminForm
 from .models import Exchange, TradingPair, ArbitrageDealItem, ArbitrageDeal, ExchangeCredentials
-from .resources import ArbitrageDealResource, ArbitrageDealItemResource, ArbitrageDealFullResource
+from .resources import ArbitrageDealItemResource, ArbitrageDealFullResource
 
 
 class ExchangeCredentialsInline(admin.TabularInline):
@@ -31,7 +32,12 @@ class ExchangeCredentialsInline(admin.TabularInline):
 
 @admin.register(Exchange)
 class ExchangeAdmin(ImportExportModelAdmin, admin.ModelAdmin):
-    list_display = ('name', 'is_enabled')
+    list_display = ('name', 'is_enabled', 'created_at', 'updated_at')
+    list_filter = (
+        'is_enabled',
+        'created_at',
+        'updated_at',
+    )
     fieldsets = (
         (None, {
             'fields': ('name', 'is_enabled')
@@ -53,7 +59,17 @@ class ExchangeCredentialsAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         'exchange',
         'user',
         'api_key',
-        'is_enabled'
+        'is_enabled',
+        'created_at',
+        'updated_at'
+    )
+
+    list_filter = (
+        AutocompleteFilterFactory(_('Exchange'), 'exchange'),
+        AutocompleteFilterFactory(_('User'), 'user'),
+        'is_enabled',
+        'created_at',
+        'updated_at',
     )
 
     fieldsets = (
@@ -71,12 +87,19 @@ class ExchangeCredentialsAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         }),
     )
     readonly_fields = ('created_at', 'updated_at',)
+    autocomplete_fields = ('exchange', 'user')
     search_fields = ('exchange__name', 'user__username')
 
 
 @admin.register(TradingPair)
 class TradingPairAdmin(ImportExportModelAdmin, admin.ModelAdmin):
-    list_display = ('base_currency', 'quote_currency', 'symbol')
+    list_display = ('base_currency', 'quote_currency', 'symbol', 'created_at', 'updated_at')
+    list_filter = (
+        'base_currency',
+        'quote_currency',
+        'created_at',
+        'updated_at',
+    )
     fieldsets = (
         (None, {
             'fields': ('base_currency', 'quote_currency', 'symbol')
@@ -86,7 +109,7 @@ class TradingPairAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         }),
     )
     readonly_fields = ('created_at', 'updated_at', 'symbol')
-    search_fields = ('symbol',)
+    search_fields = ('symbol', 'base_currency', 'quote_currency')
 
 
 @admin.register(ArbitrageDealItem)
@@ -147,6 +170,9 @@ class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         AutocompleteFilterFactory(_('Exchange'), 'exchange'),
         'side',
         'is_liquidated',
+        'leverage',
+        'open_at',
+        'close_at',
         'created_at',
         'updated_at',
     )
@@ -181,7 +207,7 @@ class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         }),
     )
 
-    actions = ['recalculate_deal']
+    actions = ['recalculate_deal', 'delete_unused_items']
 
     @admin.action(description=_('Recalculate selected deals'))
     def recalculate_deal(self, request, queryset):
@@ -189,11 +215,28 @@ class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
             obj.updated_at = now()
             obj.save()
 
+    @admin.action(description=_('Delete unused items'))
+    def delete_unused_items(self, request, queryset):
+        used_ids = set(
+            ArbitrageDeal.objects.filter(
+                Q(short__in=queryset) | Q(long__in=queryset)
+            ).values_list('short_id', 'long_id')
+        )
+        used_ids = {id for pair in used_ids for id in pair if id is not None}
+
+        unused_items = queryset.exclude(id__in=used_ids)
+        deleted_count = unused_items.count()
+
+        if deleted_count > 0:
+            unused_items.delete()
+            self.message_user(request, f'Successfully deleted {deleted_count} unused item(s).')
+        else:
+            self.message_user(request, 'No unused items found to delete.')
 
 
 @admin.register(ArbitrageDeal)
 class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
-    resource_classes = [ArbitrageDealResource, ArbitrageDealFullResource]
+    resource_classes = [ArbitrageDealFullResource]
 
     def exchanges(self, obj):
         return f'{obj.exchanges}'
@@ -381,6 +424,13 @@ class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin
         AutocompleteFilterFactory(_('User'), 'user'),
         AutocompleteFilterFactory(_('Short'), 'short'),
         AutocompleteFilterFactory(_('Long'), 'long'),
+        AutocompleteFilterFactory(_('Short Trading Pair'), 'short__trading_pair'),
+        AutocompleteFilterFactory(_('Long Trading Pair'), 'long__trading_pair'),
+        AutocompleteFilterFactory(_('Short Exchange'), 'short__exchange'),
+        AutocompleteFilterFactory(_('Long Exchange'), 'long__exchange'),
+        'type',
+        'short__is_liquidated',
+        'long__is_liquidated',
         'created_at',
         'updated_at',
     )
@@ -417,7 +467,7 @@ class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin
     fieldsets = (
         (_('Deal Owner & Items'), {
             'fields': (
-                'user', 'short', 'long', 'note',
+                'user', 'short', 'long', 'type', 'note',
             )
         }),
         (_('Short Position'), {

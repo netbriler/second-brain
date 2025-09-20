@@ -409,33 +409,6 @@ class ArbitrageDealFullResource(resources.ModelResource):
         return super().import_row(row, instance_loader, **kwargs)
 
 
-class ArbitrageDealResource(resources.ModelResource):
-    class Meta:
-        model = ArbitrageDeal
-        fields = (
-            'id',
-            'short',
-            'long',
-            'note',
-            'created_at',
-            'updated_at',
-            'exchanges',
-            'pnl',
-            'income',
-            'fees',
-            'funding',
-            'roi',
-            'roi_percent',
-            'spread_open',
-            'spread_close',
-            'spread',
-            'margin_open',
-            'margin_close',
-            'trading_volume',
-        )
-        export_order = fields
-
-
 class ArbitrageDealItemResource(resources.ModelResource):
     class Meta:
         model = ArbitrageDealItem
