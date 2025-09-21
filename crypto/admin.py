@@ -2,6 +2,7 @@ from copy import deepcopy
 
 from admin_auto_filters.filters import AutocompleteFilterFactory
 from django.contrib import admin
+from django.contrib.admin import SimpleListFilter
 from django.db.models import Q
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
@@ -248,6 +249,66 @@ class CryptoDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
             self.message_user(request, 'No unused items found to delete.')
 
 
+class PnLRangeFilter(SimpleListFilter):
+    title = _('PnL Range')
+    parameter_name = 'pnl_range'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('positive', _('Positive (> 0)')),
+            ('negative', _('Negative (< 0)')),
+            ('gt_100', _('> 100')),
+            ('gt_1000', _('> 1000')),
+            ('lt_minus_100', _('< -100')),
+            ('lt_minus_1000', _('< -1000')),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'positive':
+            return queryset.filter(pnl__gt=0)
+        if self.value() == 'negative':
+            return queryset.filter(pnl__lt=0)
+        if self.value() == 'gt_100':
+            return queryset.filter(pnl__gt=100)
+        if self.value() == 'gt_1000':
+            return queryset.filter(pnl__gt=1000)
+        if self.value() == 'lt_minus_100':
+            return queryset.filter(pnl__lt=-100)
+        if self.value() == 'lt_minus_1000':
+            return queryset.filter(pnl__lt=-1000)
+        return queryset
+
+
+class IncomeRangeFilter(SimpleListFilter):
+    title = _('Income Range')
+    parameter_name = 'income_range'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('positive', _('Positive (> 0)')),
+            ('negative', _('Negative (< 0)')),
+            ('gt_100', _('> 100')),
+            ('gt_1000', _('> 1000')),
+            ('lt_minus_100', _('< -100')),
+            ('lt_minus_1000', _('< -1000')),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'positive':
+            return queryset.filter(income__gt=0)
+        if self.value() == 'negative':
+            return queryset.filter(income__lt=0)
+        if self.value() == 'gt_100':
+            return queryset.filter(income__gt=100)
+        if self.value() == 'gt_1000':
+            return queryset.filter(income__gt=1000)
+        if self.value() == 'lt_minus_100':
+            return queryset.filter(income__lt=-100)
+        if self.value() == 'lt_minus_1000':
+            return queryset.filter(income__lt=-1000)
+        return queryset
+
+
 @admin.register(CryptoDeal)
 class CryptoDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
     resource_classes = [CryptoDealFullResource]
@@ -443,6 +504,8 @@ class CryptoDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
         AutocompleteFilterFactory(_('Short Exchange'), 'short__exchange'),
         AutocompleteFilterFactory(_('Long Exchange'), 'long__exchange'),
         'type',
+        PnLRangeFilter,
+        IncomeRangeFilter,
         'short__is_liquidated',
         'long__is_liquidated',
         'created_at',
