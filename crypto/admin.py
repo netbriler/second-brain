@@ -453,7 +453,7 @@ class CryptoDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
     search_fields = ('user__username', 'short__exchange__name', 'long__exchange__name')
 
     list_display = (
-        'user', 'pair', 'exchanges',
+        'user', 'type', 'pair', 'exchanges',
         'pnl_short', 'income_short', 'roi_percent_short', 'apr_percent_short',
         'spread_short', 'margin_open_short', 'trading_volume_short',
         'fees_short', 'funding_short',

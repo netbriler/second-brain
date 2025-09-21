@@ -15,13 +15,6 @@ from .models import (
 
 
 class CryptoDealFullResource(resources.ModelResource):
-    """
-    A resource for importing/exporting CryptoDeal and its related
-    short/long CryptoDealItem. We also handle creation of TradingPair
-    and Exchange if they do not exist on import.
-    """
-
-    # Short fields
     short_exchange = fields.Field(attribute='short.exchange.name', column_name='short_exchange')
     short_symbol = fields.Field(attribute='short.trading_pair.symbol', column_name='short_symbol')
     short_side = fields.Field(attribute='short.side', column_name='short_side')
@@ -35,7 +28,6 @@ class CryptoDealFullResource(resources.ModelResource):
     short_open_at = fields.Field(attribute='short.open_at', column_name='short_open_at')
     short_close_at = fields.Field(attribute='short.close_at', column_name='short_close_at')
 
-    # Long fields
     long_exchange = fields.Field(attribute='long.exchange.name', column_name='long_exchange')
     long_symbol = fields.Field(attribute='long.trading_pair.symbol', column_name='long_symbol')
     long_side = fields.Field(attribute='long.side', column_name='long_side')
@@ -67,6 +59,7 @@ class CryptoDealFullResource(resources.ModelResource):
         fields = (
             # Main CryptoDeal fields first:
             'id',
+            'type',
             'long',
             'short',
             'note',
@@ -82,6 +75,10 @@ class CryptoDealFullResource(resources.ModelResource):
             'margin_open',
             'margin_close',
             'trading_volume',
+            'duration',
+            'human_duration',
+            'apr_percent',
+            'exchanges',
             'created_at',
             'updated_at',
             # Then short item:
@@ -114,6 +111,7 @@ class CryptoDealFullResource(resources.ModelResource):
         export_order = (
             # Main CryptoDeal fields first:
             'id',
+            'type',
             'note',
             'pnl',
             'income',
@@ -127,6 +125,10 @@ class CryptoDealFullResource(resources.ModelResource):
             'margin_open',
             'margin_close',
             'trading_volume',
+            'duration',
+            'human_duration',
+            'apr_percent',
+            'exchanges',
             'created_at',
             'updated_at',
             # Then short item:
@@ -171,43 +173,63 @@ class CryptoDealFullResource(resources.ModelResource):
 
     def dehydrate_short_side(self, obj):
         """For exporting short side."""
-        return obj.short.side
+        if obj.short:
+            return obj.short.side
+        return ''
 
     def dehydrate_short_open_price(self, obj):
         """For exporting short open price."""
-        return obj.short.open_price
+        if obj.short:
+            return obj.short.open_price
+        return ''
 
     def dehydrate_short_close_price(self, obj):
         """For exporting short close price."""
-        return obj.short.close_price
+        if obj.short:
+            return obj.short.close_price
+        return ''
 
     def dehydrate_short_volume(self, obj):
         """For exporting short volume."""
-        return obj.short.volume
+        if obj.short:
+            return obj.short.volume
+        return ''
 
     def dehydrate_short_leverage(self, obj):
         """For exporting short leverage."""
-        return obj.short.leverage
+        if obj.short:
+            return obj.short.leverage
+        return ''
 
     def dehydrate_short_fees(self, obj):
         """For exporting short fees."""
-        return obj.short.fees
+        if obj.short:
+            return obj.short.fees
+        return ''
 
     def dehydrate_short_funding(self, obj):
         """For exporting short funding."""
-        return obj.short.funding
+        if obj.short:
+            return obj.short.funding
+        return ''
 
     def dehydrate_short_is_liquidated(self, obj):
         """For exporting short is liquidated."""
-        return obj.short.is_liquidated
+        if obj.short:
+            return obj.short.is_liquidated
+        return ''
 
     def dehydrate_short_open_at(self, obj):
         """For exporting short open at."""
-        return obj.short.open_at
+        if obj.short:
+            return obj.short.open_at
+        return ''
 
     def dehydrate_short_close_at(self, obj):
         """For exporting short close at."""
-        return obj.short.close_at
+        if obj.short:
+            return obj.short.close_at
+        return ''
 
     def dehydrate_long_exchange(self, obj):
         """For exporting long exchange name."""
@@ -223,43 +245,63 @@ class CryptoDealFullResource(resources.ModelResource):
 
     def dehydrate_long_side(self, obj):
         """For exporting long side."""
-        return obj.long.side
+        if obj.long:
+            return obj.long.side
+        return ''
 
     def dehydrate_long_open_price(self, obj):
         """For exporting long open price."""
-        return obj.long.open_price
+        if obj.long:
+            return obj.long.open_price
+        return ''
 
     def dehydrate_long_close_price(self, obj):
         """For exporting long close price."""
-        return obj.long.close_price
+        if obj.long:
+            return obj.long.close_price
+        return ''
 
     def dehydrate_long_volume(self, obj):
         """For exporting long volume."""
-        return obj.long.volume
+        if obj.long:
+            return obj.long.volume
+        return ''
 
     def dehydrate_long_leverage(self, obj):
         """For exporting long leverage."""
-        return obj.long.leverage
+        if obj.long:
+            return obj.long.leverage
+        return ''
 
     def dehydrate_long_fees(self, obj):
         """For exporting long fees."""
-        return obj.long.fees
+        if obj.long:
+            return obj.long.fees
+        return ''
 
     def dehydrate_long_funding(self, obj):
         """For exporting long funding."""
-        return obj.long.funding
+        if obj.long:
+            return obj.long.funding
+        return ''
 
     def dehydrate_long_is_liquidated(self, obj):
         """For exporting long is liquidated."""
-        return obj.long.is_liquidated
+        if obj.long:
+            return obj.long.is_liquidated
+        return ''
 
     def dehydrate_long_open_at(self, obj):
         """For exporting long open at."""
-        return obj.long.open_at
+        if obj.long:
+            return obj.long.open_at
+        return ''
 
     def dehydrate_long_close_at(self, obj):
         """For exporting long close at."""
-        return obj.long.close_at
+        if obj.long:
+            return obj.long.close_at
+        return ''
 
     # You can define similar `dehydrate_` methods for each short_ and long_ field
     # if you need fine-grained export formatting. Otherwise, the direct
@@ -315,21 +357,17 @@ class CryptoDealFullResource(resources.ModelResource):
         # Create or get the short trading pair
         short_trading_pair_obj = None
         if short_symbol:
-            # For example, if the symbol is 'BTC/USDT', split by '/'
             parts = short_symbol.split('/')
             if len(parts) == 2:
                 base_currency, quote_currency = parts
             else:
-                # Fallback if symbol doesn't contain '/'
                 base_currency = short_symbol
                 quote_currency = ''
             short_trading_pair_obj, _ = TradingPair.objects.get_or_create(
                 base_currency=base_currency,
                 quote_currency=quote_currency,
             )
-            # The save method will set symbol automatically.
 
-        # Create or get the long trading pair
         long_trading_pair_obj = None
         if long_symbol:
             parts = long_symbol.split('/')
@@ -343,68 +381,51 @@ class CryptoDealFullResource(resources.ModelResource):
                 quote_currency=quote_currency,
             )
 
-        # We will build or update short and long CryptoDealItem instances ourselves,
-        # attach them to the row in memory, then proceed with the normal import flow.
-
         try:
-            # We do not know if there's an existing PK in the row for the short or long,
-            # so we always create new or update existing. Typically for a single CSV row
-            # we are creating new items. If you want to handle updates, you'll need
-            # logic to match on an identifier.
+            if short_open_price is not None:
+                short_item = CryptoDealItem()
+                if short_exchange_obj:
+                    short_item.exchange = short_exchange_obj
+                if short_trading_pair_obj:
+                    short_item.trading_pair = short_trading_pair_obj
+                short_item.side = short_side or ''
+                short_item.open_price = Decimal(short_open_price) if short_open_price else Decimal('0')
+                short_item.close_price = Decimal(short_close_price) if short_close_price else Decimal('0')
+                short_item.volume = Decimal(short_volume) if short_volume else Decimal('0')
+                short_item.leverage = int(short_leverage) if short_leverage else 1
+                short_item.fees = Decimal(short_fees) if short_fees else Decimal('0')
+                short_item.funding = Decimal(short_funding) if short_funding else Decimal('0')
+                short_item.is_liquidated = (str(short_is_liquidated).lower() == 'true')
+                short_item.open_at = short_open_at or None
+                short_item.close_at = short_close_at or None
 
-            short_item = CryptoDealItem()
-            if short_exchange_obj:
-                short_item.exchange = short_exchange_obj
-            if short_trading_pair_obj:
-                short_item.trading_pair = short_trading_pair_obj
-            short_item.side = short_side or ''
-            short_item.open_price = Decimal(short_open_price) if short_open_price else Decimal('0')
-            short_item.close_price = Decimal(short_close_price) if short_close_price else Decimal('0')
-            short_item.volume = Decimal(short_volume) if short_volume else Decimal('0')
-            short_item.leverage = int(short_leverage) if short_leverage else 1
-            short_item.fees = Decimal(short_fees) if short_fees else Decimal('0')
-            short_item.funding = Decimal(short_funding) if short_funding else Decimal('0')
-            short_item.is_liquidated = (str(short_is_liquidated).lower() == 'true')
-            short_item.open_at = short_open_at or None
-            short_item.close_at = short_close_at or None
+                short_item.save()
+                row['short'] = short_item.id
+                row['short_id'] = short_item.id
 
-            short_item.save()
-            row['short'] = short_item.id
-            row['short_id'] = short_item.id
+            if long_open_price is not None:
+                long_item = CryptoDealItem()
+                if long_exchange_obj:
+                    long_item.exchange = long_exchange_obj
+                if long_trading_pair_obj:
+                    long_item.trading_pair = long_trading_pair_obj
+                long_item.side = long_side or ''
+                long_item.open_price = Decimal(long_open_price) if long_open_price else Decimal('0')
+                long_item.close_price = Decimal(long_close_price) if long_close_price else Decimal('0')
+                long_item.volume = Decimal(long_volume) if long_volume else Decimal('0')
+                long_item.leverage = int(long_leverage) if long_leverage else 1
+                long_item.fees = Decimal(long_fees) if long_fees else Decimal('0')
+                long_item.funding = Decimal(long_funding) if long_funding else Decimal('0')
+                long_item.is_liquidated = (str(long_is_liquidated).lower() == 'true')
+                long_item.open_at = long_open_at or None
+                long_item.close_at = long_close_at or None
 
-            long_item = CryptoDealItem()
-            if long_exchange_obj:
-                long_item.exchange = long_exchange_obj
-            if long_trading_pair_obj:
-                long_item.trading_pair = long_trading_pair_obj
-            long_item.side = long_side or ''
-            long_item.open_price = Decimal(long_open_price) if long_open_price else Decimal('0')
-            long_item.close_price = Decimal(long_close_price) if long_close_price else Decimal('0')
-            long_item.volume = Decimal(long_volume) if long_volume else Decimal('0')
-            long_item.leverage = int(long_leverage) if long_leverage else 1
-            long_item.fees = Decimal(long_fees) if long_fees else Decimal('0')
-            long_item.funding = Decimal(long_funding) if long_funding else Decimal('0')
-            long_item.is_liquidated = (str(long_is_liquidated).lower() == 'true')
-            long_item.open_at = long_open_at or None
-            long_item.close_at = long_close_at or None
-
-            long_item.save()
-            row['long'] = long_item.id
-            row['long_id'] = long_item.id
+                long_item.save()
+                row['long'] = long_item.id
+                row['long_id'] = long_item.id
 
         except Exception as exc:
             raise exc
-            result = super().import_row(row, instance_loader, **kwargs)
-            # Record the error. The transaction will roll back anyway.
-            row_errors = result.errors or []
-            row_errors.append(Error(str(exc), row_number))
-            result.errors = row_errors
-            return result
-
-        # Now that we have the short_item and long_item saved, we want to ensure
-        # that the main CryptoDeal row references these two items. We'll inject
-        # them into the incoming dataset so that the normal import logic
-        # (which tries to create CryptoDeal) uses them.
 
         return super().import_row(row, instance_loader, **kwargs)
 
