@@ -56,10 +56,10 @@ class ArbitrageService:
             item.margin_close = item.margin_open + item.income
 
         item.trading_volume = abs(
-            item.volume * item.open_price * Decimal(item.leverage)
+            item.volume * item.open_price
         )
         if item.close_price is not None:
-            item.trading_volume += abs(item.volume * item.close_price * Decimal(item.leverage))
+            item.trading_volume += abs(item.volume * item.close_price)
 
         item.roi = item.income / item.margin_open if item.margin_open else ZERO
         item.roi_percent = ArbitrageService._q2(item.roi * HUNDRED)
