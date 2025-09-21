@@ -316,8 +316,8 @@ class CryptoDealItem(models.Model):
         verbose_name=_('Human Duration'),
     )
 
-    def save(self, dont_apply_item: bool = False, *args, **kwargs):
-        if dont_apply_item:
+    def save(self, apply_item: bool = True, *args, **kwargs):
+        if apply_item:
             CryptoService.apply_item(self)
 
         super().save(*args, **kwargs)

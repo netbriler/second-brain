@@ -86,8 +86,8 @@ class CryptoService:
 
         CryptoService.apply_item(short, deal.user)
         CryptoService.apply_item(long, deal.user)
-        short.save(dont_apply_item=True)
-        long.save(dont_apply_item=True)
+        short.save(apply_item=False)
+        long.save(apply_item=False)
 
         deal.exchanges = f'{short.exchange} - {long.exchange}' if short.exchange != long.exchange else f'{short.exchange}'
 
@@ -108,9 +108,15 @@ class CryptoService:
             short.trading_volume + long.trading_volume
         )
 
-        if short.open_at and long.open_at and short.close_at and long.close_at:
-            deal.duration = max(short.close_at, long.close_at) - min(short.open_at, long.open_at)
-            deal.human_duration = timesince(min(short.open_at, long.open_at), max(short.close_at, long.close_at))
+        opens,closes = [t for t in (short.open_at, short.open_at) if t is not None]
+        closes = [t for t in (short.close_at, short.close_at) if t is not None]
+        if opens and closes:
+            min_open_at, max_close_at = min(opens), max(closes)
+            deal.duration = max_close_at - min_open_at
+            deal.human_duration = timesince(min_open_at, max_close_at)
+        else:
+            deal.duration = None
+            deal.human_duration = None
 
         deal.roi = deal.income / deal.margin_open if deal.margin_open else ZERO
         deal.roi_percent = CryptoService._q2(deal.roi * HUNDRED)
@@ -133,7 +139,7 @@ class CryptoService:
             return deal
 
         CryptoService.apply_item(pos)
-        pos.save(dont_apply_item=True)
+        pos.save(apply_item=False)
 
         deal.exchanges = pos.exchange.name
         deal.pnl = pos.pnl
