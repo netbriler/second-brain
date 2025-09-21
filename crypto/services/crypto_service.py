@@ -108,7 +108,7 @@ class CryptoService:
             short.trading_volume + long.trading_volume
         )
 
-        opens,closes = [t for t in (short.open_at, short.open_at) if t is not None]
+        opens = [t for t in (short.open_at, short.open_at) if t is not None]
         closes = [t for t in (short.close_at, short.close_at) if t is not None]
         if opens and closes:
             min_open_at, max_close_at = min(opens), max(closes)
