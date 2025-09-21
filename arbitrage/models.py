@@ -317,7 +317,8 @@ class ArbitrageDealItem(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        ArbitrageService.apply_item(self)
+        if kwargs.get('dont_apply_item'):
+            ArbitrageService.apply_item(self)
 
         super().save(*args, **kwargs)
 

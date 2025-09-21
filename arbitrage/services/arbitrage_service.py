@@ -85,9 +85,9 @@ class ArbitrageService:
             return deal
 
         ArbitrageService.apply_item(short, deal.user)
-        short.save()
         ArbitrageService.apply_item(long, deal.user)
-        long.save()
+        short.save(dont_apply_item=True)
+        long.save(dont_apply_item=True)
 
         deal.exchanges = f'{short.exchange} - {long.exchange}' if short.exchange != long.exchange else f'{short.exchange}'
 
@@ -133,7 +133,7 @@ class ArbitrageService:
             return deal
 
         ArbitrageService.apply_item(pos)
-        pos.save()
+        pos.save(dont_apply_item=True)
 
         deal.exchanges = pos.exchange.name
         deal.pnl = pos.pnl
