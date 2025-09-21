@@ -2,7 +2,7 @@ import asyncio
 
 from django.core.management.base import BaseCommand
 
-from arbitrage.exchanges.binance import BinanceExchange
+from crypto.exchanges.binance import BinanceExchange
 
 
 class Command(BaseCommand):

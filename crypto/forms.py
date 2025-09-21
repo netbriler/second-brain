@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.admin.helpers import ActionForm
 
-from arbitrage.models import ExchangeCredentials
+from crypto.models import ExchangeCredentials
 from users.models import User
 
 

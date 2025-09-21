@@ -3,11 +3,11 @@ from django.apps import AppConfig
 from django.utils.translation import gettext_lazy as _
 
 
-class ArbitrageConfig(AppConfig):
+class CryptoConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'arbitrage'
+    name = 'crypto'
 
-    verbose_name = _('Arbitrage')
+    verbose_name = _('Crypto')
 
     def ready(self):
-        import arbitrage.receivers  # noqa
+        import crypto.receivers  # noqa

@@ -8,7 +8,7 @@ from urllib.parse import urlencode
 
 from aiogram.client.session import aiohttp
 
-from arbitrage.exchanges.base import (
+from crypto.exchanges.base import (
     AbstractExchange,
     BalanceSchema
 )

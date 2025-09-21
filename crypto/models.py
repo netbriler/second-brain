@@ -10,7 +10,7 @@ from django.db import models
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 
-from arbitrage.services.arbitrage_service import ArbitrageService
+from crypto.services.crypto_service import CryptoService
 
 
 class Exchange(models.Model):
@@ -50,7 +50,7 @@ class ExchangeCredentials(models.Model):
 
     user = models.ForeignKey(
         'users.User',
-        related_name='arbitrage_exchanges',
+        related_name='crypto_exchanges',
         on_delete=models.CASCADE,
         blank=True,
         null=True,
@@ -139,14 +139,14 @@ class TradingPair(models.Model):
         return f'{self.symbol}'
 
 
-class ArbitrageDealItem(models.Model):
+class CryptoDealItem(models.Model):
     class Meta:
-        verbose_name = _('Arbitrage Deal Item')
-        verbose_name_plural = _('Arbitrage Deal Items')
+        verbose_name = _('Crypto Deal Item')
+        verbose_name_plural = _('Crypto Deal Items')
 
     user = models.ForeignKey(
         'users.User',
-        related_name='arbitrage_deals_items',
+        related_name='crypto_deals_items',
         on_delete=models.CASCADE,
         verbose_name=_('User'),
         null=True,
@@ -161,7 +161,7 @@ class ArbitrageDealItem(models.Model):
 
     exchange = models.ForeignKey(
         Exchange,
-        related_name='arbitrage_deal',
+        related_name='crypto_deal',
         on_delete=models.CASCADE,
         verbose_name=_('Exchange'),
     )
@@ -318,7 +318,7 @@ class ArbitrageDealItem(models.Model):
 
     def save(self, dont_apply_item: bool = False, *args, **kwargs):
         if dont_apply_item:
-            ArbitrageService.apply_item(self)
+            CryptoService.apply_item(self)
 
         super().save(*args, **kwargs)
 
@@ -326,19 +326,19 @@ class ArbitrageDealItem(models.Model):
         return f'{self.trading_pair.symbol} - {self.exchange.name} - {self.side} | {self.open_price} - {self.close_price}'
 
 
-class ArbitrageDeal(models.Model):
+class CryptoDeal(models.Model):
     class DealType(models.TextChoices):
         ARBITRAGE = 'arbitrage', _('Arbitrage')
         HEDGE = 'hedge', _('Hedge')
         TRADE = 'trade', _('Trade')
 
     class Meta:
-        verbose_name = _('Arbitrage Deal')
-        verbose_name_plural = _('Arbitrage Deals')
+        verbose_name = _('Crypto Deal')
+        verbose_name_plural = _('Crypto Deals')
 
     user = models.ForeignKey(
         'users.User',
-        related_name='arbitrage_deals',
+        related_name='crypto_deals',
         on_delete=models.CASCADE,
         verbose_name=_('User'),
         null=True,
@@ -353,7 +353,7 @@ class ArbitrageDeal(models.Model):
     )
 
     short = models.ForeignKey(
-        ArbitrageDealItem,
+        CryptoDealItem,
         related_name='short_deal',
         on_delete=models.CASCADE,
         verbose_name=_('Short Deal'),
@@ -362,7 +362,7 @@ class ArbitrageDeal(models.Model):
     )
 
     long = models.ForeignKey(
-        ArbitrageDealItem,
+        CryptoDealItem,
         related_name='long_deal',
         on_delete=models.CASCADE,
         verbose_name=_('Long Deal'),
@@ -520,7 +520,7 @@ class ArbitrageDeal(models.Model):
         if self.type in [self.DealType.ARBITRAGE, self.DealType.HEDGE]:
             if not self.short or not self.long:
                 raise ValidationError(
-                    _('Arbitrage deals must have both short and long positions.')
+                    _('Crypto deals must have both short and long positions.')
                 )
         elif self.type == self.DealType.TRADE:
             if not self.short and not self.long:
@@ -535,7 +535,7 @@ class ArbitrageDeal(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
 
-        ArbitrageService.apply_deal(self)
+        CryptoService.apply_deal(self)
 
         super().save(*args, **kwargs)
 
@@ -551,7 +551,7 @@ class ArbitrageDeal(models.Model):
                 f'{self.pair} {self.short.exchange} '
                 f'> {self.long.exchange} | income: {self.income}'
             )
-        return f'Arbitrage Deal | income: {self.income}'
+        return f'Crypto Deal | income: {self.income}'
 
 
 class Balance(models.Model):

@@ -7,17 +7,17 @@ from import_export.results import Error
 from import_export.widgets import ForeignKeyWidget
 
 from .models import (
-    ArbitrageDeal,
-    ArbitrageDealItem,
+    CryptoDeal,
+    CryptoDealItem,
     TradingPair,
     Exchange,
 )
 
 
-class ArbitrageDealFullResource(resources.ModelResource):
+class CryptoDealFullResource(resources.ModelResource):
     """
-    A resource for importing/exporting ArbitrageDeal and its related
-    short/long ArbitrageDealItem. We also handle creation of TradingPair
+    A resource for importing/exporting CryptoDeal and its related
+    short/long CryptoDealItem. We also handle creation of TradingPair
     and Exchange if they do not exist on import.
     """
 
@@ -52,20 +52,20 @@ class ArbitrageDealFullResource(resources.ModelResource):
     short = fields.Field(
         attribute='short',
         column_name='short',
-        widget=ForeignKeyWidget(ArbitrageDealItem, 'id')
+        widget=ForeignKeyWidget(CryptoDealItem, 'id')
     )
     long = fields.Field(
         attribute='long',
         column_name='long',
-        widget=ForeignKeyWidget(ArbitrageDealItem, 'id')
+        widget=ForeignKeyWidget(CryptoDealItem, 'id')
     )
 
     class Meta:
-        model = ArbitrageDeal
-        # These are the fields that come directly from ArbitrageDeal
+        model = CryptoDeal
+        # These are the fields that come directly from CryptoDeal
         # (IDs, creation timestamps, numeric fields, etc.). Adjust as needed.
         fields = (
-            # Main ArbitrageDeal fields first:
+            # Main CryptoDeal fields first:
             'id',
             'long',
             'short',
@@ -112,7 +112,7 @@ class ArbitrageDealFullResource(resources.ModelResource):
             'long_close_at',
         )
         export_order = (
-            # Main ArbitrageDeal fields first:
+            # Main CryptoDeal fields first:
             'id',
             'note',
             'pnl',
@@ -271,8 +271,8 @@ class ArbitrageDealFullResource(resources.ModelResource):
         # If needed, you can fetch the row number from kwargs:
         """
         Override import_row to handle the creation/updating
-        of Exchange, TradingPair, and ArbitrageDealItem for both
-        short and long sides before saving the main ArbitrageDeal.
+        of Exchange, TradingPair, and CryptoDealItem for both
+        short and long sides before saving the main CryptoDeal.
         """
         # Extract short side info from row
         short_exchange_name = row.get('short_exchange')
@@ -343,7 +343,7 @@ class ArbitrageDealFullResource(resources.ModelResource):
                 quote_currency=quote_currency,
             )
 
-        # We will build or update short and long ArbitrageDealItem instances ourselves,
+        # We will build or update short and long CryptoDealItem instances ourselves,
         # attach them to the row in memory, then proceed with the normal import flow.
 
         try:
@@ -352,7 +352,7 @@ class ArbitrageDealFullResource(resources.ModelResource):
             # we are creating new items. If you want to handle updates, you'll need
             # logic to match on an identifier.
 
-            short_item = ArbitrageDealItem()
+            short_item = CryptoDealItem()
             if short_exchange_obj:
                 short_item.exchange = short_exchange_obj
             if short_trading_pair_obj:
@@ -372,7 +372,7 @@ class ArbitrageDealFullResource(resources.ModelResource):
             row['short'] = short_item.id
             row['short_id'] = short_item.id
 
-            long_item = ArbitrageDealItem()
+            long_item = CryptoDealItem()
             if long_exchange_obj:
                 long_item.exchange = long_exchange_obj
             if long_trading_pair_obj:
@@ -402,16 +402,16 @@ class ArbitrageDealFullResource(resources.ModelResource):
             return result
 
         # Now that we have the short_item and long_item saved, we want to ensure
-        # that the main ArbitrageDeal row references these two items. We'll inject
+        # that the main CryptoDeal row references these two items. We'll inject
         # them into the incoming dataset so that the normal import logic
-        # (which tries to create ArbitrageDeal) uses them.
+        # (which tries to create CryptoDeal) uses them.
 
         return super().import_row(row, instance_loader, **kwargs)
 
 
-class ArbitrageDealItemResource(resources.ModelResource):
+class CryptoDealItemResource(resources.ModelResource):
     class Meta:
-        model = ArbitrageDealItem
+        model = CryptoDealItem
         fields = (
             'id',
             'trading_pair',

@@ -8,7 +8,7 @@ HUNDRED = Decimal('100.0')
 DAYS_IN_YEAR = Decimal('365.25')
 
 
-class ArbitrageService:
+class CryptoService:
     @staticmethod
     def _q2(x: Decimal | None) -> Decimal:
         return (x or ZERO).quantize(Q2, rounding=ROUND_HALF_UP)
@@ -18,9 +18,9 @@ class ArbitrageService:
         spread_open = ((short_open / long_open) - 1) * HUNDRED if short_open and long_open else ZERO
         spread_close = ((short_close / long_close) - 1) * HUNDRED if short_close and long_close else ZERO
         return (
-            ArbitrageService._q2(spread_open),
-            ArbitrageService._q2(spread_close),
-            ArbitrageService._q2(spread_open - spread_close),
+            CryptoService._q2(spread_open),
+            CryptoService._q2(spread_close),
+            CryptoService._q2(spread_open - spread_close),
         )
 
     @staticmethod
@@ -28,10 +28,10 @@ class ArbitrageService:
         if not (income and margin_open and duration and duration.total_seconds() > 0):
             return ZERO
         days = Decimal(str(duration.total_seconds() / 86400))
-        return ArbitrageService._q2((income / margin_open) * (DAYS_IN_YEAR / days) * HUNDRED)
+        return CryptoService._q2((income / margin_open) * (DAYS_IN_YEAR / days) * HUNDRED)
 
     @staticmethod
-    def apply_item(item: 'ArbitrageDealItem', user: 'User' = None):
+    def apply_item(item: 'CryptoDealItem', user: 'User' = None):
         if user:
             item.user = user
         item.margin_close = ZERO
@@ -62,7 +62,7 @@ class ArbitrageService:
             item.trading_volume += abs(item.volume * item.close_price)
 
         item.roi = item.income / item.margin_open if item.margin_open else ZERO
-        item.roi_percent = ArbitrageService._q2(item.roi * HUNDRED)
+        item.roi_percent = CryptoService._q2(item.roi * HUNDRED)
 
         if item.open_at and item.close_at:
             item.duration = item.close_at - item.open_at
@@ -70,7 +70,7 @@ class ArbitrageService:
         return item
 
     @staticmethod
-    def apply_arbitrage_deal(deal: 'ArbitrageDeal'):
+    def apply_crypto_deal(deal: 'CryptoDeal'):
         deal.duration = None
         deal.human_duration = None
         deal.spread_open = ZERO
@@ -84,8 +84,8 @@ class ArbitrageService:
         if not (short and long):
             return deal
 
-        ArbitrageService.apply_item(short, deal.user)
-        ArbitrageService.apply_item(long, deal.user)
+        CryptoService.apply_item(short, deal.user)
+        CryptoService.apply_item(long, deal.user)
         short.save(dont_apply_item=True)
         long.save(dont_apply_item=True)
 
@@ -99,7 +99,7 @@ class ArbitrageService:
         deal.margin_open = short.margin_open + long.margin_open
         deal.margin_close = short.margin_close + long.margin_close
 
-        deal.spread_open, deal.spread_close, deal.spread = ArbitrageService._spread(
+        deal.spread_open, deal.spread_close, deal.spread = CryptoService._spread(
             short.open_price, long.open_price,
             short.close_price, long.close_price
         )
@@ -113,13 +113,13 @@ class ArbitrageService:
             deal.human_duration = timesince(min(short.open_at, long.open_at), max(short.close_at, long.close_at))
 
         deal.roi = deal.income / deal.margin_open if deal.margin_open else ZERO
-        deal.roi_percent = ArbitrageService._q2(deal.roi * HUNDRED)
-        deal.apr_percent = ArbitrageService._apr_percent(deal.income, deal.margin_open, deal.duration)
+        deal.roi_percent = CryptoService._q2(deal.roi * HUNDRED)
+        deal.apr_percent = CryptoService._apr_percent(deal.income, deal.margin_open, deal.duration)
 
         return deal
 
     @staticmethod
-    def apply_trade_deal(deal: 'ArbitrageDeal'):
+    def apply_trade_deal(deal: 'CryptoDeal'):
         deal.duration = None
         deal.human_duration = None
         deal.spread_open = ZERO
@@ -132,7 +132,7 @@ class ArbitrageService:
         if not pos:
             return deal
 
-        ArbitrageService.apply_item(pos)
+        CryptoService.apply_item(pos)
         pos.save(dont_apply_item=True)
 
         deal.exchanges = pos.exchange.name
@@ -150,13 +150,13 @@ class ArbitrageService:
             deal.human_duration = timesince(pos.open_at, pos.close_at)
 
         deal.roi = deal.income / pos.margin_open if pos.margin_open else ZERO
-        deal.roi_percent = ArbitrageService._q2(deal.roi * HUNDRED)
-        deal.apr_percent = ArbitrageService._apr_percent(deal.income, deal.margin_open, deal.duration)
+        deal.roi_percent = CryptoService._q2(deal.roi * HUNDRED)
+        deal.apr_percent = CryptoService._apr_percent(deal.income, deal.margin_open, deal.duration)
 
         return deal
 
     @staticmethod
-    def apply_deal(deal: 'ArbitrageDeal'):
+    def apply_deal(deal: 'CryptoDeal'):
         if deal.type in [deal.DealType.ARBITRAGE, deal.DealType.HEDGE]:
-            return ArbitrageService.apply_arbitrage_deal(deal)
-        return ArbitrageService.apply_trade_deal(deal)
+            return CryptoService.apply_crypto_deal(deal)
+        return CryptoService.apply_trade_deal(deal)

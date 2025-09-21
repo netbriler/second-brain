@@ -58,7 +58,7 @@ INSTALLED_APPS = [
     'telegram_restricted_downloader',
     'courses',
     'ai',
-    'arbitrage',
+    'crypto',
     'reminders',
     'workflows',
     'notes',

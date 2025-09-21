@@ -10,8 +10,8 @@ from totalsum.admin import TotalsumAdmin
 
 from utils.helpers import model_link, format_number
 from .forms import UserForm, ExchangeCredentialsAdminForm
-from .models import Exchange, TradingPair, ArbitrageDealItem, ArbitrageDeal, ExchangeCredentials
-from .resources import ArbitrageDealItemResource, ArbitrageDealFullResource
+from .models import Exchange, TradingPair, CryptoDealItem, CryptoDeal, ExchangeCredentials
+from .resources import CryptoDealItemResource, CryptoDealFullResource
 
 
 class ExchangeCredentialsInline(admin.TabularInline):
@@ -114,9 +114,9 @@ class TradingPairAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     search_fields = ('symbol', 'base_currency', 'quote_currency')
 
 
-@admin.register(ArbitrageDealItem)
-class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
-    resource_class = ArbitrageDealItemResource
+@admin.register(CryptoDealItem)
+class CryptoDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
+    resource_class = CryptoDealItemResource
 
     def pnl_display(self, obj):
         return format_number(obj.pnl)
@@ -232,7 +232,7 @@ class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     @admin.action(description=_('Delete unused items'))
     def delete_unused_items(self, request, queryset):
         used_ids = set(
-            ArbitrageDeal.objects.filter(
+            CryptoDeal.objects.filter(
                 Q(short__in=queryset) | Q(long__in=queryset)
             ).values_list('short_id', 'long_id')
         )
@@ -248,9 +248,9 @@ class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
             self.message_user(request, 'No unused items found to delete.')
 
 
-@admin.register(ArbitrageDeal)
-class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
-    resource_classes = [ArbitrageDealFullResource]
+@admin.register(CryptoDeal)
+class CryptoDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
+    resource_classes = [CryptoDealFullResource]
 
     def exchanges(self, obj):
         return f'{obj.exchanges}'
