@@ -51,9 +51,15 @@ class ArbitrageService:
         if item.funding:
             item.income += item.funding
 
-        item.margin_open = (item.open_price * item.volume / item.leverage)
+        item.margin_open = (item.open_price * item.volume / item.leverage) + item.extra_margin
         if item.close_price is not None:
-            item.margin_close = (item.close_price * item.volume / item.leverage) + item.income
+            item.margin_close = item.margin_open + item.income
+
+        item.trading_volume = abs(
+            item.volume * item.open_price * Decimal(item.leverage)
+        )
+        if item.close_price is not None:
+            item.trading_volume += abs(item.volume * item.close_price * Decimal(item.leverage))
 
         item.roi = item.income / item.margin_open if item.margin_open else ZERO
         item.roi_percent = ArbitrageService._q2(item.roi * HUNDRED)
@@ -79,7 +85,9 @@ class ArbitrageService:
             return deal
 
         ArbitrageService.apply_item(short, deal.user)
+        short.save()
         ArbitrageService.apply_item(long, deal.user)
+        long.save()
 
         deal.exchanges = f'{short.exchange} - {long.exchange}' if short.exchange != long.exchange else f'{short.exchange}'
 
@@ -97,8 +105,7 @@ class ArbitrageService:
         )
 
         deal.trading_volume = abs(
-            (short.margin_open + long.margin_open) * Decimal(short.leverage) +
-            (short.margin_close + long.margin_close) * Decimal(long.leverage)
+            short.trading_volume + long.trading_volume
         )
 
         if short.open_at and long.open_at and short.close_at and long.close_at:
@@ -126,6 +133,7 @@ class ArbitrageService:
             return deal
 
         ArbitrageService.apply_item(pos)
+        pos.save()
 
         deal.exchanges = pos.exchange.name
         deal.pnl = pos.pnl
@@ -135,7 +143,7 @@ class ArbitrageService:
         deal.margin_open = pos.margin_open
         deal.margin_close = pos.margin_close
 
-        deal.trading_volume = abs(pos.margin_open * Decimal(pos.leverage) + pos.margin_close * Decimal(pos.leverage))
+        deal.trading_volume = abs(pos.trading_volume)
 
         if pos.open_at and pos.close_at:
             deal.duration = pos.close_at - pos.open_at

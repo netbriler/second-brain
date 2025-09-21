@@ -118,35 +118,41 @@ class TradingPairAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     resource_class = ArbitrageDealItemResource
 
-    def pnl_short(self, obj):
+    def pnl_display(self, obj):
         return format_number(obj.pnl)
 
-    pnl_short.short_description = _('PnL')
+    pnl_display.short_description = _('PnL')
 
-    def income_short(self, obj):
+    def income_display(self, obj):
         return format_number(obj.income)
 
-    income_short.short_description = _('Income')
+    income_display.short_description = _('Income')
 
-    def roi_short(self, obj):
+    def roi_display(self, obj):
         return format_number(obj.roi)
 
-    roi_short.short_description = _('ROI')
+    roi_display.short_description = _('ROI')
 
-    def roi_percent_short(self, obj):
+    def roi_percent_display(self, obj):
         return format_number(obj.roi_percent)
 
-    roi_percent_short.short_description = _('ROI %')
+    roi_percent_display.short_description = _('ROI %')
 
-    def margin_open_short(self, obj):
+    def margin_open_display(self, obj):
         return format_number(obj.margin_open)
 
-    margin_open_short.short_description = _('Margin Open')
+    margin_open_display.short_description = _('Margin Open')
 
-    def margin_close_short(self, obj):
+    def margin_close_display(self, obj):
         return format_number(obj.margin_close)
 
-    margin_close_short.short_description = _('Margin Close')
+    margin_close_display.short_description = _('Margin Close')
+    
+    def trading_volume_display(self, obj):
+        return format_number(obj.trading_volume)
+
+    trading_volume_display.short_description = _('Trading Volume')
+    trading_volume_display.admin_order_field = 'trading_volume'
 
     list_select_related = ('trading_pair', 'exchange', 'user')
 
@@ -155,13 +161,13 @@ class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         'open_price', 'close_price',
         'volume', 'leverage', 'fees', 'funding',
         'is_liquidated',
-        'pnl_short', 'income_short', 'roi_percent_short',
+        'pnl_display', 'income_display', 'roi_percent_display',
         'duration', 'human_duration'
     )
 
     readonly_fields = (
-        'pnl_short', 'margin_open_short', 'margin_close_short',
-        'income_short', 'roi_short', 'roi_percent_short',
+        'pnl_display', 'margin_open_display', 'margin_close_display',
+        'income_display', 'roi_display', 'roi_percent_display',
         'duration', 'human_duration',
         'created_at', 'updated_at',
     )
@@ -188,7 +194,7 @@ class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         }),
         (_('Prices & Volume'), {
             'fields': (('open_price', 'close_price'),
-                       ('volume', 'leverage'))
+                       ('volume', 'leverage', 'extra_margin'))
         }),
         (_('Costs & Funding'), {
             'fields': ('funding', 'fees', 'is_liquidated')
@@ -198,9 +204,9 @@ class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         }),
         (_('Calculated Fields'), {
             'fields': (
-                'pnl_short',
-                'margin_open_short', 'margin_close_short',
-                'income_short', 'roi_short', 'roi_percent_short',
+                'pnl_display',
+                'margin_open_display', 'margin_close_display', 'trading_volume_display',
+                'income_display', 'roi_display', 'roi_percent_display',
                 'duration', 'human_duration',
             )
         }),
@@ -501,7 +507,6 @@ class ArbitrageDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin
             'fields': ('created_at', 'updated_at')
         }),
     )
-
 
     def get_fieldsets(self, request, obj=None):
         fs = deepcopy(super().get_fieldsets(request, obj) or self.fieldsets)

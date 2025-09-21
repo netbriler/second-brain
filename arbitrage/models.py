@@ -258,6 +258,13 @@ class ArbitrageDealItem(models.Model):
         verbose_name=_('PnL')
     )
 
+    extra_margin = models.DecimalField(
+        max_digits=20,
+        decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('Extra Margin'),
+    )
+
     margin_open = models.DecimalField(
         max_digits=20,
         decimal_places=8,
@@ -270,6 +277,13 @@ class ArbitrageDealItem(models.Model):
         decimal_places=8,
         default=Decimal('0.0'),
         verbose_name=_('Margin Close')
+    )
+
+    trading_volume = models.DecimalField(
+        max_digits=20,
+        decimal_places=8,
+        default=Decimal('0.0'),
+        verbose_name=_('Trading Volume'),
     )
 
     income = models.DecimalField(
