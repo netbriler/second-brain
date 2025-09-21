@@ -122,32 +122,38 @@ class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         return format_number(obj.pnl)
 
     pnl_display.short_description = _('PnL')
+    pnl_display.admin_order_field = 'pnl'
 
     def income_display(self, obj):
         return format_number(obj.income)
 
     income_display.short_description = _('Income')
+    income_display.admin_order_field = 'income'
 
     def roi_display(self, obj):
         return format_number(obj.roi)
 
     roi_display.short_description = _('ROI')
+    roi_display.admin_order_field = 'roi'
 
     def roi_percent_display(self, obj):
         return format_number(obj.roi_percent)
 
     roi_percent_display.short_description = _('ROI %')
+    roi_percent_display.admin_order_field = 'roi_percent'
 
     def margin_open_display(self, obj):
         return format_number(obj.margin_open)
 
     margin_open_display.short_description = _('Margin Open')
+    margin_open_display.admin_order_field = 'margin_open'
 
     def margin_close_display(self, obj):
         return format_number(obj.margin_close)
 
     margin_close_display.short_description = _('Margin Close')
-    
+    margin_close_display.admin_order_field = 'margin_close'
+
     def trading_volume_display(self, obj):
         return format_number(obj.trading_volume)
 
@@ -161,12 +167,12 @@ class ArbitrageDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         'open_price', 'close_price',
         'volume', 'leverage', 'fees', 'funding',
         'is_liquidated',
-        'pnl_display', 'income_display', 'roi_percent_display',
+        'pnl_display', 'income_display', 'roi_percent_display', 'trading_volume_display',
         'duration', 'human_duration'
     )
 
     readonly_fields = (
-        'pnl_display', 'margin_open_display', 'margin_close_display',
+        'pnl_display', 'margin_open_display', 'margin_close_display', 'trading_volume_display',
         'income_display', 'roi_display', 'roi_percent_display',
         'duration', 'human_duration',
         'created_at', 'updated_at',
