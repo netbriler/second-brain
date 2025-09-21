@@ -329,6 +329,7 @@ class ArbitrageDealItem(models.Model):
 class ArbitrageDeal(models.Model):
     class DealType(models.TextChoices):
         ARBITRAGE = 'arbitrage', _('Arbitrage')
+        HEDGE = 'hedge', _('Hedge')
         TRADE = 'trade', _('Trade')
 
     class Meta:
@@ -516,7 +517,7 @@ class ArbitrageDeal(models.Model):
 
     def clean(self):
         super().clean()
-        if self.type == self.DealType.ARBITRAGE:
+        if self.type in [self.DealType.ARBITRAGE, self.DealType.HEDGE]:
             if not self.short or not self.long:
                 raise ValidationError(
                     _('Arbitrage deals must have both short and long positions.')

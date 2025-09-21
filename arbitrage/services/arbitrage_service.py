@@ -157,6 +157,6 @@ class ArbitrageService:
 
     @staticmethod
     def apply_deal(deal: 'ArbitrageDeal'):
-        if deal.type == deal.DealType.ARBITRAGE:
+        if deal.type in [deal.DealType.ARBITRAGE, deal.DealType.HEDGE]:
             return ArbitrageService.apply_arbitrage_deal(deal)
         return ArbitrageService.apply_trade_deal(deal)
