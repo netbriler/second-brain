@@ -3,7 +3,9 @@ import threading
 import traceback
 from os import environ as env
 
-bind = '0.0.0.0:8000'
+port = int(env.get('PORT', '8000'))
+
+bind = f'0.0.0.0:{port}'
 backlog = 2047
 
 preload_app = True
