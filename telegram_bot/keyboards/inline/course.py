@@ -22,6 +22,14 @@ def get_course_inline_markup(course: Course) -> InlineKeyboardMarkup:
         callback_data=f'courses:course_{course.id}:stats',
     )
 
+    links = course.links.all()
+    if links:
+        for link in links:
+            builder.button(
+                text=link.title,
+                url=link.url,
+            )
+
     builder.adjust(1)
 
     return builder.as_markup()
@@ -52,6 +60,14 @@ def get_group_inline_markup(group: Group) -> InlineKeyboardMarkup:
         callback_data=f'courses:group_{group.id}:stats',
     )
 
+    links = group.links.all()
+    if links:
+        for link in links:
+            builder.button(
+                text=link.title,
+                url=link.url,
+            )
+
     builder.adjust(1)
 
     return builder.as_markup()
@@ -73,6 +89,14 @@ def get_lesson_inline_markup(lesson: Lesson) -> InlineKeyboardMarkup | None:
             text=_('📁 {group_title}').format(group_title=lesson.group.title),
             switch_inline_query_current_chat=f'courses:group_{lesson.group.id}',
         )
+
+    links = lesson.links.all()
+    if links:
+        for link in links:
+            builder.button(
+                text=link.title,
+                url=link.url,
+            )
 
     builder.adjust(1)
 
@@ -112,5 +136,7 @@ def get_lesson_entity_inline_markup(lesson_entity) -> InlineKeyboardMarkup:
                 text=link.title,
                 url=link.url,
             )
+
+    builder.adjust(1)
 
     return builder.as_markup()

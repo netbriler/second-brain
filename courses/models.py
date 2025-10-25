@@ -232,11 +232,40 @@ class Link(models.Model):
         verbose_name=_('URL'),
     )
 
+    course = models.ForeignKey(
+        'courses.Course',
+        related_name='links',
+        on_delete=models.CASCADE,
+        verbose_name=_('Course'),
+        blank=True,
+        null=True,
+    )
+
+    group = models.ForeignKey(
+        'courses.Group',
+        related_name='links',
+        on_delete=models.CASCADE,
+        verbose_name=_('Group'),
+        blank=True,
+        null=True,
+    )
+
+    lesson = models.ForeignKey(
+        'courses.Lesson',
+        related_name='links',
+        on_delete=models.CASCADE,
+        verbose_name=_('Lesson'),
+        blank=True,
+        null=True,
+    )
+
     lesson_entity = models.ForeignKey(
         'courses.LessonEntity',
         related_name='links',
         on_delete=models.CASCADE,
         verbose_name=_('Lesson Entity'),
+        blank=True,
+        null=True,
     )
 
     created_at = models.DateTimeField(
@@ -248,6 +277,11 @@ class Link(models.Model):
         auto_now=True,
         verbose_name=_('Updated At'),
     )
+
+    def clean(self):
+        fields = [self.course, self.group, self.lesson, self.lesson_entity]
+        if not any(fields):
+            raise ValidationError(_('At least one of course, group, lesson, or lesson_entity must be set'))
 
     def __str__(self):
         return self.title

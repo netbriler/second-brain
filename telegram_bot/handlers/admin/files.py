@@ -13,8 +13,10 @@ from telegram_bot.filters.i18n_text import I18nText
 from telegram_bot.keyboards.default.cancel import get_cancel_markup
 from telegram_bot.models import File
 from telegram_bot.services.files import generate_file_text, save_file, send_file_to_user
-from telegram_bot.states.file import FilesAddForm
+from telegram_bot.services.courses import create_lesson_entity_from_file
+from telegram_bot.states.file import FilesAddForm, LessonFilesAddForm
 from users.models import User
+from courses.models import Lesson
 
 router = Router(name=__name__)
 
@@ -102,3 +104,70 @@ async def _upload_file(message: Message, user: User, bot: Bot) -> NoReturn:
         user=user,
     )
     await message.react([ReactionTypeEmoji(emoji='👍')])
+
+
+@router.message(
+    IsAdmin(),
+    Command(re.compile(r'lesson_upload_files[\s|_]?([\w]*)', re.IGNORECASE)),
+)
+async def _lesson_upload_files(message: Message, state: FSMContext, command: CommandObject) -> NoReturn:
+    lesson_id = command.regexp_match.group(1) or command.args
+    if not lesson_id:
+        return await message.answer(_('Usage:\n/lesson_upload_files [lesson_id]'))
+
+    try:
+        lesson_id = int(lesson_id)
+    except ValueError:
+        return await message.answer(_('Invalid lesson_id. Must be a number.'))
+
+    lesson = await Lesson.objects.filter(id=lesson_id).afirst()
+    if not lesson:
+        return await message.answer(_('Lesson not found'))
+
+    await state.update_data(lesson_id=lesson_id)
+    await state.set_state(LessonFilesAddForm.add_file)
+
+    await message.answer(
+        _('Send me files to upload for lesson: {lesson_title}').format(lesson_title=lesson.title),
+        reply_markup=get_cancel_markup(),
+    )
+
+
+@router.message(
+    IsAdmin(),
+    LessonFilesAddForm.add_file,
+    F.content_type.in_(
+        {
+            ContentType.AUDIO,
+            ContentType.DOCUMENT,
+            ContentType.PHOTO,
+            ContentType.STICKER,
+            ContentType.VIDEO,
+            ContentType.VIDEO_NOTE,
+            ContentType.VOICE,
+        },
+    ),
+)
+async def _lesson_upload_file(message: Message, user: User, state: FSMContext) -> NoReturn:
+    await message.react([ReactionTypeEmoji(emoji='👀')])
+
+    data = await state.get_data()
+    lesson_id = data.get('lesson_id')
+
+    lesson = await Lesson.objects.filter(id=lesson_id).afirst()
+    if not lesson:
+        await message.answer(_('Lesson not found'))
+        await state.clear()
+        return NoReturn
+
+    file = await save_file(
+        message=message,
+        user=user,
+    )
+
+    if file:
+        await create_lesson_entity_from_file(lesson=lesson, file=file)
+        await message.react([ReactionTypeEmoji(emoji='👍')])
+    else:
+        await message.react([ReactionTypeEmoji(emoji='👎')])
+        await message.answer(_('Failed to save file'))

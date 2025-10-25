@@ -62,7 +62,7 @@ class CourseAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
         ),
     ]
 
-    inlines = [GroupInline, LessonInline]
+    inlines = [GroupInline, LessonInline, LinkInline]
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
@@ -136,7 +136,7 @@ class GroupAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
         ),
     ]
 
-    inlines = [GroupInline, LessonInline]
+    inlines = [GroupInline, LessonInline, LinkInline]
 
     action_form = GroupAndCourseForm
     actions = ['assign_group_and_course']
@@ -228,7 +228,7 @@ class LessonAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
         ),
     ]
 
-    inlines = [LessonEntityInline]
+    inlines = [LessonEntityInline, LinkInline]
 
     action_form = GroupAndCourseForm
     actions = ['assign_group_and_course']
@@ -417,6 +417,9 @@ class LinkAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
     list_display = (
         'title',
         'url',
+        'course_link',
+        'group_link',
+        'lesson_link',
         'lesson_entity_link',
         'created_at',
         'updated_at',
@@ -427,11 +430,18 @@ class LinkAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
         'url',
     )
 
-    list_select_related = ('lesson_entity',)
-    autocomplete_fields = ('lesson_entity',)
+    list_select_related = ('course', 'group', 'lesson', 'lesson_entity')
+    autocomplete_fields = ('course', 'group', 'lesson', 'lesson_entity')
 
     list_filter = (
+        AutocompleteFilterFactory(_('Course'), 'course'),
+        AutocompleteFilterFactory(_('Group'), 'group'),
+        AutocompleteFilterFactory(_('Lesson'), 'lesson'),
         AutocompleteFilterFactory(_('Lesson entry'), 'lesson_entity'),
+        ('course', admin.EmptyFieldListFilter),
+        ('group', admin.EmptyFieldListFilter),
+        ('lesson', admin.EmptyFieldListFilter),
+        ('lesson_entity', admin.EmptyFieldListFilter),
         'created_at',
         'updated_at',
     )
@@ -450,6 +460,9 @@ class LinkAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
                     'id',
                     'title',
                     'url',
+                    'course',
+                    'group',
+                    'lesson',
                     'lesson_entity',
                     'created_at',
                     'updated_at',
@@ -459,6 +472,27 @@ class LinkAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
     ]
 
     ordering = ('position',)
+
+    def course_link(self, obj):
+        if obj.course:
+            return model_link(obj.course)
+        return '-'
+
+    course_link.short_description = _('Course')
+
+    def group_link(self, obj):
+        if obj.group:
+            return model_link(obj.group)
+        return '-'
+
+    group_link.short_description = _('Group')
+
+    def lesson_link(self, obj):
+        if obj.lesson:
+            return model_link(obj.lesson)
+        return '-'
+
+    lesson_link.short_description = _('Lesson')
 
     def lesson_entity_link(self, obj):
         if obj.lesson_entity:

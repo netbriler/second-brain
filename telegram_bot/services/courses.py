@@ -1,7 +1,8 @@
 from django.utils.translation import gettext as _
 
-from courses.models import Course, Group, Lesson
+from courses.models import Course, Group, Lesson, LessonEntity
 from courses.services import GroupLessonsStats, LessonsStats, get_stats_emoji
+from telegram_bot.models import File
 
 
 def get_course_text(course: Course, stats: LessonsStats = None) -> str:
@@ -84,3 +85,32 @@ def get_lesson_text(lesson: Lesson) -> str:
     return _('<b>Lesson Information</b>\n\n<b>Title:</b> {title}\n\n').format(
         title=lesson.title,
     )
+
+
+async def create_lesson_entity_from_file(lesson: Lesson, file: File) -> LessonEntity:
+    return await LessonEntity.objects.acreate(
+        lesson=lesson,
+        content=file.caption or '',
+        file=file,
+    )
+
+
+def create_lesson_entity_from_file_sync(lesson: Lesson, file: File) -> LessonEntity:
+    return LessonEntity.objects.create(
+        lesson=lesson,
+        content=file.caption or '',
+        file=file,
+    )
+
+
+def create_lessons_from_files(files):
+    first_position = len(files) * 2
+    i = 1
+    for file in files:
+        title = (file.caption or '').strip().split('\n')[0]
+        lesson = Lesson.objects.create(
+            title=title,
+            position=first_position - i,
+        )
+        create_lesson_entity_from_file_sync(lesson=lesson, file=file)
+        i += 1

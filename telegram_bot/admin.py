@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from djangoql.admin import DjangoQLSearchMixin
 
 from ai.tasks import send_file_to_user_task, transcribe_file_task
-from courses.models import Lesson, LessonEntity
+from telegram_bot.services.courses import create_lessons_from_files
 from utils.helpers import model_link
 
 from . import models
@@ -82,7 +82,7 @@ class FileAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     actions = [
         'send_to_telegram',
         'transcribe_audio_to_text',
-        'create_lessons_from_files',
+        'create_lessons_from_files_action',
     ]
 
     # add title translation here
@@ -133,21 +133,8 @@ class FileAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         self.message_user(request, _('Files sent to transcription'))
 
     @admin.action(description=_('Create lessons from files'))
-    def create_lessons_from_files(self, request, queryset):
-        first_position = len(queryset) * 2
-        i = 1
-        for file in queryset:
-            title = (file.caption or '').strip().split('\n')[0]
-            LessonEntity.objects.create(
-                lesson=Lesson.objects.create(
-                    title=title,
-                    position=first_position - i,
-                ),
-                content=file.caption,
-                file=file,
-            )
-            i += 1
-
+    def create_lessons_from_files_action(self, request, queryset):
+        create_lessons_from_files(queryset)
         self.message_user(request, _('Lessons created'))
 
     def has_add_permission(self, request):
