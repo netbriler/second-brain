@@ -27,4 +27,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('__debug__/', include('debug_toolbar.urls')),
     path('healthz', healthz),
+    path('i18n/', include('django.conf.urls.i18n')),
 ]
