@@ -62,6 +62,15 @@ class Group(models.Model):
         verbose_name=_('Description'),
     )
 
+    thumbnail = models.ForeignKey(
+        'telegram_bot.File',
+        related_name='group_thumbnails',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name=_('Thumbnail'),
+    )
+
     course = models.ForeignKey(
         'courses.Course',
         related_name='groups',
@@ -93,6 +102,18 @@ class Group(models.Model):
     def clean(self):
         if self.parent and self.parent.course and self.course and self.parent.course != self.course:
             raise ValidationError(_('Parent group must belong to the same course'))
+
+        # Validate thumbnail content type
+        if self.thumbnail:
+            if self.thumbnail.content_type == 'photo':
+                # Photo content type is valid
+                pass
+            elif self.thumbnail.content_type == 'document':
+                # Document must have image/* mime type
+                if not self.thumbnail.mime_type or not self.thumbnail.mime_type.startswith('image/'):
+                    raise ValidationError(_('Thumbnail document must have image/* mime type'))
+            else:
+                raise ValidationError(_('Thumbnail must be a photo or document with image/* mime type'))
 
     def save(
         self,

@@ -93,8 +93,8 @@ class GroupAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
         'updated_at',
     )
 
-    autocomplete_fields = ('parent', 'course')
-    list_select_related = ('parent', 'course')
+    autocomplete_fields = ('parent', 'course', 'thumbnail')
+    list_select_related = ('parent', 'course', 'thumbnail')
 
     list_filter = (
         'id',
@@ -125,6 +125,7 @@ class GroupAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
                     'id',
                     'title',
                     'description',
+                    'thumbnail',
                     'parent',
                     'course',
                     'lesson_count',

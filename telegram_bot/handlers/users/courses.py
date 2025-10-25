@@ -342,21 +342,35 @@ async def message_course(message: Message, regexp: re.Match, state: FSMContext, 
 async def message_group(message: Message, regexp: re.Match, state: FSMContext, user: User) -> NoReturn:
     await check_learning_session(message, state, view='group')
     group_id = regexp.group('group_id')
+    answer_message_id = None
     try:
-        group = await Group.objects.select_related('parent', 'course').aget(id=group_id)
+        group = await Group.objects.select_related('parent', 'course', 'thumbnail').aget(id=group_id)
         stats = await get_group_lessons_progress(group_id=group.id, user_id=user.id)
-        answer_message = await message.answer(
-            text=get_group_text(group, stats),
-            reply_markup=get_group_inline_markup(group),
-        )
+
+        if group.thumbnail:
+            answer_message_id, _ = await send_file_to_user(
+                bot=message.bot,
+                file=group.thumbnail,
+                user=user,
+                caption=get_group_text(group, stats),
+                reply_markup=get_group_inline_markup(group),
+                document_as_image=True,
+            )
+        else:
+            answer_message = await message.answer(
+                text=get_group_text(group, stats),
+                reply_markup=get_group_inline_markup(group),
+            )
+            answer_message_id = answer_message.message_id
     except Group.DoesNotExist:
         answer_message = await message.answer(
             text=_('Group id not found'),
         )
+        answer_message_id = answer_message.message_id
 
     await message.delete()
     await clean_messages(bot=message.bot, chat_id=message.chat.id, state=state)
-    await add_message_to_clean(state, answer_message.message_id)
+    await add_message_to_clean(state, answer_message_id)
 
 
 async def set_lesson(message: Message, lesson: Lesson, user: User, state: FSMContext) -> list[int]:

@@ -42,6 +42,7 @@ async def send_file_to_user(
     send_file_info: bool = False,
     caption: str = None,
     reply_markup: InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply = None,
+    document_as_image: bool = False,
 ) -> tuple[int, int]:
     if file.content_type == ContentType.AUDIO:
         message = await bot.send_audio(
@@ -51,12 +52,20 @@ async def send_file_to_user(
             reply_markup=reply_markup,
         )
     elif file.content_type == ContentType.DOCUMENT:
-        message = await bot.send_document(
-            user.telegram_id,
-            file.file_id,
-            caption=caption,
-            reply_markup=reply_markup,
-        )
+        if document_as_image and file.mime_type and file.mime_type.startswith('image/'):
+            message = await bot.send_photo(
+                user.telegram_id,
+                file.file_id,
+                caption=caption,
+                reply_markup=reply_markup,
+            )
+        else:
+            message = await bot.send_document(
+                user.telegram_id,
+                file.file_id,
+                caption=caption,
+                reply_markup=reply_markup,
+            )
     elif file.content_type == ContentType.PHOTO:
         message = await bot.send_photo(
             user.telegram_id,
