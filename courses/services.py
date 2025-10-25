@@ -327,6 +327,6 @@ async def get_next_lesson(user: User, lesson: Lesson) -> tuple[Lesson | None, Le
         .select_related(
             'course',
             'group',
-        )
+        ).prefetch_related('links')
         .afirst()
     ), stats

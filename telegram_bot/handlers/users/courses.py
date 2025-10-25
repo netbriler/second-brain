@@ -318,7 +318,7 @@ async def message_course(message: Message, regexp: re.Match, state: FSMContext, 
     course_id = regexp.group('course_id')
     answer_message_id = None
     try:
-        course = await Course.objects.select_related('thumbnail').aget(id=course_id)
+        course = await Course.objects.select_related('thumbnail').prefetch_related('links').aget(id=course_id)
         stats = await get_course_lessons_progress(course_id=course.id, user_id=user.id)
 
         if course.thumbnail:
@@ -357,7 +357,9 @@ async def message_group(message: Message, regexp: re.Match, state: FSMContext, u
     group_id = regexp.group('group_id')
     answer_message_id = None
     try:
-        group = await Group.objects.select_related('parent', 'course', 'thumbnail').aget(id=group_id)
+        group = await Group.objects.select_related('parent', 'course', 'thumbnail').prefetch_related('links').aget(
+            id=group_id
+        )
         stats = await get_group_lessons_progress(group_id=group.id, user_id=user.id)
 
         if group.thumbnail:
@@ -480,7 +482,10 @@ async def set_lesson(message: Message, lesson: Lesson, user: User, state: FSMCon
 async def callback_lesson(callback_query: CallbackQuery, regexp: re.Match, user: User, state: FSMContext) -> NoReturn:
     lesson_id = regexp.group('lesson_id')
     try:
-        lesson = await Lesson.objects.select_related('group', 'course', 'thumbnail').aget(id=lesson_id)
+        lesson = await (
+            Lesson.objects.select_related('group', 'course', 'thumbnail')
+            .prefetch_related('links').aget(id=lesson_id)
+        )
         answer_messages_ids = await set_lesson(callback_query.message, lesson, user, state)
         for answer_messages_id in answer_messages_ids:
             await add_message_to_clean(state, answer_messages_id)
@@ -502,7 +507,9 @@ async def message_lesson(message: Message, regexp: re.Match, user: User, state: 
     state = await check_learning_session(message, state, lesson_selected=True, view='lesson')
     lesson_id = regexp.group('lesson_id')
     try:
-        lesson = await Lesson.objects.select_related('group', 'course', 'thumbnail').aget(id=lesson_id)
+        lesson = await Lesson.objects.select_related('group', 'course', 'thumbnail').prefetch_related('links').aget(
+            id=lesson_id
+        )
         answer_messages_ids = await set_lesson(message, lesson, user, state)
     except Lesson.DoesNotExist:
         answer_message = await message.answer(
@@ -621,7 +628,7 @@ async def message_finish_current_lesson(message: Message, state: FSMContext, use
 
     answer_messages_ids = []
     try:
-        lesson = await Lesson.objects.select_related('course', 'group').aget(id=lesson_id)
+        lesson = await Lesson.objects.select_related('course', 'group').prefetch_related('links').aget(id=lesson_id)
 
         await create_or_update_learning_progress(
             user=user,
