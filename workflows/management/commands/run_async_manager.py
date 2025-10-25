@@ -3,13 +3,12 @@ import logging
 
 from django.core.management.base import BaseCommand
 
-from telegram_restricted_downloader.workflows.restricted_downloader import RestrictedDownloaderWorkflow
 from workflows.manager import async_manager
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler()]
+    handlers=[logging.StreamHandler()],
 )
 
 

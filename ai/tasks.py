@@ -10,7 +10,7 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, ReactionTy
 
 from ai.constants import AITasksCategories
 from ai.models import Message
-from ai.services.base import save_ai_response, TextRecognition
+from ai.services.base import TextRecognition, save_ai_response
 from ai.services.text_recognation import (
     determine_category_and_format_text,
     google_translate_speech_to_text,

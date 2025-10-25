@@ -15,11 +15,11 @@ class Command(BaseCommand):
         async def main():
             binance = BinanceExchange(
                 api_key='F8nG6szxGg8P9C9uJalUXHdcING6MnlQhSHxn7kYWAcYT2d7ijMqYN9wsCPpiaNv',
-                secret_key='58z8kF4ipFIEf8Q6Cf1VHztFWC8EQQ6lRDCP2tPHNO3dWowKMdSKuCA6j0bUZFfE'
+                secret_key='58z8kF4ipFIEf8Q6Cf1VHztFWC8EQQ6lRDCP2tPHNO3dWowKMdSKuCA6j0bUZFfE',
             )
 
             print(
-                await binance.get_all_movements()
+                await binance.get_all_movements(),
             )
             # balances = await binance.fetch_balances()
 

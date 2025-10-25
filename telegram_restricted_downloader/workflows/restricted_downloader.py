@@ -3,14 +3,14 @@ from pathlib import Path
 from django.conf import settings
 from telethon import TelegramClient
 from telethon.errors import AuthKeyUnregisteredError
-from telethon.sessions import StringSession, MemorySession
-from telethon.tl.types import MessageActionTopicCreate, DocumentAttributeAudio, DocumentAttributeVideo
+from telethon.sessions import MemorySession, StringSession
+from telethon.tl.types import DocumentAttributeAudio, DocumentAttributeVideo, MessageActionTopicCreate
 
-from telegram_bot.services.restricted_downloader import fetch_channel_info, get_topic_text, get_message_text
+from telegram_bot.services.restricted_downloader import fetch_channel_info, get_message_text, get_topic_text
 from telegram_restricted_downloader.helpers import ProgressTracker
 from telegram_restricted_downloader.models import Account
 from workflows.constants import JOB_PLANNED
-from workflows.models import Process, Job
+from workflows.models import Job, Process
 from workflows.workflow import AsyncWorkflow
 
 
@@ -26,18 +26,18 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
             self,
             account: Account = None,
             bot_token: str = settings.TELEGRAM_BOT_TOKEN,
-            key: str = 'client'
+            key: str = 'client',
     ):
         if not self.clients.get(key):
             if account:
                 self.clients[key] = TelegramClient(
                     StringSession(
-                        account.session_string
-                    ), settings.TELEGRAM_API_ID, settings.TELEGRAM_API_HASH
+                        account.session_string,
+                    ), settings.TELEGRAM_API_ID, settings.TELEGRAM_API_HASH,
                 )
             elif bot_token:
                 self.clients[key] = TelegramClient(
-                    MemorySession(), settings.TELEGRAM_API_ID, settings.TELEGRAM_API_HASH
+                    MemorySession(), settings.TELEGRAM_API_ID, settings.TELEGRAM_API_HASH,
                 )
 
         if account:
@@ -77,12 +77,12 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         """
         from_account_id = job.data.get('from_account_id')
         if not from_account_id:
-            return await self.fail_process(process, job, f'from_account_id is required.')
+            return await self.fail_process(process, job, 'from_account_id is required.')
 
         try:
             from_account = await Account.objects.aget(id=from_account_id)
         except Account.DoesNotExist:
-            return await self.fail_process(process, job, f'From account not found.')
+            return await self.fail_process(process, job, 'From account not found.')
 
         try:
             client = await self.get_client(from_account)
@@ -90,14 +90,14 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
             me = await client.get_me()
         except Exception as e:
             await self.process_log(process, str(e))
-            return await self.fail_process(process, job, f'Failed to initialize client.')
+            return await self.fail_process(process, job, 'Failed to initialize client.')
 
         if not me:
-            return await self.fail_process(process, job, f'Failed to get client.')
+            return await self.fail_process(process, job, 'Failed to get client.')
 
         destination_user_id = job.data.get('destination_user_id')
         if not destination_user_id:
-            return await self.fail_process(process, job, f'Destination user id is required.')
+            return await self.fail_process(process, job, 'Destination user id is required.')
 
         sender_account = None
         if process.data.get('sender_account_id'):
@@ -112,27 +112,27 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
             me = await sender.get_me()
         except Exception as e:
             await self.process_log(process, str(e))
-            return await self.fail_process(process, job, f'Failed to initialize sender.')
+            return await self.fail_process(process, job, 'Failed to initialize sender.')
 
         if not me:
-            return await self.fail_process(process, job, f'Failed to get sender.')
+            return await self.fail_process(process, job, 'Failed to get sender.')
 
         try:
             entity = await sender.get_entity(destination_user_id)
             await self.job_log(job, f'Checked destination user: {entity}')
         except Exception as e:
             await self.process_log(process, str(e))
-            return await self.fail_process(process, job, f'Failed to get entity.')
+            return await self.fail_process(process, job, 'Failed to get entity.')
 
         channel_id = job.data.get('channel_id')
         if not channel_id:
-            return await self.fail_process(process, job, f'Channel id is required.')
+            return await self.fail_process(process, job, 'Channel id is required.')
 
         try:
             channel, text = await fetch_channel_info(client, channel_id)
         except Exception as e:
             await self.process_log(process, str(e))
-            return await self.fail_process(process, job, f'Failed to get channel.')
+            return await self.fail_process(process, job, 'Failed to get channel.')
 
         await self.process_log(process, f'RestrictedDownloaderWorkflow.prepare: {text}')
 
@@ -255,7 +255,7 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
         except Exception as e:
             if 'Could not find the input entity' in str(e):
                 return await self.fail_job(
-                    job, 'Channel not found.' if 'PeerChannel' in str(e) else 'Message not found.'
+                    job, 'Channel not found.' if 'PeerChannel' in str(e) else 'Message not found.',
                 )
             elif 'The key is not registered in the system' in str(e):
                 return await self.fail_job(job, 'Source client session is invalid.')
@@ -308,7 +308,7 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
 
         try:
             message = await self.get_message(
-                client, job.data['channel_id'], job.data['message_id']
+                client, job.data['channel_id'], job.data['message_id'],
             )
         except AuthKeyUnregisteredError:
             return await self.fail_job(job, 'Source client session is invalid.')
@@ -335,7 +335,7 @@ class RestrictedDownloaderWorkflow(AsyncWorkflow):
                     progress_callback=lambda current, total: self.progress_callback(job, current, total),
                     caption=text[:1024],
                     formatting_entities=message.entities,
-                    **self.detect_document_kwargs(message.document)
+                    **self.detect_document_kwargs(message.document),
                 )
 
                 text = text[1024:]

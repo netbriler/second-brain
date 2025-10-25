@@ -14,7 +14,7 @@ class ExchangeCredentialsAdminForm(forms.ModelForm):
     api_secret = forms.CharField(
         label='API Secret',
         widget=forms.PasswordInput(render_value=False),
-        required=False
+        required=False,
     )
 
     class Meta:

@@ -1,8 +1,7 @@
 import asyncio
 import logging
 from datetime import timedelta
-from time import sleep
-from time import time
+from time import sleep, time
 
 from django.db import transaction
 from django.db.models import Q
@@ -18,7 +17,7 @@ DEFAULT_EXECUTION_TIMEOUT = 60
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler()]
+    handlers=[logging.StreamHandler()],
 )
 
 
@@ -79,7 +78,7 @@ class Manager:
 
             logging.exception(err)
             try:
-                getattr(workflow, 'job_log')(job=job, message=f'Error: {err}')
+                workflow.job_log(job=job, message=f'Error: {err}')
             except Exception as e:
                 logging.exception(e)
 
@@ -166,7 +165,7 @@ class AsyncManager(Manager):
         except Exception as err:
             logging.exception(err)
             try:
-                await getattr(workflow, 'job_log')(job=job, message=f'Error: {err}')
+                await workflow.job_log(job=job, message=f'Error: {err}')
             except Exception as e:
                 logging.exception(e)
 

@@ -2,15 +2,14 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
-from import_export import resources, fields
-from import_export.results import Error
+from import_export import fields, resources
 from import_export.widgets import ForeignKeyWidget
 
 from .models import (
     CryptoDeal,
     CryptoDealItem,
-    TradingPair,
     Exchange,
+    TradingPair,
 )
 
 
@@ -44,12 +43,12 @@ class CryptoDealFullResource(resources.ModelResource):
     short = fields.Field(
         attribute='short',
         column_name='short',
-        widget=ForeignKeyWidget(CryptoDealItem, 'id')
+        widget=ForeignKeyWidget(CryptoDealItem, 'id'),
     )
     long = fields.Field(
         attribute='long',
         column_name='long',
-        widget=ForeignKeyWidget(CryptoDealItem, 'id')
+        widget=ForeignKeyWidget(CryptoDealItem, 'id'),
     )
 
     class Meta:

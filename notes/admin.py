@@ -3,13 +3,14 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
 from utils.helpers import model_link
+
 from .models import Note
 
 
 @admin.register(Note)
 class NoteAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'title', 'text', 'summary', 'user_link', 'source_link', 'status', 'is_deleted', 'created_at', 'updated_at'
+        'id', 'title', 'text', 'summary', 'user_link', 'source_link', 'status', 'is_deleted', 'created_at', 'updated_at',
     )
 
     list_display_links = ('id', 'title')
@@ -17,7 +18,7 @@ class NoteAdmin(admin.ModelAdmin):
     list_filter = (
         'title', 'text', 'summary',
         AutocompleteFilterFactory(_('User'), 'user'),
-        'status', 'is_deleted', 'created_at', 'updated_at', 'tags'
+        'status', 'is_deleted', 'created_at', 'updated_at', 'tags',
     )
 
     search_fields = ('title', 'text', 'summary', 'tags')
@@ -29,13 +30,13 @@ class NoteAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('title', 'text', 'summary', 'related_notes', 'user', 'source_link', 'tags')
+            'fields': ('title', 'text', 'summary', 'related_notes', 'user', 'source_link', 'tags'),
         }),
         ('Status', {
-            'fields': ('status', 'is_deleted')
+            'fields': ('status', 'is_deleted'),
         }),
         ('Timestamps', {
-            'fields': ('created_at', 'updated_at')
+            'fields': ('created_at', 'updated_at'),
         }),
     )
     filter_horizontal = ('related_notes',)

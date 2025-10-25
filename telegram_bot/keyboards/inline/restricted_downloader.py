@@ -16,7 +16,7 @@ def get_restricted_downloader_select_account_inline_markup(accounts: list[Accoun
 
     builder.button(
         text=_('Add new account 🆕'),
-        callback_data=f'restricted_downloader:add_account',
+        callback_data='restricted_downloader:add_account',
     )
 
     builder.adjust(1)
@@ -30,24 +30,24 @@ def get_restricted_downloader_select_dialog_inline_markup(channel_selected: bool
     if channel_selected:
         builder.button(
             text=_('📁 Select chapter'),
-            switch_inline_query_current_chat=f'restricted_downloader:select_dialog:',
+            switch_inline_query_current_chat='restricted_downloader:select_dialog:',
         )
         builder.button(
             text=_('✏️ Change sender account'),
-            switch_inline_query_current_chat=f'restricted_downloader:select_sender_account',
+            switch_inline_query_current_chat='restricted_downloader:select_sender_account',
         )
         builder.button(
             text=_('✏️ Change receiver account'),
-            switch_inline_query_current_chat=f'restricted_downloader:select_receiver_account',
+            switch_inline_query_current_chat='restricted_downloader:select_receiver_account',
         )
         builder.button(
             text=_('🚀 Start downloading'),
-            switch_inline_query_current_chat=f'restricted_downloader:start_downloading',
+            switch_inline_query_current_chat='restricted_downloader:start_downloading',
         )
     else:
         builder.button(
             text=_('📁 Select dialog'),
-            switch_inline_query_current_chat=f'restricted_downloader:select_dialog:',
+            switch_inline_query_current_chat='restricted_downloader:select_dialog:',
         )
 
     builder.adjust(1)

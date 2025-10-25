@@ -112,6 +112,6 @@ class CustomTelethonClient(TelegramClient):
         return CURRENT_VERSION + StringSession.encode(
             struct.pack(
                 _STRUCT_PREFORMAT.format(len(ip)), self.session.dc_id, ip, self.session.port,
-                self.session.auth_key.key
-            )
+                self.session.auth_key.key,
+            ),
         )

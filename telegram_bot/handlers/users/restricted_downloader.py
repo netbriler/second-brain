@@ -4,7 +4,7 @@ from typing import NoReturn
 from aiogram import Router
 from aiogram.filters import Command, or_f
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message, InlineQueryResultArticle, InputTextMessageContent
+from aiogram.types import CallbackQuery, InlineQueryResultArticle, InputTextMessageContent, Message
 from django.conf import settings
 from django.utils.translation import gettext as _
 from loguru import logger
@@ -18,10 +18,17 @@ from telegram_bot.filters.regexp import Regexp
 from telegram_bot.keyboards.default.cancel import get_cancel_markup
 from telegram_bot.keyboards.default.default import get_default_markup
 from telegram_bot.keyboards.inline.restricted_downloader import (
-    get_restricted_downloader_select_account_inline_markup, get_restricted_downloader_select_dialog_inline_markup,
+    get_restricted_downloader_select_account_inline_markup,
+    get_restricted_downloader_select_dialog_inline_markup,
 )
-from telegram_bot.services.restricted_downloader import get_account_text, save_account_data, \
-    check_restricted_downloader_session, check_client, fetch_channel_info, fetch_message_details
+from telegram_bot.services.restricted_downloader import (
+    check_client,
+    check_restricted_downloader_session,
+    fetch_channel_info,
+    fetch_message_details,
+    get_account_text,
+    save_account_data,
+)
 from telegram_bot.states.restricted_downloader import RestrictedDownloaderForm
 from telegram_restricted_downloader.helpers import CustomTelethonClient
 from telegram_restricted_downloader.models import Account
@@ -40,7 +47,7 @@ router = Router(name=__name__)
     ),
     or_f(
         Command(commands=['cancel']),
-        I18nText('Cancel ❌')
+        I18nText('Cancel ❌'),
     ),
 )
 async def _cancel(message: Message, user: User, state: FSMContext) -> NoReturn:
@@ -78,7 +85,7 @@ async def callback_add_account(
 
     await callback_query.message.answer(
         _('Please enter account phone number or session string'),
-        reply_markup=get_cancel_markup(_('Phone number or session string:'))
+        reply_markup=get_cancel_markup(_('Phone number or session string:')),
     )
 
     await state.set_state(RestrictedDownloaderForm.get_phone_number)
@@ -153,7 +160,7 @@ async def message_get_phone_number(message: Message, state: FSMContext, user: Us
 
     await message.answer(
         _('Please enter code messaged to your phone number'),
-        reply_markup=get_cancel_markup(_('Code:'))
+        reply_markup=get_cancel_markup(_('Code:')),
     )
 
     await state.set_state(RestrictedDownloaderForm.get_code)
@@ -187,10 +194,10 @@ async def process_verification_code(message: Message, state: FSMContext, user: U
     except SessionPasswordNeededError:
         await message.answer(
             _('Two-step verification is enabled. Please enter your password, it will be deleted instantly'),
-            reply_markup=get_cancel_markup(_('Password:'))
+            reply_markup=get_cancel_markup(_('Password:')),
         )
         await state.set_state(RestrictedDownloaderForm.get_password)
-        return
+        return None
     except Exception as e:
         logger.exception(e)
         await message.answer(
@@ -255,7 +262,7 @@ async def callback_select_account(
     except Account.DoesNotExist:
         await callback_query.message.edit_reply_markup(
             reply_markup=get_restricted_downloader_select_account_inline_markup(
-                [a async for a in Account.objects.filter(user=user, is_active=True).select_related('user')]
+                [a async for a in Account.objects.filter(user=user, is_active=True).select_related('user')],
             ),
         )
         return await callback_query.answer(_('Account not found'), show_alert=True)
@@ -273,7 +280,7 @@ async def callback_select_account(
     try:
         if account.session_string:
             client = CustomTelethonClient(
-                StringSession(account.session_string), settings.TELEGRAM_API_ID, settings.TELEGRAM_API_HASH
+                StringSession(account.session_string), settings.TELEGRAM_API_ID, settings.TELEGRAM_API_HASH,
             )
             await client.connect()
             me = await client.get_me()
@@ -301,7 +308,7 @@ async def callback_select_account(
         r'^https:\/\/t\.me\/c\/'
         r'(?P<chat_id>-?\d+)'
         r'(\/(?P<chapter_id>\d+))?'
-        r'(\/(?P<message_id>\d+))?$'
+        r'(\/(?P<message_id>\d+))?$',
     ),
 )
 async def download_telegram_message(
@@ -315,7 +322,7 @@ async def download_telegram_message(
     message_id = int(regexp.group('message_id') or chapter_id)
 
     await message.answer(
-        f'Chat ID: {chat_id}\nChapter ID: {chapter_id}\nMessage ID: {message_id}\n'
+        f'Chat ID: {chat_id}\nChapter ID: {chapter_id}\nMessage ID: {message_id}\n',
     )
 
     data = await state.get_data()
@@ -325,7 +332,7 @@ async def download_telegram_message(
     receiver_chat_id = data.get('receiver_chat_id', user.telegram_id)
     if channel_id and chat_id != channel_id:
         return await message.answer(
-            _(f'You can download messages only from one channel. t.me/c/{channel_id}'), show_alert=True
+            _(f'You can download messages only from one channel. t.me/c/{channel_id}'), show_alert=True,
         )
 
     try:
@@ -366,7 +373,7 @@ async def download_telegram_message(
     channel, text = await fetch_channel_info(client, chat_id)
     await message.answer(text)
     if not channel:
-        return
+        return None
 
     if chapter_id and message_id != chapter_id:
         chapter, text = await fetch_message_details(client, channel, chapter_id)
@@ -473,7 +480,7 @@ async def inline_select_dialog(
         query: CallbackQuery,
         state: FSMContext,
         user: User,
-        regexp: re.Match
+        regexp: re.Match,
 ) -> NoReturn:
     search_query = (regexp.group('search') or '').strip().lower()
 
@@ -491,7 +498,7 @@ async def inline_select_dialog(
                 title=_('Account not found'),
                 description=_('Please select account again'),
                 input_message_content=InputTextMessageContent(
-                    message_text=f'/restricted_downloader',
+                    message_text='/restricted_downloader',
                 ),
             ),
         )
@@ -521,7 +528,7 @@ async def inline_select_dialog(
                 title=_('Invalid session'),
                 description=_('Please re-add account'),
                 input_message_content=InputTextMessageContent(
-                    message_text=f'/restricted_downloader',
+                    message_text='/restricted_downloader',
                 ),
             ),
         )
@@ -541,7 +548,7 @@ async def inline_select_dialog(
                 offset_topic=0,
                 limit=100,
                 q=search_query,
-            )
+            ),
         )
         for topic in result.topics:
             results.append(

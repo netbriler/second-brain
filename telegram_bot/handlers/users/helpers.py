@@ -24,7 +24,7 @@ router = Router(name=__name__)
 @router.message(
     or_f(
         Command(commands=['cancel']),
-        I18nText('Cancel ❌')
+        I18nText('Cancel ❌'),
     ),
 )
 async def _cancel(message: Message, user: User, state: FSMContext) -> NoReturn:

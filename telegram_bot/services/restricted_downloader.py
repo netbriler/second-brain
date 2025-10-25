@@ -18,7 +18,7 @@ def get_account_text(account: Account) -> str:
         'ID: {id}\n'
         'Name: {name}\n'
         'Username: {username}\n'
-        'Last used at: {last_used_at}\n'
+        'Last used at: {last_used_at}\n',
     ).format(
         id=account.telegram_id,
         name=account.name,
@@ -47,7 +47,7 @@ async def save_account_data(
             'username': telethon_user.username,
             'encrypted_session_string': Account.encrypt(session_string),
             'last_used_at': now(),
-        }
+        },
     )
 
     text = _('Account successfully added 🎉\n') + get_account_text(account)
@@ -56,7 +56,7 @@ async def save_account_data(
     await state.set_state(RestrictedDownloaderForm.restricted_downloader_session)
     await message.answer(
         text,
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=ReplyKeyboardRemove(),
     )
 
     return account
@@ -94,11 +94,11 @@ def get_channel_text(channel):
 def get_topic_text(_message):
     """Format topic creation message information."""
     return _(
-        'ID: {id}\nTopic: {topic}\nCreated At: {created_at}\n'
+        'ID: {id}\nTopic: {topic}\nCreated At: {created_at}\n',
     ).format(
         id=_message.id,
         topic=(_message.action.title[:100] + '...' if len(
-            _message.action.title
+            _message.action.title,
         ) > 100 else '') if _message.action.title else '',
         created_at=f'{_message.date:%Y-%m-%d %H:%M:%S}',
     )
@@ -107,7 +107,7 @@ def get_topic_text(_message):
 def get_message_text(_message):
     """Format general message information."""
     return _(
-        'ID: {id}\nDocument: {document}\nText: {text}\n'
+        'ID: {id}\nDocument: {document}\nText: {text}\n',
     ).format(
         id=_message.id,
         text=(_message.text[:100] + '...' if len(_message.text) > 100 else '') if _message.text else '',
@@ -119,7 +119,7 @@ def get_message_text(_message):
 async def fetch_channel_info(client, chat_id) -> tuple[Entity | None, str]:
     try:
         channel = await client.get_entity(
-            int(f'-100{chat_id}' if not str(chat_id).startswith('-100') else chat_id)
+            int(f'-100{chat_id}' if not str(chat_id).startswith('-100') else chat_id),
         )
         return channel, get_channel_text(channel)
     except Exception as e:

@@ -86,7 +86,7 @@ class ExchangeCredentials(models.Model):
         if not self._api_secret:
             return None
         key = base64.urlsafe_b64encode(
-            hashlib.sha256(settings.SECRET_KEY.encode('utf-8')).digest()
+            hashlib.sha256(settings.SECRET_KEY.encode('utf-8')).digest(),
         )
         f = Fernet(key)
         return f.decrypt(self._api_secret.encode()).decode()
@@ -94,7 +94,7 @@ class ExchangeCredentials(models.Model):
     @api_secret.setter
     def api_secret(self, value):
         key = base64.urlsafe_b64encode(
-            hashlib.sha256(settings.SECRET_KEY.encode('utf-8')).digest()
+            hashlib.sha256(settings.SECRET_KEY.encode('utf-8')).digest(),
         )
         f = Fernet(key)
         self._api_secret = f.encrypt(value.encode()).decode()
@@ -247,7 +247,7 @@ class CryptoDealItem(models.Model):
 
     trades = models.JSONField(
         blank=True, null=True,
-        verbose_name=_('Trades')
+        verbose_name=_('Trades'),
     )
 
     # New fields that used to be properties
@@ -255,7 +255,7 @@ class CryptoDealItem(models.Model):
         max_digits=20,
         decimal_places=8,
         default=Decimal('0.0'),
-        verbose_name=_('PnL')
+        verbose_name=_('PnL'),
     )
 
     extra_margin = models.DecimalField(
@@ -269,14 +269,14 @@ class CryptoDealItem(models.Model):
         max_digits=20,
         decimal_places=8,
         default=Decimal('0.0'),
-        verbose_name=_('Margin Open')
+        verbose_name=_('Margin Open'),
     )
 
     margin_close = models.DecimalField(
         max_digits=20,
         decimal_places=8,
         default=Decimal('0.0'),
-        verbose_name=_('Margin Close')
+        verbose_name=_('Margin Close'),
     )
 
     trading_volume = models.DecimalField(
@@ -289,19 +289,19 @@ class CryptoDealItem(models.Model):
     income = models.DecimalField(
         max_digits=20, decimal_places=8,
         default=Decimal('0.0'),
-        verbose_name=_('Income')
+        verbose_name=_('Income'),
     )
 
     roi = models.DecimalField(
         max_digits=20, decimal_places=8,
         default=Decimal('0.0'),
-        verbose_name=_('ROI')
+        verbose_name=_('ROI'),
     )
 
     roi_percent = models.DecimalField(
         max_digits=20, decimal_places=8,
         default=Decimal('0.0'),
-        verbose_name=_('ROI %')
+        verbose_name=_('ROI %'),
     )
 
     duration = models.DurationField(
@@ -520,16 +520,16 @@ class CryptoDeal(models.Model):
         if self.type in [self.DealType.ARBITRAGE, self.DealType.HEDGE]:
             if not self.short or not self.long:
                 raise ValidationError(
-                    _('Crypto deals must have both short and long positions.')
+                    _('Crypto deals must have both short and long positions.'),
                 )
         elif self.type == self.DealType.TRADE:
             if not self.short and not self.long:
                 raise ValidationError(
-                    _('Trade deals must have either short or long position.')
+                    _('Trade deals must have either short or long position.'),
                 )
             if self.short and self.long:
                 raise ValidationError(
-                    _('Trade deals must have only one position (either short or long).')
+                    _('Trade deals must have only one position (either short or long).'),
                 )
 
     def save(self, *args, **kwargs):
@@ -562,7 +562,7 @@ class Balance(models.Model):
     locked = models.DecimalField(max_digits=20, decimal_places=8)
 
     def __str__(self):
-        return f"{self.exchange.name} - {self.asset}"
+        return f'{self.exchange.name} - {self.asset}'
 
 
 class BalanceSnapshot(models.Model):
@@ -574,4 +574,4 @@ class BalanceSnapshot(models.Model):
     snapshot_time = models.DateTimeField(default=now)
 
     def __str__(self):
-        return f"{self.exchange.name} - {self.asset} - {self.snapshot_time}"
+        return f'{self.exchange.name} - {self.asset} - {self.snapshot_time}'

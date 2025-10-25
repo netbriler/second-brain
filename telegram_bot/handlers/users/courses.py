@@ -358,7 +358,7 @@ async def message_group(message: Message, regexp: re.Match, state: FSMContext, u
     answer_message_id = None
     try:
         group = await Group.objects.select_related('parent', 'course', 'thumbnail').prefetch_related('links').aget(
-            id=group_id
+            id=group_id,
         )
         stats = await get_group_lessons_progress(group_id=group.id, user_id=user.id)
 
@@ -508,7 +508,7 @@ async def message_lesson(message: Message, regexp: re.Match, user: User, state: 
     lesson_id = regexp.group('lesson_id')
     try:
         lesson = await Lesson.objects.select_related('group', 'course', 'thumbnail').prefetch_related('links').aget(
-            id=lesson_id
+            id=lesson_id,
         )
         answer_messages_ids = await set_lesson(message, lesson, user, state)
     except Lesson.DoesNotExist:

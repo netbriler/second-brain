@@ -1,5 +1,6 @@
 from datetime import timedelta
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
+
 from django.utils.timesince import timesince
 
 Q2 = Decimal('0.01')
@@ -56,7 +57,7 @@ class CryptoService:
             item.margin_close = item.margin_open + item.income
 
         item.trading_volume = abs(
-            item.volume * item.open_price
+            item.volume * item.open_price,
         )
         if item.close_price is not None:
             item.trading_volume += abs(item.volume * item.close_price)
@@ -101,11 +102,11 @@ class CryptoService:
 
         deal.spread_open, deal.spread_close, deal.spread = CryptoService._spread(
             short.open_price, long.open_price,
-            short.close_price, long.close_price
+            short.close_price, long.close_price,
         )
 
         deal.trading_volume = abs(
-            short.trading_volume + long.trading_volume
+            short.trading_volume + long.trading_volume,
         )
 
         opens = [t for t in (short.open_at, short.open_at) if t is not None]

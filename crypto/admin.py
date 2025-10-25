@@ -9,10 +9,11 @@ from django.utils.translation import gettext_lazy as _
 from import_export.admin import ImportExportModelAdmin
 from totalsum.admin import TotalsumAdmin
 
-from utils.helpers import model_link, format_number
-from .forms import UserForm, ExchangeCredentialsAdminForm
-from .models import Exchange, TradingPair, CryptoDealItem, CryptoDeal, ExchangeCredentials
-from .resources import CryptoDealItemResource, CryptoDealFullResource
+from utils.helpers import format_number, model_link
+
+from .forms import ExchangeCredentialsAdminForm, UserForm
+from .models import CryptoDeal, CryptoDealItem, Exchange, ExchangeCredentials, TradingPair
+from .resources import CryptoDealFullResource, CryptoDealItemResource
 
 
 class ExchangeCredentialsInline(admin.TabularInline):
@@ -24,10 +25,10 @@ class ExchangeCredentialsInline(admin.TabularInline):
                 'user',
                 'api_key',
                 'is_enabled',
-            )
+            ),
         }),
         ('Timestamps', {
-            'fields': ('created_at', 'updated_at')
+            'fields': ('created_at', 'updated_at'),
         }),
     )
     readonly_fields = ('created_at', 'updated_at')
@@ -43,14 +44,14 @@ class ExchangeAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     )
     fieldsets = (
         (None, {
-            'fields': ('name', 'is_enabled')
+            'fields': ('name', 'is_enabled'),
         }),
         ('Timestamps', {
-            'fields': ('created_at', 'updated_at')
+            'fields': ('created_at', 'updated_at'),
         }),
     )
     inlines = [ExchangeCredentialsInline]
-    readonly_fields = ('created_at', 'updated_at',)
+    readonly_fields = ('created_at', 'updated_at')
     search_fields = ('name',)
 
 
@@ -64,7 +65,7 @@ class ExchangeCredentialsAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         'api_key',
         'is_enabled',
         'created_at',
-        'updated_at'
+        'updated_at',
     )
 
     list_filter = (
@@ -83,13 +84,13 @@ class ExchangeCredentialsAdmin(ImportExportModelAdmin, admin.ModelAdmin):
                 'api_key',
                 'api_secret',
                 'is_enabled',
-            )
+            ),
         }),
         ('Timestamps', {
-            'fields': ('created_at', 'updated_at')
+            'fields': ('created_at', 'updated_at'),
         }),
     )
-    readonly_fields = ('created_at', 'updated_at',)
+    readonly_fields = ('created_at', 'updated_at')
     autocomplete_fields = ('exchange', 'user')
     search_fields = ('exchange__name', 'user__username')
 
@@ -105,10 +106,10 @@ class TradingPairAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     )
     fieldsets = (
         (None, {
-            'fields': ('base_currency', 'quote_currency', 'symbol')
+            'fields': ('base_currency', 'quote_currency', 'symbol'),
         }),
         ('Timestamps', {
-            'fields': ('created_at', 'updated_at')
+            'fields': ('created_at', 'updated_at'),
         }),
     )
     readonly_fields = ('created_at', 'updated_at', 'symbol')
@@ -169,7 +170,7 @@ class CryptoDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         'volume', 'leverage', 'fees', 'funding',
         'is_liquidated',
         'pnl_display', 'income_display', 'roi_percent_display', 'trading_volume_display',
-        'duration', 'human_duration'
+        'duration', 'human_duration',
     )
 
     readonly_fields = (
@@ -197,17 +198,17 @@ class CryptoDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 
     fieldsets = (
         (_('Basic Info'), {
-            'fields': ('user', 'trading_pair', 'exchange', 'side')
+            'fields': ('user', 'trading_pair', 'exchange', 'side'),
         }),
         (_('Prices & Volume'), {
             'fields': (('open_price', 'close_price'),
-                       ('volume', 'leverage', 'extra_margin'))
+                       ('volume', 'leverage', 'extra_margin')),
         }),
         (_('Costs & Funding'), {
-            'fields': ('funding', 'fees', 'is_liquidated')
+            'fields': ('funding', 'fees', 'is_liquidated'),
         }),
         (_('Timing'), {
-            'fields': (('open_at', 'close_at'),)
+            'fields': (('open_at', 'close_at'),),
         }),
         (_('Calculated Fields'), {
             'fields': (
@@ -215,10 +216,10 @@ class CryptoDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
                 'margin_open_display', 'margin_close_display', 'trading_volume_display',
                 'income_display', 'roi_display', 'roi_percent_display',
                 'duration', 'human_duration',
-            )
+            ),
         }),
         (_('Timestamps'), {
-            'fields': ('created_at', 'updated_at')
+            'fields': ('created_at', 'updated_at'),
         }),
     )
 
@@ -234,8 +235,8 @@ class CryptoDealItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     def delete_unused_items(self, request, queryset):
         used_ids = set(
             CryptoDeal.objects.filter(
-                Q(short__in=queryset) | Q(long__in=queryset)
-            ).values_list('short_id', 'long_id')
+                Q(short__in=queryset) | Q(long__in=queryset),
+            ).values_list('short_id', 'long_id'),
         )
         used_ids = {id for pair in used_ids for id in pair if id is not None}
 
@@ -492,7 +493,7 @@ class CryptoDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
     pair_long.long_description = _('Pair Long')
 
     list_select_related = (
-        'short', 'long', 'short__exchange', 'long__exchange', 'user', 'short__trading_pair', 'long__trading_pair'
+        'short', 'long', 'short__exchange', 'long__exchange', 'user', 'short__trading_pair', 'long__trading_pair',
     )
 
     list_filter = (
@@ -521,7 +522,7 @@ class CryptoDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
         'spread_short', 'margin_open_short', 'trading_volume_short',
         'fees_short', 'funding_short',
         'duration', 'human_duration',
-        'created_at'
+        'created_at',
     )
 
     readonly_fields = (
@@ -545,7 +546,7 @@ class CryptoDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
         (_('Deal Owner & Items'), {
             'fields': (
                 'user', 'short', 'long', 'type', 'note',
-            )
+            ),
         }),
         (_('Short Position'), {
             'fields': (
@@ -553,7 +554,7 @@ class CryptoDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
                 'open_price_short', 'close_price_short',
                 'volume_short', 'leverage_short',
                 'duration_short', 'human_duration_short',
-            )
+            ),
         }),
         (_('Long Position'), {
             'fields': (
@@ -561,7 +562,7 @@ class CryptoDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
                 'open_price_long', 'close_price_long',
                 'volume_long', 'leverage_long',
                 'duration_long', 'human_duration_long',
-            )
+            ),
         }),
         (_('Calculated Fields'), {
             'fields': (
@@ -570,10 +571,10 @@ class CryptoDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
                 'spread_open_short', 'spread_close_short', 'spread_short',
                 'margin_open_short', 'margin_close_short', 'trading_volume_short',
                 'duration', 'human_duration',
-            )
+            ),
         }),
         (_('Timestamps'), {
-            'fields': ('created_at', 'updated_at')
+            'fields': ('created_at', 'updated_at'),
         }),
     )
 
@@ -593,7 +594,7 @@ class CryptoDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
                 if title == _('Calculated Fields'):
                     fields = list(opts.get('fields', ()))
                     fields = [f for f in fields if f not in (
-                        'spread_open_short', 'spread_close_short', 'spread_short'
+                        'spread_open_short', 'spread_close_short', 'spread_short',
                     )]
                     opts = {**opts, 'fields': tuple(fields)}
                 keep_sections.append((title, opts))
@@ -636,13 +637,13 @@ class CryptoDealAdmin(ImportExportModelAdmin, TotalsumAdmin, admin.ModelAdmin):
                     obj.short.user_id = selected_user
                     obj.long.user_id = selected_user
                     obj.save(
-                        update_fields=['user_id']
+                        update_fields=['user_id'],
                     )
                     obj.short.save(
-                        update_fields=['user_id']
+                        update_fields=['user_id'],
                     )
                     obj.long.save(
-                        update_fields=['user_id']
+                        update_fields=['user_id'],
                     )
 
     @admin.action(description=_('Recalculate selected deals'))

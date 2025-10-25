@@ -8,10 +8,7 @@ from urllib.parse import urlencode
 
 from aiogram.client.session import aiohttp
 
-from crypto.exchanges.base import (
-    AbstractExchange,
-    BalanceSchema
-)
+from crypto.exchanges.base import AbstractExchange, BalanceSchema
 from utils.logging import logger
 
 
@@ -38,7 +35,7 @@ class BinanceExchange(AbstractExchange):
         signature = hmac.new(
             self.secret_key.encode('utf-8'),
             query_string.encode('utf-8'),
-            hashlib.sha256
+            hashlib.sha256,
         ).hexdigest()
         params['signature'] = signature
         headers = {'X-MBX-APIKEY': self.api_key}
@@ -69,8 +66,8 @@ class BinanceExchange(AbstractExchange):
                         account='spot',
                         free=free,
                         locked=locked,
-                        raw=asset
-                    )
+                        raw=asset,
+                    ),
                 )
         except Exception as e:
             logger.exception(f'Error fetching spot balances: {e}')
@@ -98,7 +95,7 @@ class BinanceExchange(AbstractExchange):
                         free=free,
                         locked=locked + borrowed + interest,
                         raw=asset,
-                    )
+                    ),
                 )
         except Exception as e:
             logger.exception(f'Error fetching margin balances: {e}')
@@ -122,8 +119,8 @@ class BinanceExchange(AbstractExchange):
                         account='futures',
                         free=free,
                         locked=locked,
-                        raw=asset
-                    )
+                        raw=asset,
+                    ),
                 )
         except Exception as e:
             logger.exception(f'Error fetching futures balances: {e}')
@@ -148,7 +145,7 @@ class BinanceExchange(AbstractExchange):
                         free=free,
                         locked=locked,
                         raw=asset,
-                    )
+                    ),
                 )
         except Exception as e:
             logger.exception(f'Error fetching funding balances: {e}')
@@ -247,35 +244,35 @@ class BinanceExchange(AbstractExchange):
             self._send_signed_request(
                 'GET', '/sapi/v1/capital/deposit/hisrec', {
                     'startTime': start_time,
-                    'endTime': end_time
-                }
+                    'endTime': end_time,
+                },
             ),
             self._send_signed_request(
                 'GET', '/sapi/v1/capital/withdraw/history', {
                     'startTime': start_time,
-                    'endTime': end_time
-                }
+                    'endTime': end_time,
+                },
             ),
             self._send_signed_request(
                 'GET', '/sapi/v1/asset/transfer', {
                     'type': 0,  # all types
                     'startTime': start_time,
-                    'endTime': end_time
-                }
+                    'endTime': end_time,
+                },
             ),
             self._send_signed_request(
                 'GET', '/sapi/v1/asset/assetDividend', {
                     'startTime': start_time,
-                    'endTime': end_time
-                }
+                    'endTime': end_time,
+                },
             ),
             self._send_signed_request(
                 'GET', '/sapi/v1/simple-earn/flexible/history/rewardsRecord', {
                     'startTime': start_time,
                     'endTime': end_time,
                     'type': 'ALL',
-                }
-            )
+                },
+            ),
         ]
 
         try:
@@ -290,8 +287,8 @@ class BinanceExchange(AbstractExchange):
                         'asset': d['coin'],
                         'amount': d['amount'],
                         'status': d['status'],
-                        'time': d['insertTime']
-                    }
+                        'time': d['insertTime'],
+                    },
                 )
 
             for w in withdraw_data:
@@ -301,8 +298,8 @@ class BinanceExchange(AbstractExchange):
                         'asset': w['coin'],
                         'amount': w['amount'],
                         'status': w['status'],
-                        'time': w['applyTime']
-                    }
+                        'time': w['applyTime'],
+                    },
                 )
 
             for t in transfer_data.get('rows', []):
@@ -313,8 +310,8 @@ class BinanceExchange(AbstractExchange):
                         'amount': t['qty'],
                         'from': t['fromAccountType'],
                         'to': t['toAccountType'],
-                        'time': t['timestamp']
-                    }
+                        'time': t['timestamp'],
+                    },
                 )
 
             for r in dividend_data.get('rows', []):
@@ -324,8 +321,8 @@ class BinanceExchange(AbstractExchange):
                         'asset': r['asset'],
                         'amount': r['amount'],
                         'info': r['tranId'],
-                        'time': r['divTime']
-                    }
+                        'time': r['divTime'],
+                    },
                 )
 
             for e in earn_data:
@@ -334,11 +331,11 @@ class BinanceExchange(AbstractExchange):
                         'type': 'earn_reward',
                         'asset': e['asset'],
                         'amount': e['interest'],
-                        'time': e['time']
-                    }
+                        'time': e['time'],
+                    },
                 )
 
             return sorted(movements, key=lambda x: x['time'])
         except Exception as e:
-            logger.exception("Failed to fetch all movements")
+            logger.exception('Failed to fetch all movements')
             return []
