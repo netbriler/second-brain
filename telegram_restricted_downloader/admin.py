@@ -18,7 +18,6 @@ class AccountAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     )
 
     search_fields = (
-        'id',
         'name',
         'phone',
         'user',

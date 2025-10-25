@@ -28,14 +28,12 @@ class FileAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_select_related = ('uploaded_by',)
 
     search_fields = (
-        '=id',
         'content_type',
         'file_id',
         'file_unique_id',
         'mime_type',
         'created_at',
         'updated_at',
-        'uploaded_by',
     )
 
     list_filter = (
@@ -183,8 +181,6 @@ class MessageAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         'message_id',
         'chat_id',
         'text',
-        'file',
-        'user',
         'role',
         'created_at',
         'updated_at',

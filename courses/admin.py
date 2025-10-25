@@ -23,7 +23,6 @@ class CourseAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
     )
 
     search_fields = (
-        'id',
         'title',
         'description',
         'created_at',
@@ -88,11 +87,8 @@ class GroupAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
     )
 
     search_fields = (
-        'id',
         'title',
         'description',
-        'parent',
-        'course',
         'created_at',
         'updated_at',
     )
@@ -188,10 +184,7 @@ class LessonAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
     )
 
     search_fields = (
-        'id',
         'title',
-        'group',
-        'course',
         'created_at',
         'updated_at',
     )
@@ -282,10 +275,7 @@ class LessonEntityAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmi
     )
 
     search_fields = (
-        'id',
         'content',
-        'lesson',
-        'file',
     )
 
     def content_short(self, obj):
@@ -352,11 +342,6 @@ class LearningProgressAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     )
 
     search_fields = (
-        'id',
-        'user',
-        'course',
-        'lesson',
-        'lesson_entity',
         'timecode',
         'is_finished',
         'created_at',
@@ -437,10 +422,8 @@ class LinkAdmin(DjangoQLSearchMixin, SortableAdminMixin, admin.ModelAdmin):
     )
 
     search_fields = (
-        'id',
         'title',
         'url',
-        'lesson_entity',
     )
 
     list_select_related = ('lesson_entity',)

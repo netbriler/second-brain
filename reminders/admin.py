@@ -22,12 +22,10 @@ class ReminderAdmin(admin.ModelAdmin):
     list_select_related = ('user', 'periodic_task')
 
     search_fields = (
-        'id',
         'title',
         'description',
         'task_class',
         'is_enabled',
-        'user',
         'created_at',
         'updated_at',
     )

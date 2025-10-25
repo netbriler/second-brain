@@ -23,14 +23,11 @@ class MessageAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     )
 
     search_fields = (
-        'id',
         'text',
         'prompt',
         'response',
         'category',
         'time_spent',
-        'source',
-        'requested_by',
         'created_at',
         'updated_at',
     )

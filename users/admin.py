@@ -22,7 +22,6 @@ class UserAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     )
 
     search_fields = (
-        'id',
         'username',
         'telegram_id',
         'telegram_username',
