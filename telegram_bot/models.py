@@ -66,7 +66,7 @@ class File(models.Model):
     )
 
     def __str__(self):
-        return f'Telegram file {self.get_content_type_display()} {self.id}'
+        return f'Telegram file {self.get_content_type_display()} {self.id} {self.caption[:30] if self.caption else ""}'
 
 
 class Message(models.Model):
