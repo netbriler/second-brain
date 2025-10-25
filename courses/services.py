@@ -20,14 +20,15 @@ async def create_or_update_learning_progress(
         'course': course,
         'lesson': lesson,
     }
-    if lesson_entity:
-        filters['lesson_entity'] = lesson_entity
 
     # Try to get the most recent learning progress entry
     if is_finished is not None:
         await LearningProgress.objects.filter(**filters).aupdate(
             is_finished=is_finished,
         )
+
+    if lesson_entity:
+        filters['lesson_entity'] = lesson_entity
 
     progress = await LearningProgress.objects.filter(**filters).order_by('-updated_at').afirst()
 
@@ -46,7 +47,7 @@ async def create_or_update_learning_progress(
             course=course,
             lesson=lesson,
             lesson_entity=lesson_entity,
-            timecode=timecode,
+            timecode=timecode or 0,
             is_finished=is_finished if is_finished is not None else False,
         )
         return progress

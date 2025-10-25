@@ -192,10 +192,10 @@ async def inline_query_lesson(query: CallbackQuery, regexp: re.Match) -> NoRetur
     Regexp(r'^courses:course_(?P<course_id>\d+):stats$'),
 )
 async def callback_course_stats(
-    callback_query: CallbackQuery,
-    regexp: re.Match,
-    user: User,
-    state: FSMContext,
+        callback_query: CallbackQuery,
+        regexp: re.Match,
+        user: User,
+        state: FSMContext,
 ) -> NoReturn:
     course_id = regexp.group('course_id')
     try:
@@ -224,7 +224,7 @@ async def inline_query(query: CallbackQuery, regexp: re.Match, user: User) -> No
     middle_results = list()
     end_results = list()
     async for course in Course.objects.filter(
-        Q(title__icontains=search_query) | Q(description__icontains=search_query),
+            Q(title__icontains=search_query) | Q(description__icontains=search_query),
     ):
         stats = await get_course_lessons_progress(course_id=course.id, user_id=user.id)
         article = InlineQueryResultArticle(
@@ -262,10 +262,10 @@ async def inline_query(query: CallbackQuery, regexp: re.Match, user: User) -> No
     Regexp(r'^courses:group_(?P<group_id>\d+):stats$'),
 )
 async def callback_group_stats(
-    callback_query: CallbackQuery,
-    regexp: re.Match,
-    user: User,
-    state: FSMContext,
+        callback_query: CallbackQuery,
+        regexp: re.Match,
+        user: User,
+        state: FSMContext,
 ) -> NoReturn:
     group_id = regexp.group('group_id')
     try:
@@ -285,11 +285,11 @@ async def callback_group_stats(
 
 
 async def check_learning_session(
-    message: Message,
-    state: FSMContext,
-    lesson_selected: bool = False,
-    send_keyboard: bool = False,
-    view: str = None,
+        message: Message,
+        state: FSMContext,
+        lesson_selected: bool = False,
+        send_keyboard: bool = False,
+        view: str = None,
 ) -> FSMContext:
     if await state.get_state() != CourseForm.learning_session or send_keyboard:
         await state.set_state(CourseForm.learning_session)
@@ -316,21 +316,34 @@ async def check_learning_session(
 async def message_course(message: Message, regexp: re.Match, state: FSMContext, user: User) -> NoReturn:
     await check_learning_session(message, state, view='course')
     course_id = regexp.group('course_id')
+    answer_message_id = None
     try:
-        course = await Course.objects.aget(id=course_id)
+        course = await Course.objects.select_related('thumbnail').aget(id=course_id)
         stats = await get_course_lessons_progress(course_id=course.id, user_id=user.id)
-        answer_message = await message.answer(
-            text=get_course_text(course, stats),
-            reply_markup=get_course_inline_markup(course),
-        )
+
+        if course.thumbnail:
+            answer_message_id, _ = await send_file_to_user(
+                bot=message.bot,
+                file=course.thumbnail,
+                user=user,
+                caption=get_course_text(course, stats),
+                reply_markup=get_course_inline_markup(course),
+            )
+        else:
+            answer_message = await message.answer(
+                text=get_course_text(course, stats),
+                reply_markup=get_course_inline_markup(course),
+            )
+            answer_message_id = answer_message.message_id
     except Course.DoesNotExist:
         answer_message = await message.answer(
             text=_('Course id not found'),
         )
+        answer_message_id = answer_message.message_id
 
     await message.delete()
     await clean_messages(bot=message.bot, chat_id=message.chat.id, state=state)
-    await add_message_to_clean(state, answer_message.message_id)
+    await add_message_to_clean(state, answer_message_id)
 
 
 @router.message(
@@ -354,7 +367,6 @@ async def message_group(message: Message, regexp: re.Match, state: FSMContext, u
                 user=user,
                 caption=get_group_text(group, stats),
                 reply_markup=get_group_inline_markup(group),
-                document_as_image=True,
             )
         else:
             answer_message = await message.answer(
@@ -377,11 +389,22 @@ async def set_lesson(message: Message, lesson: Lesson, user: User, state: FSMCon
     await check_learning_session(message, state, lesson_selected=True, view='lesson')
 
     answer_messages_ids = []
-    answer_message = await message.answer(
-        text=get_lesson_text(lesson),
-        reply_markup=get_lesson_inline_markup(lesson),
-    )
-    answer_messages_ids.append(answer_message.message_id)
+
+    if lesson.thumbnail:
+        answer_message_id, _ = await send_file_to_user(
+            bot=message.bot,
+            file=lesson.thumbnail,
+            user=user,
+            caption=get_lesson_text(lesson),
+            reply_markup=get_lesson_inline_markup(lesson),
+        )
+        answer_messages_ids.append(answer_message_id)
+    else:
+        answer_message = await message.answer(
+            text=get_lesson_text(lesson),
+            reply_markup=get_lesson_inline_markup(lesson),
+        )
+        answer_messages_ids.append(answer_message.message_id)
     state_data = await state.get_data()
     lesson_entity_messages = state_data.get('lesson_entity_messages', {})
     reply_markup_set = False
@@ -457,7 +480,7 @@ async def set_lesson(message: Message, lesson: Lesson, user: User, state: FSMCon
 async def callback_lesson(callback_query: CallbackQuery, regexp: re.Match, user: User, state: FSMContext) -> NoReturn:
     lesson_id = regexp.group('lesson_id')
     try:
-        lesson = await Lesson.objects.select_related('group', 'course').aget(id=lesson_id)
+        lesson = await Lesson.objects.select_related('group', 'course', 'thumbnail').aget(id=lesson_id)
         answer_messages_ids = await set_lesson(callback_query.message, lesson, user, state)
         for answer_messages_id in answer_messages_ids:
             await add_message_to_clean(state, answer_messages_id)
@@ -479,7 +502,7 @@ async def message_lesson(message: Message, regexp: re.Match, user: User, state: 
     state = await check_learning_session(message, state, lesson_selected=True, view='lesson')
     lesson_id = regexp.group('lesson_id')
     try:
-        lesson = await Lesson.objects.select_related('group', 'course').aget(id=lesson_id)
+        lesson = await Lesson.objects.select_related('group', 'course', 'thumbnail').aget(id=lesson_id)
         answer_messages_ids = await set_lesson(message, lesson, user, state)
     except Lesson.DoesNotExist:
         answer_message = await message.answer(

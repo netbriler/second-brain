@@ -12,11 +12,41 @@ from telegram_bot.filters.admin import IsAdmin
 from telegram_bot.filters.i18n_text import I18nText
 from telegram_bot.keyboards.default.cancel import get_cancel_markup
 from telegram_bot.models import File
-from telegram_bot.services.files import save_file, send_file_to_user
+from telegram_bot.services.files import generate_file_text, save_file, send_file_to_user
 from telegram_bot.states.file import FilesAddForm
 from users.models import User
 
 router = Router(name=__name__)
+
+
+@router.message(
+    IsAdmin(),
+    Command(commands=['file']),
+    F.reply_to_message.content_type.in_(
+        {
+            ContentType.AUDIO,
+            ContentType.DOCUMENT,
+            ContentType.PHOTO,
+            ContentType.STICKER,
+            ContentType.VIDEO,
+            ContentType.VIDEO_NOTE,
+            ContentType.VOICE,
+        },
+    ),
+)
+async def _file_reply(message: Message, user: User) -> NoReturn:
+    """Save file from reply and return file info"""
+    file = await save_file(
+        message=message.reply_to_message,
+        user=user,
+    )
+
+    if file:
+        file = await File.objects.filter(file_id__iexact=file.file_id).select_related('uploaded_by').afirst()
+        file_text = generate_file_text(file)
+        await message.answer(file_text)
+    else:
+        await message.answer(_('Failed to save file'))
 
 
 @router.message(

@@ -21,7 +21,6 @@ def generate_file_text(file: File) -> str:
         raw_data += f'<b>{key.title().replace("_", " ")}</b>: <code>{value}</code>\n'
 
     return _(
-        'New file uploaded:\n'
         '<b>File type</b>: <code>{content_type}</code>\n'
         '<b>File ID</b>: <code>{file_id}</code>\n'
         '<b>Uploaded by</b>: <a href="tg://user?id={uploaded_by_id}">{uploaded_by}</a>\n'
@@ -42,7 +41,6 @@ async def send_file_to_user(
     send_file_info: bool = False,
     caption: str = None,
     reply_markup: InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply = None,
-    document_as_image: bool = False,
 ) -> tuple[int, int]:
     if file.content_type == ContentType.AUDIO:
         message = await bot.send_audio(
@@ -52,20 +50,12 @@ async def send_file_to_user(
             reply_markup=reply_markup,
         )
     elif file.content_type == ContentType.DOCUMENT:
-        if document_as_image and file.mime_type and file.mime_type.startswith('image/'):
-            message = await bot.send_photo(
-                user.telegram_id,
-                file.file_id,
-                caption=caption,
-                reply_markup=reply_markup,
-            )
-        else:
-            message = await bot.send_document(
-                user.telegram_id,
-                file.file_id,
-                caption=caption,
-                reply_markup=reply_markup,
-            )
+        message = await bot.send_document(
+            user.telegram_id,
+            file.file_id,
+            caption=caption,
+            reply_markup=reply_markup,
+        )
     elif file.content_type == ContentType.PHOTO:
         message = await bot.send_photo(
             user.telegram_id,
@@ -167,7 +157,7 @@ def sync_send_file_to_user(
     return message.message_id, message2_id
 
 
-async def save_file(message: AiogramMessage, user: User) -> NoReturn:
+async def save_file(message: AiogramMessage, user: User) -> File | NoReturn:
     logger.debug(f'User {user} uploaded file {message.content_type}')
     raw_json = None
     if message.content_type == ContentType.AUDIO:

@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
 
+from telegram_bot.constants import FileContentType
 from utils.helpers import AutoIncrementalField
 
 
@@ -27,6 +28,15 @@ class Course(models.Model):
         verbose_name=_('Description'),
     )
 
+    thumbnail = models.ForeignKey(
+        'telegram_bot.File',
+        related_name='course_thumbnails',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name=_('Thumbnail'),
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name=_('Created At'),
@@ -36,6 +46,10 @@ class Course(models.Model):
         auto_now=True,
         verbose_name=_('Updated At'),
     )
+
+    def clean(self):
+        if self.thumbnail and self.thumbnail.content_type != FileContentType.PHOTO:
+            raise ValidationError(_('Thumbnail must be a photo'))
 
     def __str__(self):
         return self.title
@@ -103,17 +117,8 @@ class Group(models.Model):
         if self.parent and self.parent.course and self.course and self.parent.course != self.course:
             raise ValidationError(_('Parent group must belong to the same course'))
 
-        # Validate thumbnail content type
-        if self.thumbnail:
-            if self.thumbnail.content_type == 'photo':
-                # Photo content type is valid
-                pass
-            elif self.thumbnail.content_type == 'document':
-                # Document must have image/* mime type
-                if not self.thumbnail.mime_type or not self.thumbnail.mime_type.startswith('image/'):
-                    raise ValidationError(_('Thumbnail document must have image/* mime type'))
-            else:
-                raise ValidationError(_('Thumbnail must be a photo or document with image/* mime type'))
+        if self.thumbnail and self.thumbnail.content_type != FileContentType.PHOTO:
+            raise ValidationError(_('Thumbnail must be a photo'))
 
     def save(
         self,
@@ -165,6 +170,15 @@ class Lesson(models.Model):
         blank=True,
     )
 
+    thumbnail = models.ForeignKey(
+        'telegram_bot.File',
+        related_name='lesson_thumbnails',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name=_('Thumbnail'),
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name=_('Created At'),
@@ -178,6 +192,9 @@ class Lesson(models.Model):
     def clean(self):
         if self.group and self.course and self.group.course and self.group.course != self.course:
             raise ValidationError(_('Group must belong to the same course'))
+
+        if self.thumbnail and self.thumbnail.content_type != FileContentType.PHOTO:
+            raise ValidationError(_('Thumbnail must be a photo'))
 
     def save(
         self,
