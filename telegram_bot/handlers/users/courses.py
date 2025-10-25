@@ -322,7 +322,7 @@ async def message_course(message: Message, regexp: re.Match, state: FSMContext, 
         stats = await get_course_lessons_progress(course_id=course.id, user_id=user.id)
 
         if course.thumbnail:
-            answer_message_id, _ = await send_file_to_user(
+            answer_message_id, __ = await send_file_to_user(
                 bot=message.bot,
                 file=course.thumbnail,
                 user=user,
@@ -363,7 +363,7 @@ async def message_group(message: Message, regexp: re.Match, state: FSMContext, u
         stats = await get_group_lessons_progress(group_id=group.id, user_id=user.id)
 
         if group.thumbnail:
-            answer_message_id, _ = await send_file_to_user(
+            answer_message_id, __ = await send_file_to_user(
                 bot=message.bot,
                 file=group.thumbnail,
                 user=user,
@@ -393,7 +393,7 @@ async def set_lesson(message: Message, lesson: Lesson, user: User, state: FSMCon
     answer_messages_ids = []
 
     if lesson.thumbnail:
-        answer_message_id, _ = await send_file_to_user(
+        answer_message_id, __ = await send_file_to_user(
             bot=message.bot,
             file=lesson.thumbnail,
             user=user,
@@ -418,7 +418,7 @@ async def set_lesson(message: Message, lesson: Lesson, user: User, state: FSMCon
             reply_markup_set = True
 
         if lesson_entity.file:
-            lesson_entity_message_id, __ = await send_file_to_user(
+            lesson_entity_message_id, ___ = await send_file_to_user(
                 bot=message.bot,
                 file=lesson_entity.file,
                 user=user,
